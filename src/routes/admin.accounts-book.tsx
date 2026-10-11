@@ -22,6 +22,8 @@ import {
   reconcileBanksWalletsToSheets,
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
+  reconcileSalesAccountsToSheets,
+  reconcileAllAccountsBookToSheets,
   updateAccountsBookOpening,
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
@@ -1014,6 +1016,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
   const [isReconcilingCashBook, setIsReconcilingCashBook] = useState(false);
   const [isReconcilingExpenses, setIsReconcilingExpenses] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const reconcileAllFn = useServerFn(reconcileAllAccountsBookToSheets);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -1152,6 +1156,23 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
       toast.error("Daily Cash Book reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
     }).finally(() => {
       setIsReconcilingCashBook(false);
+    });
+  };
+
+  const syncAllSheets = () => {
+    if (isSyncingAll) return;
+    setIsSyncingAll(true);
+    void reconcileAllFn({ data: {} }).then((result) => {
+      if (result.status === "success") {
+        toast.success(`Google Sheets synchronized: ${result.sheets || "All ledgers updated"}`);
+      } else {
+        toast.warning(`Google Sheets sync completed with notices: ${result.failures?.join("; ") || "check logs"}`);
+      }
+      refresh();
+    }).catch((error) => {
+      toast.error("Google Sheets sync failed: " + (error instanceof Error ? error.message : String(error)));
+    }).finally(() => {
+      setIsSyncingAll(false);
     });
   };
 
@@ -1332,7 +1353,20 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   <h2>Dashboard</h2>
                   <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    className="btn outline"
+                    onClick={syncAllSheets}
+                    disabled={isSyncingAll}
+                    title="Force synchronize all ledgers to Google Sheets"
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <RefreshCw size={13} className={isSyncingAll ? "animate-spin" : ""} />
+                    {isSyncingAll ? "Syncing..." : "Sync Sheets"}
+                  </button>
+                  <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
+                </div>
               </div>
               <div className="cards">
                 <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />

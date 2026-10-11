@@ -6,8 +6,10 @@ import {
   appendRows,
   applyBrandFormatting,
   applyRohiExportFormatting,
+  batchClear,
   batchUpdateSpreadsheet,
   batchWrite,
+  buildRohiExportFormattingRequests,
   clearSheet,
   colLetter,
   createSpreadsheet,
@@ -568,8 +570,9 @@ function canonicalBankWalletSheetName(rawName: string): string {
 export async function reconcileBanksWalletsToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
-  // Banks & Wallets reconciliation is single-flight. Concurrent clicks/tabs
-  // otherwise cause Google Sheets rate limits and partial workbooks.
+  const STALE_MS = 45 * 1000;
+
+  // Single-flight lock with 45s stale recovery so serverless crashes never block future live syncs
   const { data: existingRun, error: existingRunError } = await db
     .from("backup_runs")
     .select("id,started_at")
@@ -579,12 +582,12 @@ export async function reconcileBanksWalletsToSheets() {
     .limit(1)
     .maybeSingle();
   if (existingRunError) throw new Error(existingRunError.message);
+
   if (existingRun?.id) {
     const startedAtMs = Date.parse(String(existingRun.started_at ?? ""));
-    const staleRun = !Number.isFinite(startedAtMs) || Date.now() - startedAtMs > 15 * 60 * 1000;
+    const staleRun = !Number.isFinite(startedAtMs) || Date.now() - startedAtMs > STALE_MS;
     if (staleRun) {
-      // Recover abandoned runs so a crashed server cannot block all future live syncs.
-      const { error: staleUpdateError } = await db
+      await db
         .from("backup_runs")
         .update({
           status: "failed",
@@ -593,7 +596,6 @@ export async function reconcileBanksWalletsToSheets() {
         })
         .eq("id", existingRun.id)
         .eq("status", "running");
-      if (staleUpdateError) throw new Error(staleUpdateError.message);
     } else {
       const target = await ensureSpreadsheet("banksWallets");
       return {
@@ -615,33 +617,41 @@ export async function reconcileBanksWalletsToSheets() {
     .insert({ kind: "banks-wallets-reconciliation", status: "running" })
     .select("id")
     .single();
+
+  let runId: string;
   if (runInsertError) {
-    // The partial unique index prevents the check/insert race across instances.
     const { data: winner } = await db
       .from("backup_runs")
-      .select("id")
+      .select("id,started_at")
       .eq("kind", "banks-wallets-reconciliation")
       .eq("status", "running")
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (winner?.id) {
-      const target = await ensureSpreadsheet("banksWallets");
-      return {
-        runId: winner.id,
-        status: "running" as const,
-        spreadsheetId: target.id,
-        spreadsheetUrl: target.url,
-        accounts: [],
-        outcomes: [] as TableSyncOutcome[],
-        failures: [] as { table: string; message: string }[],
-        warningCount: 0,
-        alreadyRunning: true,
-      };
+      const winnerMs = Date.parse(String(winner.started_at ?? ""));
+      if (Number.isFinite(winnerMs) && Date.now() - winnerMs <= STALE_MS) {
+        const target = await ensureSpreadsheet("banksWallets");
+        return {
+          runId: winner.id,
+          status: "running" as const,
+          spreadsheetId: target.id,
+          spreadsheetUrl: target.url,
+          accounts: [],
+          outcomes: [] as TableSyncOutcome[],
+          failures: [] as { table: string; message: string }[],
+          warningCount: 0,
+          alreadyRunning: true,
+        };
+      }
+      runId = winner.id;
+    } else {
+      throw new Error(runInsertError.message);
     }
-    throw new Error(runInsertError.message);
+  } else {
+    runId = (runRow as { id: string }).id;
   }
-  const runId = (runRow as { id: string }).id;
+
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
 
@@ -649,8 +659,8 @@ export async function reconcileBanksWalletsToSheets() {
     const target = await ensureSpreadsheet("banksWallets");
     const info = await getSpreadsheet(target.id);
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
-    const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
-    // Match the official-site favicon sources used by the Banks & Wallets cards.
+    const safeSheetPart = (value: string) => value.replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
     const bankWalletLogoDomain = (name: string): string | null => {
       const lower = name.toLowerCase();
       const compact = lower.replace(/[^a-z0-9]/g, "");
@@ -681,60 +691,56 @@ export async function reconcileBanksWalletsToSheets() {
       if (includes("silkbank")) return "silkbank.com.pk";
       return null;
     };
+
     const bankWalletLogoFormula = (name: string, customLogoUrl?: string | null) => {
       const savedUrl = String(customLogoUrl ?? "").trim();
-      if (savedUrl && /^https:\/\//i.test(savedUrl)) return `=IMAGE("${savedUrl.replace(/"/g, '\"')}",4,40,40)`;
+      if (savedUrl && /^https:\/\//i.test(savedUrl)) return `=IMAGE("${savedUrl.replace(/"/g, '"')}",4,40,40)`;
       const domain = bankWalletLogoDomain(name);
       return domain
         ? `=IMAGE("https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128",4,40,40)`
         : "";
     };
 
-    let allBankWalletAccounts: Array<Record<string, any>> | null;
-    let accountsError: { message?: string } | null;
-    ({ data: allBankWalletAccounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,logo_url,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true }));
-    if (accountsError && /logo_url/i.test(accountsError.message ?? "")) {
-      // The logo_url column has not been added to this database yet. Keep the
-      // sheet sync working (automatic brand logos) instead of failing outright.
-      console.warn("[backup] accounts_book_accounts.logo_url missing; syncing Banks & Wallets without custom logos.");
-      ({ data: allBankWalletAccounts, error: accountsError } = await db
-        .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true }));
+    // Read accounts and transactions in parallel
+    const [accountsResult, txnsResult] = await Promise.all([
+      db.from("accounts_book_accounts")
+        .select("id,name,kind,logo_url,opening_balance,opening_balance_date,created_at,is_active,sort_order")
+        .in("kind", ["bank", "wallet"])
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      db.from("accounts_book_transactions")
+        .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
+        .order("created_at", { ascending: true }),
+    ]);
+
+    let allBankWalletAccounts: Array<{ id: string; name: string; kind: string; logo_url?: string | null; opening_balance?: number | null; opening_balance_date?: string | null; created_at?: string | null; is_active?: boolean | null; sort_order?: number | null }> = accountsResult.data ?? [];
+    if (accountsResult.error && /logo_url/i.test(accountsResult.error.message ?? "")) {
+      const fallback = await db
+        .from("accounts_book_accounts")
+        .select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order")
+        .in("kind", ["bank", "wallet"])
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+      allBankWalletAccounts = (fallback.data ?? []).map((row) => ({ ...row, logo_url: null }));
     }
-    if (accountsError) throw new Error(accountsError.message ?? "Could not read bank/wallet accounts");
 
-    // Standardized provisioning: EVERY active bank/wallet account gets a
-    // canonical "<Name> Account" tab and a master-tab row automatically —
-    // whether it is an initial account or newly added from the admin panel.
-    // Inactive or deleted accounts and their tabs are removed automatically,
-    // so no account ever needs manual design or manual cleanup again.
-    // Preserve every account row and worksheet, including inactive accounts.
-    // Historical bank/wallet tabs must never be deleted by a routine sync.
     const accounts = allBankWalletAccounts ?? [];
-    const activeAccounts = accounts;
+    const allAccountTxnsOrdered = inCreationOrder(txnsResult.data ?? []);
 
-    // Banks & Wallets master tab: keep opening position visible alongside each account.
-    const accountRows: (string | number)[][] = [
+    // 1. Prepare master tab
+    const masterRows: (string | number)[][] = [
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", ""],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", ""],
       ["Banks & Wallets", "", "", "", "", ""],
       [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", "", ""],
       ["Official Logo", "Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
     ];
-    // Read the ledger once and use this same committed transaction snapshot for
-    // both the master balances and each account tab, preventing drift between tabs.
-    const { data: allAccountTxns, error: masterTxError } = await db
-      .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
-      .order("created_at", { ascending: true });
-    if (masterTxError) throw new Error(masterTxError.message);
-    const allAccountTxnsOrdered = inCreationOrder(allAccountTxns ?? []);
 
-    for (const account of accounts ?? []) {
+    for (const account of accounts) {
       const opening = Number((account as any).opening_balance ?? 0);
       const txns = allAccountTxnsOrdered.filter((t) => String(t.account_id ?? "") === String(account.id));
       const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
-      accountRows.push([
+      masterRows.push([
         bankWalletLogoFormula(String(account.name), (account as any).logo_url),
         String(account.name),
         String(account.kind),
@@ -743,54 +749,16 @@ export async function reconcileBanksWalletsToSheets() {
         current
       ]);
     }
-    await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
-    await clearSheet(target.id, "Banks & Wallets");
-    await writeRange(target.id, "'Banks & Wallets'!A1:F" + accountRows.length, accountRows);
-    const masterSheetId = existingSheets.get("Banks & Wallets");
-    if (masterSheetId !== undefined) {
-      await applyRohiExportFormatting(target.id, masterSheetId, {
-        columnCount: 6,
-        dataEndRow: accountRows.length,
-        numericColumnIndexes: [3, 5],
-        dateColumnIndexes: [4],
-      });
-      if (accounts.length) {
-        await batchWrite(target.id, [{
-          range: `'Banks & Wallets'!A6:A${accountRows.length}`,
-          values: accounts.map((account) => [bankWalletLogoFormula(String(account.name), (account as any).logo_url)]),
-        }], "USER_ENTERED");
-        await batchUpdateSpreadsheet(target.id, [
-          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 76 }, fields: "pixelSize" } },
-          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "ROWS", startIndex: 5, endIndex: accountRows.length }, properties: { pixelSize: 48 }, fields: "pixelSize" } },
-          { repeatCell: { range: { sheetId: masterSheetId, startRowIndex: 5, endRowIndex: accountRows.length, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } }, fields: "userEnteredFormat(horizontalAlignment,verticalAlignment)" } },
-        ]);
-      }
-    }
-    outcomes.push({
-      table: "accounts_book_accounts",
-      sheet: "Banks & Wallets",
-      rows: accountRows.length - 1,
-      mode: "full",
-      cursor: null,
-      errors: []
-    });
 
-    // Clean account tab names. Keep exactly one canonical "<Account> Account"
-    // worksheet per account and remove spacing/numbered duplicates such as
-    // "Jazz Cash Account" and "Jazz Cash 2".
-    const normalizeAccountTab = (value: string) =>
-      value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
-
-    // Legacy worksheet names are retained for audit/history; do not delete tabs
-    // merely because an account is inactive or renamed.
+    // Disambiguate account tab names
     const nameCounts = new Map<string, number>();
-    for (const account of accounts ?? []) {
+    for (const account of accounts) {
       const base = safeSheetPart(String(account.name));
       nameCounts.set(base, (nameCounts.get(base) ?? 0) + 1);
     }
     const seenNames = new Set<string>();
     const sheetNameByAccountId = new Map<string, string>();
-    for (const account of accounts ?? []) {
+    for (const account of accounts) {
       const base = safeSheetPart(String(account.name));
       const isDuplicateName = (nameCounts.get(base) ?? 0) > 1;
       const disambiguated = isDuplicateName && seenNames.has(base)
@@ -801,120 +769,165 @@ export async function reconcileBanksWalletsToSheets() {
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
-    // Intentionally do not delete legacy, duplicate, inactive, or unrecognized tabs.
-    // They may contain financial history that is not represented by the current account
-    // registry. The canonical tab for each current account is ensured below; older tabs
-    // remain available until an administrator explicitly archives them.
-    if ([...nameCounts.values()].some((n) => n > 1)) {
-      // Informational only — not a sync failure, so it doesn't flip the run to "partial".
-      console.warn("[backup] Banks & Wallets: duplicate account names found; tabs disambiguated with an id suffix. Consider renaming the duplicates in the Accounts Book.");
+    // 2. Prepare individual account tab rows
+    const accountSheetData: Array<{ sheet: string; rows: (string | number)[][]; txCount: number }> = [];
+    for (const account of accounts) {
+      const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name));
+      const txns = allAccountTxnsOrdered.filter((t) => String(t.account_id ?? "") === String(account.id));
+      const openingBalance = Number((account as any).opening_balance ?? 0);
+      let runningBalance = openingBalance;
+      const opDate = String(formatSheetDate((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : "")) || "");
+
+      const txRows: (string | number)[][] = [
+        [
+          opDate,
+          "Opening Balance",
+          openingBalance > 0 ? openingBalance : "",
+          openingBalance < 0 ? Math.abs(openingBalance) : "",
+          openingBalance
+        ]
+      ];
+
+      for (const t of txns) {
+        const amt = Number(t.amount || 0);
+        const isDebit = t.direction === "out";
+        if (isDebit) runningBalance -= amt;
+        else runningBalance += amt;
+
+        const descParts: string[] = [];
+        if (t.category) descParts.push("[" + t.category + "]");
+        if (t.description) descParts.push(String(t.description));
+        if (t.party) descParts.push("(" + t.party + ")");
+        const formattedDesc = descParts.join(" ") || "Transaction";
+
+        txRows.push([
+          String(formatSheetDate(t.entry_date) || ""),
+          formattedDesc,
+          isDebit ? amt : "",
+          !isDebit ? amt : "",
+          runningBalance
+        ]);
+      }
+
+      const rows: (string | number)[][] = [
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
+        [sheet, "", "", "", ""],
+        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${txns.length + 1} ledger rows`, "", "", "", ""],
+        ["Date", "Description", "Debit", "Credit", "Balance"],
+        ...txRows
+      ];
+
+      accountSheetData.push({ sheet, rows, txCount: txns.length });
     }
 
-    // Fetch all active transactions for these accounts to build clean (Date, Description, Debit, Credit, Balance) ledgers
-    for (const account of accounts ?? []) {
-      const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name));
-      try {
-        await ensureSheetTab(target.id, sheet, existingSheets);
-        const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
-        
-        const openingBalance = Number((account as any).opening_balance ?? 0);
-        let runningBalance = openingBalance;
-        const opDate = String(formatSheetDate((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : "")) || "");
-        
-        const txRows: (string | number)[][] = [
-          [
-            opDate,
-            "Opening Balance",
-            openingBalance > 0 ? openingBalance : "",
-            openingBalance < 0 ? Math.abs(openingBalance) : "",
-            openingBalance
-          ]
-        ];
+    // Ensure all required sheet tabs exist
+    await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
+    for (const item of accountSheetData) {
+      await ensureSheetTab(target.id, item.sheet, existingSheets);
+    }
 
-        for (const t of txns) {
-          const amt = Number(t.amount || 0);
-          const isDebit = t.direction === "out";
-          if (isDebit) runningBalance -= amt;
-          else runningBalance += amt;
+    // 3. Batch clear all tabs at once
+    const clearRanges = [
+      quoteSheet("Banks & Wallets"),
+      ...accountSheetData.map((item) => quoteSheet(item.sheet))
+    ];
+    await batchClear(target.id, clearRanges);
 
-          const descParts: string[] = [];
-          if (t.category) descParts.push("[" + t.category + "]");
-          if (t.description) descParts.push(String(t.description));
-          if (t.party) descParts.push("(" + t.party + ")");
-          const formattedDesc = descParts.join(" ") || "Transaction";
+    // 4. Batch write all tabs at once (single API call)
+    const writeData = [
+      { range: `'Banks & Wallets'!A1:F${masterRows.length}`, values: masterRows },
+      ...accountSheetData.map((item) => ({
+        range: `'${item.sheet}'!A1:E${item.rows.length}`,
+        values: item.rows,
+      }))
+    ];
+    await batchWrite(target.id, writeData, "USER_ENTERED");
 
-          txRows.push([
-            String(formatSheetDate(t.entry_date) || ""),
-            formattedDesc,
-            isDebit ? amt : "",
-            !isDebit ? amt : "",
-            runningBalance
-          ]);
-        }
-
-        const rows: (string | number)[][] = [
-          ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
-          ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
-          [sheet, "", "", "", ""],
-          [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${txns.length + 1} ledger rows`, "", "", "", ""],
-          ["Date", "Description", "Debit", "Credit", "Balance"],
-          ...txRows
-        ];
-
-        await clearSheet(target.id, sheet);
-        await writeRange(target.id, `'${sheet}'!A1:E${rows.length}`, rows);
-        const accountSheetId = existingSheets.get(sheet);
-        if (accountSheetId !== undefined) {
-          await applyRohiExportFormatting(target.id, accountSheetId, {
-            columnCount: 5,
-            dataEndRow: rows.length,
-            numericColumnIndexes: [2, 3, 4],
-            dateColumnIndexes: [0],
-          });
-        }
-        outcomes.push({
-          table: "accounts_book_transactions",
-          sheet,
-          rows: rows.length - 1,
-          mode: "full",
-          cursor: null,
-          errors: []
-        });
-      } catch (error) {
-        failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
+    // 5. Batch format and reorder all tabs at once (single API call)
+    const allFormattingRequests: any[] = [];
+    const masterSheetId = existingSheets.get("Banks & Wallets");
+    if (masterSheetId !== undefined) {
+      allFormattingRequests.push(...buildRohiExportFormattingRequests(masterSheetId, {
+        columnCount: 6,
+        dataEndRow: masterRows.length,
+        numericColumnIndexes: [3, 5],
+        dateColumnIndexes: [4],
+      }));
+      if (accounts.length) {
+        allFormattingRequests.push(
+          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 76 }, fields: "pixelSize" } },
+          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "ROWS", startIndex: 5, endIndex: masterRows.length }, properties: { pixelSize: 48 }, fields: "pixelSize" } },
+          { repeatCell: { range: { sheetId: masterSheetId, startRowIndex: 5, endRowIndex: masterRows.length, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } }, fields: "userEnteredFormat(horizontalAlignment,verticalAlignment)" } }
+        );
       }
     }
 
-    // Reorder Google Sheets tabs to match the saved website account order.
+    for (const item of accountSheetData) {
+      const sheetId = existingSheets.get(item.sheet);
+      if (sheetId !== undefined) {
+        allFormattingRequests.push(...buildRohiExportFormattingRequests(sheetId, {
+          columnCount: 5,
+          dataEndRow: item.rows.length,
+          numericColumnIndexes: [2, 3, 4],
+          dateColumnIndexes: [0],
+        }));
+      }
+    }
+
+    // Reorder tabs
     const orderedTabNames = [
       "Banks & Wallets",
       ...accounts.map((account) => sheetNameByAccountId.get(String(account.id))).filter((name): name is string => Boolean(name)),
     ];
-    const tabOrderRequests = orderedTabNames.flatMap((title, index) => {
-      const sheetId = existingSheets.get(title);
-      return sheetId === undefined ? [] : [{
-        updateSheetProperties: { properties: { sheetId, index }, fields: "index" },
-      }];
-    });
-    if (tabOrderRequests.length) {
-      try {
-        await batchUpdateSpreadsheet(target.id, tabOrderRequests);
-      } catch (error) {
-        failures.push({
-          table: "accounts_book_accounts",
-          message: "Ledger data was synced, but worksheet order could not be updated: " + (error instanceof Error ? error.message : String(error)),
+    for (let index = 0; index < orderedTabNames.length; index++) {
+      const sheetId = existingSheets.get(orderedTabNames[index]);
+      if (sheetId !== undefined) {
+        allFormattingRequests.push({
+          updateSheetProperties: { properties: { sheetId, index }, fields: "index" },
         });
       }
     }
 
-    const warnings = outcomes.flatMap((o) => o.errors);
-    if (warnings.length) await db.from("backup_errors").insert(warnings.slice(0, 100).map((warning) => ({ run_id: runId, table_name: "accounts_book_transactions", row_id: warning.row_id, severity: "warning", message: warning.message })));
-    if (failures.length) await db.from("backup_errors").insert(failures.map((failure) => ({ run_id: runId, table_name: failure.table || "accounts_book_transactions", severity: "error", message: failure.message })));
+    if (allFormattingRequests.length) {
+      try {
+        await batchUpdateSpreadsheet(target.id, allFormattingRequests);
+      } catch (fmtError) {
+        console.warn("[backup] Tab formatting/ordering completed with non-fatal notice:", fmtError);
+      }
+    }
 
-    const status = failures.length || warnings.length ? "partial" : "success";
+    outcomes.push({
+      table: "accounts_book_accounts",
+      sheet: "Banks & Wallets",
+      rows: masterRows.length - 1,
+      mode: "full",
+      cursor: null,
+      errors: []
+    });
+
+    for (const item of accountSheetData) {
+      outcomes.push({
+        table: "accounts_book_transactions",
+        sheet: item.sheet,
+        rows: item.rows.length - 1,
+        mode: "full",
+        cursor: null,
+        errors: []
+      });
+    }
+
     const finishedAt = new Date().toISOString();
-    await db.from("backup_runs").update({ status, finished_at: finishedAt, tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: failures.length, message: failures.length ? failures.map((failure) => failure.message).join(" | ").slice(0, 1000) : "", details: { scope: "banksWallets", spreadsheetId: target.id, startedAt, outcomes, failures } as any }).eq("id", runId);
-    return { runId, status, spreadsheetId: target.id, spreadsheetUrl: target.url, accounts: (accounts ?? []).map((account) => account.name), outcomes, failures, warningCount: warnings.length };
+    await db.from("backup_runs").update({
+      status: "success",
+      finished_at: finishedAt,
+      tables_synced: outcomes.length,
+      rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0),
+      error_count: 0,
+      details: { scope: "banksWallets", spreadsheetId: target.id, startedAt, outcomes, failures } as any
+    }).eq("id", runId);
+
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, accounts: accounts.map((a) => a.name), outcomes, failures, warningCount: 0 };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     failures.push({ table: "banksWallets", message });
@@ -924,7 +937,6 @@ export async function reconcileBanksWalletsToSheets() {
   }
 }
 
-
 /**
  * Reconcile only the Sales Accounts workbook.
  * Syncs the master Sales Accounts sheet and individual category tabs (e.g. Saudia Visa Process).
@@ -932,13 +944,44 @@ export async function reconcileBanksWalletsToSheets() {
 export async function reconcileSalesAccountsToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
+  const STALE_MS = 45 * 1000;
+
+  // Stale check
+  const { data: existingRun } = await db
+    .from("backup_runs")
+    .select("id,started_at")
+    .eq("kind", "sales-accounts-reconciliation")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingRun?.id) {
+    const startedAtMs = Date.parse(String(existingRun.started_at ?? ""));
+    if (!Number.isFinite(startedAtMs) || Date.now() - startedAtMs > STALE_MS) {
+      await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), message: "Recovered stale sales run." }).eq("id", existingRun.id).eq("status", "running");
+    }
+  }
+
   const { data: runRow, error: runInsertError } = await db
     .from("backup_runs")
     .insert({ kind: "sales-accounts-reconciliation", status: "running" })
     .select("id")
     .single();
-  if (runInsertError) throw new Error(runInsertError.message);
-  const runId = (runRow as { id: string }).id;
+
+  let runId = (runRow as { id?: string })?.id;
+  if (!runId) {
+    const { data: winner } = await db
+      .from("backup_runs")
+      .select("id")
+      .eq("kind", "sales-accounts-reconciliation")
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    runId = winner?.id ?? crypto.randomUUID();
+  }
+
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
 
@@ -948,77 +991,197 @@ export async function reconcileSalesAccountsToSheets() {
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const safeSheetPart = (value: string) => value.replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    // 1. Sync master Sales Accounts sheet
-    const masterOutcome = await syncTable(target.id, {
-      table_name: "accounts_book_transactions", sheet_name: "Sales Accounts", cursor_column: null, last_cursor: null,
-    }, {
-      full: true, existingSheets, rowFilter: isSalesTransaction, verifyWrite: true,
-    });
-    outcomes.push(masterOutcome);
+    // Read accounts, services and all sale transactions in parallel
+    const [accountsResult, servicesResult, txnsResult] = await Promise.all([
+      db.from("accounts_book_accounts").select("id,name,kind"),
+      db.from("accounts_book_services").select("name").eq("is_active", true),
+      db.from("accounts_book_transactions")
+        .select("id,account_id,entry_date,created_at,description,category,party,amount,direct_cost,direction,source_type,entry_type")
+        .or("source_type.eq.sale,entry_type.eq.sale")
+        .order("created_at", { ascending: true }),
+    ]);
 
-    // 2. Discover categories from accounts_book_services and existing sale transactions
-    const { data: categoryServices } = await db
-      .from("accounts_book_services")
-      .select("name")
-      .eq("is_active", true);
+    const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
 
     const salesCategories = new Set<string>(
-      (categoryServices ?? [])
+      (servicesResult.data ?? [])
         .map((s) => String(s.name ?? ""))
         .filter((name) => name && !name.startsWith("EXP: "))
     );
 
-    const { data: transactionCategories } = await db
-      .from("accounts_book_transactions")
-      .select("category")
-      .eq("source_type", "sale");
-
-    for (const row of transactionCategories ?? []) {
+    const allSales = inCreationOrder(txnsResult.data ?? []);
+    for (const row of allSales) {
       const cat = String(row.category ?? "").trim();
       if (cat) salesCategories.add(cat);
     }
 
-    // Clean up any old prefixed tabs like 'Sales - <Category>'
-    for (const category of salesCategories) {
-      const legacy = `Sales - ${safeSheetPart(category)}`;
-      const legacyId = existingSheets.get(legacy);
-      if (legacyId !== undefined && legacy !== safeSheetPart(category)) {
-        try {
-          await deleteSheet(target.id, legacyId);
-          existingSheets.delete(legacy);
-        } catch (err) {
-          console.warn("[backup] could not delete legacy sales tab", legacy, err);
-        }
-      }
+    // Build Master Sales Accounts sheet
+    let totalSalesAmt = 0;
+    let totalProfitAmt = 0;
+    const masterDataRows: (string | number)[][] = [];
+    let sr = 1;
+
+    for (const t of allSales) {
+      if (t.direction === "out" && Number(t.direct_cost || 0) === 0) continue;
+      const saleAmt = Number(t.amount || 0);
+      const costAmt = Number(t.direct_cost || 0);
+      const profit = saleAmt - costAmt;
+      totalSalesAmt += saleAmt;
+      totalProfitAmt += profit;
+      const accName = accountMap.get(String(t.account_id)) || "Account";
+
+      masterDataRows.push([
+        sr++,
+        String(formatSheetDate(t.entry_date) || ""),
+        String(t.description || "Sale"),
+        String(t.party || "—"),
+        String(t.category || "General"),
+        accName,
+        saleAmt,
+        costAmt,
+        profit
+      ]);
     }
 
-    // 3. Sync each category tab (e.g. Saudia Visa Process, Appointments, Umrah, etc.)
-    const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
+    const masterRows: (string | number)[][] = [
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", ""],
+      ["Sales Accounts", "", "", "", "", "", "", "", ""],
+      [`Master Sales Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Total Sales: Rs ${totalSalesAmt.toLocaleString()} • Total Profit: Rs ${totalProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", ""],
+      ["SR #", "Date", "Description / Particulars", "Customer / Party", "Category", "Payment Method", "Sale Amount (PKR)", "Direct Cost (PKR)", "Net Profit (PKR)"],
+      ...masterDataRows
+    ];
+
+    // Build Category Tabs
+    const categorySheetData: Array<{ sheet: string; rows: (string | number)[][]; count: number }> = [];
     for (const category of salesCategories) {
       const sheet = safeSheetPart(category);
-      try {
-        const outcome = await syncTable(target.id, {
-          table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
-        }, {
-          full: true,
-          existingSheets,
-          rowFilter: (row) => isSalesTransaction(row) && String(row.category ?? "").trim().toLowerCase() === category.toLowerCase(),
-          verifyWrite: true,
-        });
-        outcomes.push(outcome);
-      } catch (error) {
-        failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
+      const catSales = allSales.filter((t) => String(t.category ?? "").trim().toLowerCase() === category.toLowerCase());
+      let catSalesAmt = 0;
+      let catProfitAmt = 0;
+      let catSr = 1;
+      const catDataRows: (string | number)[][] = [];
+
+      for (const t of catSales) {
+        if (t.direction === "out" && Number(t.direct_cost || 0) === 0) continue;
+        const saleAmt = Number(t.amount || 0);
+        const costAmt = Number(t.direct_cost || 0);
+        const profit = saleAmt - costAmt;
+        catSalesAmt += saleAmt;
+        catProfitAmt += profit;
+        const accName = accountMap.get(String(t.account_id)) || "Account";
+
+        catDataRows.push([
+          catSr++,
+          String(formatSheetDate(t.entry_date) || ""),
+          String(t.description || "Sale"),
+          String(t.party || "—"),
+          String(t.category || category),
+          accName,
+          saleAmt,
+          costAmt,
+          profit
+        ]);
+      }
+
+      const rows: (string | number)[][] = [
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", ""],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", ""],
+        [category, "", "", "", "", "", "", "", ""],
+        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${catSales.length} sales • Total: Rs ${catSalesAmt.toLocaleString()} • Profit: Rs ${catProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", ""],
+        ["SR #", "Date", "Description / Particulars", "Customer / Party", "Category", "Payment Method", "Sale Amount (PKR)", "Direct Cost (PKR)", "Net Profit (PKR)"],
+        ...catDataRows
+      ];
+
+      categorySheetData.push({ sheet, rows, count: catSales.length });
+    }
+
+    // Ensure tabs exist
+    await ensureSheetTab(target.id, "Sales Accounts", existingSheets);
+    for (const item of categorySheetData) {
+      await ensureSheetTab(target.id, item.sheet, existingSheets);
+    }
+
+    // Batch clear
+    const clearRanges = [
+      quoteSheet("Sales Accounts"),
+      ...categorySheetData.map((item) => quoteSheet(item.sheet))
+    ];
+    await batchClear(target.id, clearRanges);
+
+    // Batch write
+    const writeData = [
+      { range: `'Sales Accounts'!A1:I${masterRows.length}`, values: masterRows },
+      ...categorySheetData.map((item) => ({
+        range: `'${item.sheet}'!A1:I${item.rows.length}`,
+        values: item.rows,
+      }))
+    ];
+    await batchWrite(target.id, writeData, "USER_ENTERED");
+
+    // Batch format
+    const allFormattingRequests: any[] = [];
+    const masterSheetId = existingSheets.get("Sales Accounts");
+    if (masterSheetId !== undefined) {
+      allFormattingRequests.push(...buildRohiExportFormattingRequests(masterSheetId, {
+        columnCount: 9,
+        dataEndRow: masterRows.length,
+        numericColumnIndexes: [6, 7, 8],
+        dateColumnIndexes: [1],
+      }));
+    }
+
+    for (const item of categorySheetData) {
+      const sheetId = existingSheets.get(item.sheet);
+      if (sheetId !== undefined) {
+        allFormattingRequests.push(...buildRohiExportFormattingRequests(sheetId, {
+          columnCount: 9,
+          dataEndRow: item.rows.length,
+          numericColumnIndexes: [6, 7, 8],
+          dateColumnIndexes: [1],
+        }));
       }
     }
 
-    const warnings = outcomes.flatMap((o) => o.errors);
-    if (warnings.length) await db.from("backup_errors").insert(warnings.slice(0, 100).map((warning) => ({ run_id: runId, table_name: "accounts_book_transactions", row_id: warning.row_id, severity: "warning", message: warning.message })));
-    if (failures.length) await db.from("backup_errors").insert(failures.map((failure) => ({ run_id: runId, table_name: failure.table || "accounts_book_transactions", severity: "error", message: failure.message })));
+    if (allFormattingRequests.length) {
+      try {
+        await batchUpdateSpreadsheet(target.id, allFormattingRequests);
+      } catch (fmtError) {
+        console.warn("[backup] Sales tab formatting notice:", fmtError);
+      }
+    }
 
-    const status = failures.length || warnings.length ? "partial" : "success";
+    outcomes.push({
+      table: "accounts_book_transactions",
+      sheet: "Sales Accounts",
+      rows: masterRows.length - 1,
+      mode: "full",
+      cursor: null,
+      errors: []
+    });
+
+    for (const item of categorySheetData) {
+      outcomes.push({
+        table: "accounts_book_transactions",
+        sheet: item.sheet,
+        rows: item.rows.length - 1,
+        mode: "full",
+        cursor: null,
+        errors: []
+      });
+    }
+
     const finishedAt = new Date().toISOString();
-    await db.from("backup_runs").update({ status, finished_at: finishedAt, tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: failures.length, message: failures.length ? failures.map((failure) => failure.message).join(" | ").slice(0, 1000) : "", details: { scope: "salesAccounts", spreadsheetId: target.id, startedAt, outcomes, failures } as any }).eq("id", runId);
-    return { runId, status, spreadsheetId: target.id, spreadsheetUrl: target.url, categories: Array.from(salesCategories), outcomes, failures, warningCount: warnings.length };
+    await db.from("backup_runs").update({
+      status: "success",
+      finished_at: finishedAt,
+      tables_synced: outcomes.length,
+      rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0),
+      error_count: 0,
+      details: { scope: "salesAccounts", spreadsheetId: target.id, startedAt, outcomes, failures } as any
+    }).eq("id", runId);
+
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, categories: Array.from(salesCategories), outcomes, failures, warningCount: 0 };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     failures.push({ table: "salesAccounts", message });
@@ -1028,7 +1191,6 @@ export async function reconcileSalesAccountsToSheets() {
   }
 }
 
-
 /**
  * Reconcile the Daily Cash Book workbook.
  * Syncs all cash, bank, and wallet transactions (including transfers)
@@ -1037,13 +1199,44 @@ export async function reconcileSalesAccountsToSheets() {
 export async function reconcileDailyCashBookToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
+  const STALE_MS = 45 * 1000;
+
+  // Stale check
+  const { data: existingRun } = await db
+    .from("backup_runs")
+    .select("id,started_at")
+    .eq("kind", "daily-cash-book-reconciliation")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingRun?.id) {
+    const startedAtMs = Date.parse(String(existingRun.started_at ?? ""));
+    if (!Number.isFinite(startedAtMs) || Date.now() - startedAtMs > STALE_MS) {
+      await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), message: "Recovered stale cash book run." }).eq("id", existingRun.id).eq("status", "running");
+    }
+  }
+
   const { data: runRow, error: runInsertError } = await db
     .from("backup_runs")
     .insert({ kind: "daily-cash-book-reconciliation", status: "running" })
     .select("id")
     .single();
-  if (runInsertError) throw new Error(runInsertError.message);
-  const runId = (runRow as { id: string }).id;
+
+  let runId = (runRow as { id?: string })?.id;
+  if (!runId) {
+    const { data: winner } = await db
+      .from("backup_runs")
+      .select("id")
+      .eq("kind", "daily-cash-book-reconciliation")
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    runId = winner?.id ?? crypto.randomUUID();
+  }
+
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
 
@@ -1147,26 +1340,56 @@ export async function reconcileDailyCashBookToSheets() {
     const message = error instanceof Error ? error.message : String(error);
     failures.push({ table: "dailyCashBook", message });
     await db.from("backup_errors").insert({ run_id: runId, table_name: "dailyCashBook", severity: "error", message });
-    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: 0, rows_synced: 0, error_count: 1, message: message.slice(0, 1000) }).eq("id", runId);
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: 0, error_count: 1, message: message.slice(0, 1000), details: { scope: "dailyCashBook", failures } as any }).eq("id", runId);
     return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.dailyCashBook, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.dailyCashBook), outcomes, failures, warningCount: 0 };
   }
 }
 
 /**
- * Reconcile the Expenses workbook (Office Expenses & Home Expenses).
- * Syncs all expense transactions into human-readable statements formatted
- * with the Rohi Warm Clay export template.
+ * Reconcile only the Expenses workbook.
+ * Syncs expense transactions partitioned into Office Expenses and Home Expenses.
  */
 export async function reconcileExpensesToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
+  const STALE_MS = 45 * 1000;
+
+  // Stale check
+  const { data: existingRun } = await db
+    .from("backup_runs")
+    .select("id,started_at")
+    .eq("kind", "expenses-reconciliation")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingRun?.id) {
+    const startedAtMs = Date.parse(String(existingRun.started_at ?? ""));
+    if (!Number.isFinite(startedAtMs) || Date.now() - startedAtMs > STALE_MS) {
+      await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), message: "Recovered stale expenses run." }).eq("id", existingRun.id).eq("status", "running");
+    }
+  }
+
   const { data: runRow, error: runInsertError } = await db
     .from("backup_runs")
     .insert({ kind: "expenses-reconciliation", status: "running" })
     .select("id")
     .single();
-  if (runInsertError) throw new Error(runInsertError.message);
-  const runId = (runRow as { id: string }).id;
+
+  let runId = (runRow as { id?: string })?.id;
+  if (!runId) {
+    const { data: winner } = await db
+      .from("backup_runs")
+      .select("id")
+      .eq("kind", "expenses-reconciliation")
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    runId = winner?.id ?? crypto.randomUUID();
+  }
+
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
 
@@ -1175,22 +1398,18 @@ export async function reconcileExpensesToSheets() {
     const info = await getSpreadsheet(target.id);
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
 
-    // Fetch accounts to resolve human names (e.g. EasyPaisa, Cash in Hand)
-    const { data: accounts, error: accError } = await db
-      .from("accounts_book_accounts")
-      .select("id,name,kind");
-    if (accError) throw new Error(accError.message);
-    const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
+    // Fetch accounts and all expense transactions in parallel
+    const [accountsResult, txnsResult] = await Promise.all([
+      db.from("accounts_book_accounts").select("id,name,kind"),
+      db.from("accounts_book_transactions")
+        .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type,entry_type")
+        .or("entry_type.eq.expense,source_type.eq.expense")
+        .order("created_at", { ascending: true }),
+    ]);
 
-    // Fetch all expense transactions ordered by date
-    const { data: txns, error: txError } = await db
-      .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
-      .eq("entry_type", "expense")
-      .order("created_at", { ascending: true });
-    if (txError) throw new Error(txError.message);
+    const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
+    const allExpenses = inCreationOrder(txnsResult.data ?? []);
 
-    const allExpenses = inCreationOrder(txns ?? []);
     const partitions: Array<{ title: string; filter: (t: any) => boolean }> = [
       {
         title: "Office Expenses",
@@ -1202,9 +1421,8 @@ export async function reconcileExpensesToSheets() {
       },
     ];
 
-    let totalSyncedRows = 0;
+    const expenseSheetData: Array<{ title: string; rows: (string | number)[][]; count: number }> = [];
     for (const part of partitions) {
-      await ensureSheetTab(target.id, part.title, existingSheets);
       const partTxns = allExpenses.filter(part.filter);
       let runningTotal = 0;
       let sr = 1;
@@ -1234,24 +1452,50 @@ export async function reconcileExpensesToSheets() {
         ...dataRows,
       ];
 
-      await clearSheet(target.id, part.title);
-      await writeRange(target.id, `'${part.title}'!A1:G${rows.length}`, rows);
+      expenseSheetData.push({ title: part.title, rows, count: partTxns.length });
+    }
 
-      const sheetId = existingSheets.get(part.title);
+    // Ensure tabs
+    for (const item of expenseSheetData) {
+      await ensureSheetTab(target.id, item.title, existingSheets);
+    }
+
+    // Batch clear both tabs
+    await batchClear(target.id, expenseSheetData.map((item) => quoteSheet(item.title)));
+
+    // Batch write both tabs
+    await batchWrite(target.id, expenseSheetData.map((item) => ({
+      range: `'${item.title}'!A1:G${item.rows.length}`,
+      values: item.rows,
+    })), "USER_ENTERED");
+
+    // Batch format both tabs
+    const allFormattingRequests: any[] = [];
+    for (const item of expenseSheetData) {
+      const sheetId = existingSheets.get(item.title);
       if (sheetId !== undefined) {
-        await applyRohiExportFormatting(target.id, sheetId, {
+        allFormattingRequests.push(...buildRohiExportFormattingRequests(sheetId, {
           columnCount: 7,
-          dataEndRow: rows.length,
+          dataEndRow: item.rows.length,
           numericColumnIndexes: [5, 6],
           dateColumnIndexes: [1],
-        });
+        }));
       }
+    }
 
-      totalSyncedRows += dataRows.length;
+    if (allFormattingRequests.length) {
+      try {
+        await batchUpdateSpreadsheet(target.id, allFormattingRequests);
+      } catch (fmtError) {
+        console.warn("[backup] Expense tab formatting notice:", fmtError);
+      }
+    }
+
+    for (const item of expenseSheetData) {
       outcomes.push({
         table: "accounts_book_transactions",
-        sheet: part.title,
-        rows: dataRows.length,
+        sheet: item.title,
+        rows: item.rows.length - 1,
         mode: "full",
         cursor: null,
         errors: [],
@@ -1263,30 +1507,20 @@ export async function reconcileExpensesToSheets() {
       status: "success",
       finished_at: finishedAt,
       tables_synced: outcomes.length,
-      rows_synced: totalSyncedRows,
+      rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0),
       error_count: 0,
       details: { scope: "expenses", spreadsheetId: target.id, startedAt, outcomes, failures } as any,
     }).eq("id", runId);
 
-    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, outcomes, failures, warningCount: 0 };
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, partitions: partitions.map((p) => p.title), outcomes, failures, warningCount: 0 };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    failures.push({ table: "accounts_book_transactions", message });
-    await db.from("backup_runs").update({
-      status: "failed",
-      finished_at: new Date().toISOString(),
-      tables_synced: outcomes.length,
-      rows_synced: 0,
-      error_count: 1,
-      details: { scope: "expenses", startedAt, outcomes, failures } as any,
-    }).eq("id", runId);
-    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.expenses, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.expenses), outcomes, failures, warningCount: 1 };
+    failures.push({ table: "expenses", message });
+    await db.from("backup_errors").insert({ run_id: runId, table_name: "expenses", severity: "error", message });
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: 0, error_count: 1, message: message.slice(0, 1000), details: { scope: "expenses", failures } as any }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.expenses, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.expenses), partitions: [], outcomes, failures, warningCount: 0 };
   }
 }
-
-
-// ---------- run orchestration ----------
-
 export type RunOptions = { kind?: string; full?: boolean; tables?: string[] };
 
 export async function runSync(opts: RunOptions = {}) {

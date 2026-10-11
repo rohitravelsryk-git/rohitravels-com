@@ -116,11 +116,7 @@ export const reconcileBanksWalletsToSheets = createServerFn({ method: "POST" }).
   return engine.reconcileBanksWalletsToSheets();
 });
 
-export const reconcileSalesAccountsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
-  await requireUnlocked();
-  const engine = await import("@/lib/backup/engine.server");
-  return engine.reconcileSalesAccountsToSheets();
-});
+
 
 export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
@@ -512,7 +508,14 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     error = fallback.error;
   }
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const scopes: LiveSyncScope[] = data.source_type === "expense"
+    ? ["banks", "cash", "expenses"]
+    : data.source_type === "sale"
+    ? ["banks", "cash", "sales"]
+    : data.source_type === "transfer"
+    ? ["banks", "cash"]
+    : ["banks", "cash", "sales", "expenses"];
+  const sheetSync = await triggerLiveAccountsSync(true, scopes);
   return { ...row, sheetSync };
 });
 
@@ -558,7 +561,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -566,7 +569,12 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
   const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const scopes: LiveSyncScope[] = data.source_type === "expense"
+    ? ["banks", "cash", "expenses"]
+    : data.source_type === "sale"
+    ? ["banks", "cash", "sales"]
+    : ["banks", "cash"];
+  const sheetSync = await triggerLiveAccountsSync(true, scopes);
   return { ...result, sheetSync };
 });
 
@@ -648,7 +656,14 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       saved = inserted ?? [];
     }
 
-    const sheetSync = await triggerLiveAccountsSync(false);
+    const scopes: LiveSyncScope[] = data.kind === "expense"
+      ? ["banks", "cash", "expenses"]
+      : data.kind === "sale"
+      ? ["banks", "cash", "sales"]
+      : data.kind === "transfer"
+      ? ["banks", "cash"]
+      : ["banks", "cash", "sales", "expenses"];
+    const sheetSync = await triggerLiveAccountsSync(true, scopes);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
@@ -660,7 +675,7 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
   return { ...result, sheetSync };
 });
 
@@ -683,4 +698,15 @@ export const reconcileExpensesToSheets = createServerFn({ method: "POST" }).vali
   await requireUnlocked();
   const engine = await import("@/lib/backup/engine.server");
   return engine.reconcileExpensesToSheets();
+});
+
+export const reconcileSalesAccountsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileSalesAccountsToSheets();
+});
+
+export const reconcileAllAccountsBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  return triggerLiveAccountsSync(true, ["banks", "cash", "sales", "expenses"]);
 });

@@ -231,6 +231,11 @@ export async function appendRows(id: string, sheet: string, values: unknown[][])
   }
 }
 
+export async function batchClear(id: string, ranges: string[]): Promise<void> {
+  if (!ranges.length) return;
+  await call("POST", `/spreadsheets/${id}/values:batchClear`, { ranges });
+}
+
 export async function clearSheet(id: string, sheet: string): Promise<void> {
   await call("POST", `/spreadsheets/${id}/values/${quoteSheet(sheet)}!A:ZZ:clear`, {});
 }
