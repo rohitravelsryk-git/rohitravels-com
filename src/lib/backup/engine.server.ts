@@ -1514,7 +1514,6 @@ export async function reconcileExpensesToSheets() {
           accName,
           String(t.category || part.title),
           amt,
-          runningTotal,
         ]);
       }
 
@@ -1527,16 +1526,15 @@ export async function reconcileExpensesToSheets() {
           "",
           "",
           `=SUM(F6:F${5 + partTxns.length})`,
-          `=MAX(G6:G${5 + partTxns.length})`,
         ]);
       }
 
       const rows: (string | number)[][] = [
-        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", ""],
-        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", ""],
-        [part.title, "", "", "", "", "", ""],
-        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${partTxns.length} expense rows • Total: Rs ${runningTotal.toLocaleString()}`, "", "", "", "", "", ""],
-        ["SR #", "Date", "Description / Particulars", "Paid Via (Account)", "Category", "Amount (PKR)", "Running Total (PKR)"],
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", ""],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", ""],
+        [part.title, "", "", "", "", ""],
+        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${partTxns.length} expense rows • Total: Rs ${runningTotal.toLocaleString()}`, "", "", "", "", ""],
+        ["SR #", "Date", "Description / Particulars", "Paid Via (Account)", "Category", "Amount (PKR)"],
         ...dataRows,
       ];
 
@@ -1553,7 +1551,7 @@ export async function reconcileExpensesToSheets() {
 
     // Batch write both tabs
     await batchWrite(target.id, expenseSheetData.map((item) => ({
-      range: `'${item.title}'!A1:G${item.rows.length}`,
+      range: `'${item.title}'!A1:F${item.rows.length}`,
       values: item.rows,
     })), "USER_ENTERED");
 
@@ -1563,9 +1561,9 @@ export async function reconcileExpensesToSheets() {
       const sheetId = existingSheets.get(item.title);
       if (sheetId !== undefined) {
         allFormattingRequests.push(...buildRohiExportFormattingRequests(sheetId, {
-          columnCount: 7,
+          columnCount: 6,
           dataEndRow: item.rows.length,
-          numericColumnIndexes: [5, 6],
+          numericColumnIndexes: [5],
           dateColumnIndexes: [1],
           hasOpeningRow: false,
           hasTotalRow: item.count > 0,
