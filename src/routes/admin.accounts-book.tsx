@@ -64,24 +64,24 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
   { header: null, tabs: [{ id: "cashbook", label: "Daily Cash Book" }] },
   { header: null, tabs: [{ id: "bank", label: "Banks & Wallets" }] },
-  { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
   { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
   { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
-  { header: null, tabs: [{ id: "reports", label: "Reports (P&L)" }] },
+  { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
+  { header: null, tabs: [{ id: "reports", label: "Profit & Loss" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
 const TAB_NUMBERS: Record<TabId, string> = {
   dashboard: "01",
   cashbook: "02",
   bank: "03",
-  cashcount: "04",
-  expenses: "05",
-  sales: "06",
+  expenses: "04",
+  sales: "05",
+  cashcount: "06",
   reports: "07",
   settings: "08",
 };
 
-const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v4";
+const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v5";
 const DEFAULT_SIDEBAR_ORDER: TabId[] = TAB_GROUPS.flatMap((group) => group.tabs.map((t) => t.id));
 
 function loadSidebarOrder(): TabId[] {
@@ -1626,7 +1626,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           {tab === "reports" && (
             <>
               <div className="page-head">
-                <div><h2>Reports — Profit &amp; Loss</h2><p>Auto-calculated month by month from Sales and Expenses</p></div>
+                <div><h2>Profit &amp; Loss</h2><p>Auto-calculated month by month from Sales and Expenses</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <button type="button" className="btn ghost" onClick={() => downloadExcel({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Excel / Sheets</button>
                   <button type="button" className="btn ghost" onClick={() => downloadPdf({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Download PDF</button>
@@ -1657,21 +1657,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   </tbody>
                 </table>
               </Panel>
-              <Panel title="Bank & Wallet Snapshot">
-                <table>
-                  <thead><tr><th>Account</th><th className="num">Opening</th><th className="num">Current Balance</th></tr></thead>
-                  <tbody>
-                    {banks.map((bank) => (
-                      <tr key={bank.id}>
-                        <td>{bank.name}</td>
-                        <td className="num">{fmt(bank.opening_balance)}</td>
-                        <td className="num" style={{ fontWeight: 600 }}>{fmt(finalBalance(txns.filter((t) => t.account_id === bank.id), bank.opening_balance))}</td>
-                      </tr>
-                    ))}
-                    <tr className="month-strong"><td>Cash in Hand</td><td className="num">{fmt(cash?.opening_balance ?? 0)}</td><td className="num">{fmt(cashBalance)}</td></tr>
-                  </tbody>
-                </table>
-              </Panel>
+
             </>
           )}
 
