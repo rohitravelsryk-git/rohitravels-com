@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { inCreationOrder } from "@/lib/accounts-book-order";
 import { Check, ChevronDown, Copy, Edit, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
@@ -56,6 +57,7 @@ type Txn = {
   direction: "in" | "out";
   source_type?: string | null;
   source_id?: string | null;
+  created_at?: string | null;
 };
 type Service = { id: string; name: string };
 type TabId = "dashboard" | "cashbook" | "cashcount" | "bank" | "sales" | "expenses" | "reports" | "settings";
@@ -360,7 +362,8 @@ function BankWalletAccountCards({
   );
 }
 
-const byDate = (rows: Txn[]) => [...rows].sort((a, b) => (a.entry_date || "").localeCompare(b.entry_date || "") || a.id.localeCompare(b.id));
+// Entries are always listed in the order they were created (never re-sorted by date or id).
+const byDate = (rows: Txn[]) => inCreationOrder(rows);
 function withRunning(rows: Txn[], opening: number) {
   let bal = Number(opening) || 0;
   return byDate(rows).map((row) => {
@@ -1450,16 +1453,16 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
+                  <p>Overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 </div>
               </div>
               <div className="cards">
+                <Card label="Current Total Balance" value={cashBalance + bankTotal} tone="pos" foot="Cash in Hand + All Banks & Wallets" />
                 <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
                 <Card label="Total in Banks & Wallets" value={bankTotal} tone="pos" foot={`${banks.length} accounts`} />
-                <Card label="Total Liquid Capital" value={cashBalance + bankTotal} tone="pos" foot="Cash in Hand + All Banks & Wallets" />
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
@@ -1590,9 +1593,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div><h2>Banks &amp; Wallets</h2><p>Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <a className="btn ghost small" href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit" target="_blank" rel="noreferrer">Open Google Sheet</a>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
-                  <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")} disabled={!accounts.length}>NEW TRANSACTION</button>
                 </div>
@@ -1754,8 +1755,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div><h2>Profit &amp; Loss</h2><p>Auto-calculated month by month from Sales and Expenses</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <button type="button" className="btn ghost" onClick={() => downloadExcel({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Excel / Sheets</button>
-                  <button type="button" className="btn ghost" onClick={() => downloadPdf({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Download PDF</button>
+                  <button type="button" className="btn ghost" onClick={() => downloadExcel({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Excel</button>
+                  <button type="button" className="btn ghost" onClick={() => downloadPdf({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>PDF</button>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 </div>
               </div>
@@ -1832,17 +1833,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       >
                         <ExternalLink size={13} />
                         <span>Banks &amp; Wallets Sheet</span>
-                      </a>
-                      <a
-                        className="btn ghost small"
-                        href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                        title="Open live Daily Cash Book Google Spreadsheet"
-                      >
-                        <ExternalLink size={13} />
-                        <span>Cash in Hand Sheet</span>
                       </a>
                       <button
                         type="button"
@@ -2279,11 +2269,22 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
     <>
       <div className="cashbook-head">
         <div>
-          <h2>Cash in Hand</h2>
+          <h2>Cash Book</h2>
           <p>All cash, bank &amp; wallet movements · {monthName}</p>
         </div>
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
+          <a
+            className="btn ghost"
+            href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            title="Open live Daily Cash Book Google Spreadsheet"
+          >
+            <ExternalLink size={14} />
+            <span>Daily Cash Book</span>
+          </a>
           <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
           <button type="button" className="btn" onClick={onAdd}>NEW TRANSACTION</button>
         </div>
@@ -2422,6 +2423,7 @@ function DraggablePills({
   const orderRef = useRef<string[]>([]);
   const draggedRef = useRef<string | null>(null);
   const movedRef = useRef(false);
+  const suppressClickRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -2485,7 +2487,12 @@ function DraggablePills({
       draggedRef.current = null;
       setDraggedId(null);
       movedRef.current = false;
-      if (didMove) onReorder?.(finalOrder);
+      if (didMove) {
+        // The click that follows a drag must not also select the pill.
+        suppressClickRef.current = true;
+        window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+        onReorder?.(finalOrder);
+      }
     };
 
     window.addEventListener("pointermove", handleMove, { passive: true });
@@ -2518,22 +2525,22 @@ function DraggablePills({
             className={"pill " + (isActive ? "active" : "")}
             data-rohi-pill-id={item.id}
             aria-pressed={isActive}
+            title="Click to open · drag to reorder"
+            onPointerDown={(event) => startDrag(event as unknown as React.PointerEvent<HTMLSpanElement>, item.id)}
+            style={{
+              cursor: draggedId === item.id ? "grabbing" : "grab",
+              touchAction: "pan-y",
+              userSelect: "none",
+              opacity: draggedId === item.id ? 0.7 : undefined,
+            }}
             onClick={() => {
-              if (!movedRef.current) onSelect?.(item.id);
+              if (suppressClickRef.current) return;
+              onSelect?.(item.id);
             }}
           >
             <span
-              aria-label={"Drag " + item.label}
-              title="Drag to reorder"
-              onPointerDown={(event) => startDrag(event, item.id)}
-              style={{
-                display: "inline-flex",
-                cursor: draggedId === item.id ? "grabbing" : "grab",
-                touchAction: "none",
-                userSelect: "none",
-                marginRight: 6,
-                opacity: 0.55,
-              }}
+              aria-hidden="true"
+              style={{ display: "inline-flex", marginRight: 6, opacity: 0.55 }}
             >⋮⋮</span>
             <span>{item.label}</span>
             {onDelete && (
@@ -2541,6 +2548,7 @@ function DraggablePills({
                 role="button"
                 tabIndex={0}
                 aria-label={"Remove " + item.label}
+                onPointerDown={(event) => event.stopPropagation()}
                 style={{ cursor: "pointer", marginLeft: 6 }}
                 onClick={(event) => {
                   event.stopPropagation();
