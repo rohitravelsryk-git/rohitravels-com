@@ -2038,21 +2038,6 @@ function Dashboard({
         )}
       </section>
 
-      <section style={styles.section}>
-        <h3 style={styles.sectionTitle}>Export &amp; Sync</h3>
-        <div style={styles.syncNote}>
-          <FileSpreadsheet size={16} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div>
-            Every add, edit or delete is saved automatically to your secure backend database, so your data is
-            here next time you open it. Use the <strong>Export</strong> button above (per airline) or
-            <strong> Export all</strong> on the dashboard any time — each offers a professionally formatted
-            <strong> Excel (.xlsx)</strong> workbook, a <strong> Google Sheets</strong>-ready CSV (File → Import in
-            Google Sheets), or a branded <strong> PDF</strong> report. Ask and a step-by-step Google Sheets
-            one-click, always-on sync setup can be provided.
-          </div>
-        </div>
-      </section>
-
       {removeConfirm && (
         <ConfirmDialog
           message={`Remove ${removeConfirm.name}? This account has no financial transactions, so only the empty account will be removed.`}
