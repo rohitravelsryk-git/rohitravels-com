@@ -1961,31 +1961,55 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
   const sorted = useMemo(() => byDate(rows), [rows]);
   const accountMap = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
-  const sum = (list: Txn[], direction: "in" | "out") => list.filter((x) => x.direction === direction).reduce((s, x) => s + Number(x.amount), 0);
+  const sum = (list: Txn[], direction: "in" | "out") => list.filter((x) => x.direction === direction).reduce((s, x) => s + (Number(x.amount) || 0), 0);
   const cashRows = sorted.filter((t) => accountMap.get(t.account_id)?.kind === "cash");
   const available = finalBalance(cashRows, opening);
-  const monthRows = sorted.filter((t) => monthKey(t.entry_date) === month);
-  const mIn = sum(monthRows, "in");
-  const mOut = sum(monthRows, "out");
 
-  const openingForDay = new Map<string, number>();
-  for (const account of accounts) openingForDay.set(account.id, Number(account.opening_balance) || 0);
-  for (const row of sorted) {
-    if (row.entry_date < day) {
-      const current = openingForDay.get(row.account_id) ?? 0;
-      openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
-    }
-  }
-  const dayRows = sorted
-    .filter((t) => (day === "all" ? monthKey(t.entry_date) === month : t.entry_date === day))
-    .map((t) => {
-      const current = openingForDay.get(t.account_id) ?? 0;
-      const next = current + (t.direction === "in" ? Number(t.amount) : -Number(t.amount));
-      openingForDay.set(t.account_id, next);
-      return { ...t, balance: next };
-    })
-    .filter((t) => t.description.toLowerCase().includes(search.toLowerCase()));
+  const totalInitialOpening = useMemo(
+    () => accounts.reduce((acc, a) => acc + (Number(a.opening_balance) || 0), 0),
+    [accounts]
+  );
 
+  const previousBalance = useMemo(() => {
+    const cutoff = day === "all" ? `${month}-01` : day;
+    const priorTxns = sorted.filter((t) => (t.entry_date || "") < cutoff);
+    const priorNet = priorTxns.reduce(
+      (acc, t) => acc + (t.direction === "in" ? Number(t.amount) || 0 : -(Number(t.amount) || 0)),
+      0
+    );
+    return totalInitialOpening + priorNet;
+  }, [day, month, sorted, totalInitialOpening]);
+
+  const periodTxns = useMemo(
+    () => sorted.filter((t) => (day === "all" ? monthKey(t.entry_date) === month : t.entry_date === day)),
+    [day, month, sorted]
+  );
+
+  const dayRows = useMemo(() => {
+    let running = previousBalance;
+    return periodTxns.map((t) => {
+      const amt = Number(t.amount) || 0;
+      running += t.direction === "in" ? amt : -amt;
+      return { ...t, runningBalance: running };
+    });
+  }, [periodTxns, previousBalance]);
+
+  const visibleRows = useMemo(() => {
+    if (!search.trim()) return dayRows;
+    const q = search.toLowerCase();
+    return dayRows.filter(
+      (t) =>
+        (t.description || "").toLowerCase().includes(q) ||
+        (accountMap.get(t.account_id)?.name ?? "").toLowerCase().includes(q) ||
+        (t.party || "").toLowerCase().includes(q)
+    );
+  }, [dayRows, search, accountMap]);
+
+  const periodIn = useMemo(() => sum(periodTxns, "in"), [periodTxns]);
+  const periodOut = useMemo(() => sum(periodTxns, "out"), [periodTxns]);
+  const currentTotalBalance = previousBalance + periodIn - periodOut;
+
+  const monthRows = useMemo(() => sorted.filter((t) => monthKey(t.entry_date) === month), [sorted, month]);
   const [y = new Date().getFullYear(), m = new Date().getMonth() + 1] = month.split("-").map(Number);
   const daysInMonth = new Date(y, m, 0).getDate();
   const daily = Array.from({ length: daysInMonth }, (_, i) => {
@@ -2012,10 +2036,30 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
       </div>
 
       <div className="cashbook-summary">
-        <Card label="Available Cash" value={available} foot="Current cash-in-hand balance" tone={available >= 0 ? "pos" : "neg"} />
-        <Card label="Total Received" value={mIn} foot="All cash/bank/wallet accounts" tone="pos" />
-        <Card label="Total Payments" value={mOut} foot="All cash/bank/wallet accounts" tone="neg" />
-        <Card label="Net Movement" value={mIn - mOut} foot="All money accounts" tone={mIn - mOut >= 0 ? "pos" : "neg"} />
+        <Card
+          label="Previous Balance"
+          value={previousBalance}
+          foot={day === "all" ? "Previous Month Balance" : "Previous Day Balance"}
+          tone={previousBalance >= 0 ? "pos" : "neg"}
+        />
+        <Card
+          label="Total Received"
+          value={periodIn}
+          foot={day === "all" ? "All money accounts · Month" : "All money accounts"}
+          tone="pos"
+        />
+        <Card
+          label="Total Payments"
+          value={periodOut}
+          foot={day === "all" ? "All money accounts · Month" : "All money accounts"}
+          tone="neg"
+        />
+        <Card
+          label="Current Total Balance"
+          value={currentTotalBalance}
+          foot="All money accounts"
+          tone={currentTotalBalance >= 0 ? "pos" : "neg"}
+        />
       </div>
 
       <section className="cashbook-panel">
@@ -2028,19 +2072,43 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
         </div>
         <div className="cashbook-table-wrap">
           <table className="cashbook-table">
-            <thead><tr><th>#</th><th>Account</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Account Balance</th><th /></tr></thead>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Account</th>
+                <th>Description</th>
+                <th className="num">Received</th>
+                <th className="num">Payment</th>
+                <th className="num">Current Total Balance</th>
+                <th />
+              </tr>
+            </thead>
             <tbody>
-              <tr><td>—</td><td colSpan={2}><strong>Opening balances are shown per account in the ledger below.</strong></td><td /><td /><td /><td /></tr>
-              {dayRows.map((t, i) => (
+              <tr style={{ background: "var(--bg-accent-tint, rgba(217, 119, 87, 0.06))", fontWeight: 600 }}>
+                <td>—</td>
+                <td>All Accounts</td>
+                <td><strong>{day === "all" ? "Previous Balance (Month Start)" : "Previous Balance"}</strong></td>
+                <td className="num">—</td>
+                <td className="num">—</td>
+                <td className="num"><strong>{fmt(previousBalance)}</strong></td>
+                <td />
+              </tr>
+              {visibleRows.map((t, i) => (
                 <tr key={t.id}>
-                  <td>{i + 1}</td><td>{accountMap.get(t.account_id)?.name ?? "—"}</td><td>{t.description}</td>
+                  <td>{i + 1}</td>
+                  <td>{accountMap.get(t.account_id)?.name ?? "—"}</td>
+                  <td>{t.description}</td>
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
-                  <td className="num"><strong>{fmt(t.balance)}</strong></td>
+                  <td className="num"><strong>{fmt(t.runningBalance)}</strong></td>
                   <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button></td>
                 </tr>
               ))}
-              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries for this day.</td></tr>}
+              {visibleRows.length === 0 && (
+                <tr className="empty-row">
+                  <td colSpan={7}>{search ? "No matching entries found." : "No transactions for this day."}</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
