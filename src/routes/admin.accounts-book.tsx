@@ -62,36 +62,32 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  {
-    header: "Cash & Bank",
-    tabs: [
-      { id: "cashbook", label: "Daily Cash Book" },
-      { id: "cashcount", label: "Cash Count" },
-      { id: "bank", label: "Banks & Wallets" },
-    ],
-  },
-  { header: "Business Accounts", tabs: [{ id: "expenses", label: "Expenses" }, { id: "sales", label: "Sales Accounts" }] },
-  { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
+  { header: null, tabs: [{ id: "cashbook", label: "Daily Cash Book" }] },
+  { header: null, tabs: [{ id: "bank", label: "Banks & Wallets" }] },
+  { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
+  { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
+  { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
+  { header: null, tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
 const TAB_NUMBERS: Record<TabId, string> = {
   dashboard: "01",
   cashbook: "02",
-  cashcount: "03",
-  bank: "04",
+  bank: "03",
+  cashcount: "04",
   expenses: "05",
   sales: "06",
   reports: "07",
   settings: "08",
 };
 
-const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v3";
+const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v4";
 const DEFAULT_SIDEBAR_ORDER: TabId[] = TAB_GROUPS.flatMap((group) => group.tabs.map((t) => t.id));
 
 function loadSidebarOrder(): TabId[] {
   if (typeof window === "undefined") return DEFAULT_SIDEBAR_ORDER;
   try {
-    const raw = window.localStorage.getItem(SIDEBAR_ORDER_KEY) || window.localStorage.getItem("rohi-ab-sidebar-order-v2");
+    const raw = window.localStorage.getItem(SIDEBAR_ORDER_KEY);
     if (!raw) return [...DEFAULT_SIDEBAR_ORDER];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [...DEFAULT_SIDEBAR_ORDER];
@@ -101,11 +97,6 @@ function loadSidebarOrder(): TabId[] {
       if (typeof id === "string" && known.has(id as TabId) && !ordered.includes(id as TabId)) {
         ordered.push(id as TabId);
       }
-    }
-    if (!ordered.includes("cashcount")) {
-      const cashbookIdx = ordered.indexOf("cashbook");
-      if (cashbookIdx >= 0) ordered.splice(cashbookIdx + 1, 0, "cashcount");
-      else ordered.push("cashcount");
     }
     for (const id of DEFAULT_SIDEBAR_ORDER) {
       if (!ordered.includes(id)) ordered.push(id);
@@ -1351,7 +1342,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               <Panel
                 title="Recent Accounts Book Transactions"
-                action={<button type="button" className="btn small" onClick={() => setModal("quickadd")}>+ NEW TRANSACTION</button>}
               >
                 <div style={{ padding: "10px 16px", background: "var(--background)", borderBottom: "1px solid var(--border)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
                   <span>
@@ -1468,6 +1458,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
             <CashCountView
               cashBalance={cashBalance}
               cashAccountName={cash?.name ?? "Cash in Hand"}
+              onAddTransaction={() => setModal("quickadd")}
             />
           )}
 
@@ -1636,9 +1627,10 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
             <>
               <div className="page-head">
                 <div><h2>Reports — Profit &amp; Loss</h2><p>Auto-calculated month by month from Sales and Expenses</p></div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <button type="button" className="btn ghost" onClick={() => downloadExcel({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Excel / Sheets</button>
                   <button type="button" className="btn ghost" onClick={() => downloadPdf({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Download PDF</button>
+                  <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 </div>
               </div>
               <div className="cards">
@@ -1687,6 +1679,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
             <>
               <div className="page-head">
                 <div><h2>Settings</h2><p>Separate settings for each Google Sheets ledger</p></div>
+                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
                 {[
@@ -1989,9 +1982,11 @@ const CASH_COUNT_STORAGE_KEY = "rohi-cash-count-v1";
 function CashCountView({
   cashBalance,
   cashAccountName,
+  onAddTransaction,
 }: {
   cashBalance: number;
   cashAccountName: string;
+  onAddTransaction?: () => void;
 }) {
   const [counts, setCounts] = useState<Record<number, number>>(() => {
     if (typeof window === "undefined") return {};
@@ -2072,6 +2067,9 @@ function CashCountView({
           <button type="button" className="btn ghost small" onClick={copyBreakdown} title="Copy breakdown to clipboard"><Copy size={13} style={{ marginRight: 5 }} /> Copy Summary</button>
           <button type="button" className="btn ghost small" onClick={() => window.print()} title="Print Cash Count Slip"><Printer size={13} style={{ marginRight: 5 }} /> Print</button>
           <button type="button" className="btn ghost small" onClick={resetAll} title="Reset note and coin counts to zero"><RotateCcw size={13} style={{ marginRight: 5 }} /> Reset Count</button>
+          {onAddTransaction && (
+            <button type="button" className="btn" onClick={onAddTransaction}>NEW TRANSACTION</button>
+          )}
         </div>
       </div>
 
@@ -2224,7 +2222,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
           <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
-          <button type="button" className="btn" onClick={onAdd}>+ Add transaction</button>
+          <button type="button" className="btn" onClick={onAdd}>NEW TRANSACTION</button>
         </div>
       </div>
 
@@ -2257,10 +2255,10 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>Cash Book Entries</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
+            
           </div>
         </div>
         <div className="cashbook-table-wrap">
@@ -2319,7 +2317,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
       </section>
 
       <section className="cashbook-panel" style={{ marginTop: 18 }}>
-        <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments · {monthName}</div>
+        <h3>Cash Book</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments · {monthName}</div>
         {monthRows.length === 0 ? (
           <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
         ) : (
