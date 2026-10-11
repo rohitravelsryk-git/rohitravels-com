@@ -1453,7 +1453,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>Overview as of {formatDateShort(todayISO())}</p>
+                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
@@ -1461,7 +1461,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               <div className="cards">
                 <Card label="Current Total Balance" value={cashBalance + bankTotal} tone="pos" foot="Cash in Hand + All Banks & Wallets" />
-                <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
+                <Card label="Cash Book" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
                 <Card label="Total in Banks & Wallets" value={bankTotal} tone="pos" foot={`${banks.length} accounts`} />
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
@@ -1572,12 +1572,15 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           )}
 
           {tab === "cashbook" && (
+            <>
+            <div className="page-head"><div><h2>Cash Book</h2></div><a className="btn ghost small" href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit" target="_blank" rel="noreferrer"><ExternalLink size={13} /> Daily Cash Book Sheet</a></div>
             <CashBookReplacement
               rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
               onAdd={() => setModal("quickadd")}
             />
+            </>
           )}
 
           {tab === "cashcount" && (
@@ -1593,8 +1596,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div><h2>Banks &amp; Wallets</h2><p>Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
-                  <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")} disabled={!accounts.length}>NEW TRANSACTION</button>
                 </div>
               </div>
@@ -1796,7 +1797,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
                 {[
-                  ["banks", "Banks, Wallets & Cash in Hand"],
+                  ["banks", "Banks & Wallets"],
                   ["sales", "Sales Accounts"],
                   ["expenses", "Expenses"],
                 ].map(([id, label]) => (
@@ -1817,23 +1818,12 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                 <section className="settings-section">
                   <div className="settings-section-head">
                     <div>
-                      <h3>Banks, Wallets &amp; Cash in Hand</h3>
+                      <h3>Banks &amp; Wallets</h3>
                       <span className="settings-note">
                         Unified liquid accounts · Set opening balances and dates for Cash in Hand, Banks, and Wallets in one place.
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <a
-                        className="btn ghost small"
-                        href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                        title="Open live Banks & Wallets Google Spreadsheet"
-                      >
-                        <ExternalLink size={13} />
-                        <span>Banks &amp; Wallets Sheet</span>
-                      </a>
                       <button
                         type="button"
                         className="btn small"
