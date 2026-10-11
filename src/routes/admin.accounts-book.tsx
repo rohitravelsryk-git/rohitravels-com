@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronDown, Copy, Edit, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Save, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Edit, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -65,7 +65,7 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  { header: null, tabs: [{ id: "cashbook", label: "Daily Cash Book" }] },
+  { header: null, tabs: [{ id: "cashbook", label: "Cash in Hand" }] },
   { header: null, tabs: [{ id: "bank", label: "Banks & Wallets" }] },
   { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
   { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
@@ -155,6 +155,7 @@ function monthLabel(key: string) {
 function accountBrand(name: string, kind: Kind) {
   const n = name.toLowerCase();
   const known: Record<string, { short: string; bg: string; fg: string }> = {
+    cash: { short: "CASH", bg: "#166534", fg: "#fff" },
     jazzcash: { short: "JC", bg: "#7B1FA2", fg: "#fff" },
     easypaisa: { short: "EP", bg: "#008C45", fg: "#fff" },
     hbl: { short: "HBL", bg: "#006B3C", fg: "#fff" },
@@ -474,7 +475,7 @@ function BankWalletOpeningRow({
             <BankLogo account={account} size={30} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div>
+            <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.kind === "cash" && account.name.toLowerCase().includes("cash") ? "Cash in Hand" : account.name}</div>
             {isEditing && (
               <div style={{ marginTop: 4 }}>
                 <input
@@ -509,8 +510,8 @@ function BankWalletOpeningRow({
             letterSpacing: ".06em",
             padding: "3px 8px",
             borderRadius: 5,
-            background: account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
-            color: account.kind === "wallet" ? "var(--accent, #D97757)" : "var(--foreground)",
+            background: account.kind === "cash" ? "rgba(22, 101, 52, 0.12)" : account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
+            color: account.kind === "cash" ? "#166534" : account.kind === "wallet" ? "var(--accent, #D97757)" : "var(--foreground)",
           }}
         >
           {account.kind}
@@ -611,7 +612,22 @@ function BankWalletOpeningRow({
                 <span>Edit</span>
               </button>
               {savedFlash && <span style={{ fontSize: 11, color: "var(--teal)" }}>Saved!</span>}
-              <button
+              {account.kind === "cash" ? (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--muted-foreground)",
+                    fontWeight: 600,
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    background: "var(--muted, rgba(0,0,0,0.04))",
+                  }}
+                  title="Primary Cash in Hand account is permanent"
+                >
+                  Primary Cash
+                </span>
+              ) : (
+<button
                 type="button"
                 className="icon-btn danger"
                 onClick={onRemove}
@@ -620,6 +636,7 @@ function BankWalletOpeningRow({
               >
                 Delete
               </button>
+              )}
             </>
           )}
         </div>
@@ -725,135 +742,6 @@ function BanksWalletsOpeningTable({
   );
 }
 
-function CashOpeningRow({
-  cash,
-  onSave,
-}: {
-  cash: Account;
-  onSave: (id: string, opening: number, date: string) => Promise<void>;
-}) {
-  const [opening, setOpening] = useState(String(cash.opening_balance ?? 0));
-  const [openingDate, setOpeningDate] = useState(cash.opening_balance_date ?? todayISO());
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    setOpening(String(cash.opening_balance ?? 0));
-    setOpeningDate(cash.opening_balance_date ?? todayISO());
-  }, [cash.opening_balance, cash.opening_balance_date]);
-
-  const numOpening = Number(opening) || 0;
-  const isDirty = numOpening !== Number(cash.opening_balance ?? 0) || openingDate !== (cash.opening_balance_date ?? todayISO());
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave(cash.id, numOpening, openingDate);
-      setSavedFlash(true);
-      setIsEditing(false);
-      setTimeout(() => setSavedFlash(false), 2400);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <tr>
-      <td style={{ fontWeight: 650 }}>{cash.name}</td>
-      <td className="num">
-        {isEditing ? (
-          <input
-            autoFocus
-            className="opening-input"
-            type="number"
-            value={opening}
-            onChange={(e) => setOpening(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
-            style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined, fontWeight: 650 }}
-          />
-        ) : (
-          <span style={{ fontWeight: 650 }}>{fmt(numOpening)} PKR</span>
-        )}
-      </td>
-      <td>
-        {isEditing ? (
-          <input
-            className="opening-input"
-            type="date"
-            value={openingDate}
-            onChange={(e) => setOpeningDate(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
-            style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined }}
-          />
-        ) : (
-          <span style={{ color: "var(--muted-foreground)" }}>{formatDateShort(openingDate)}</span>
-        )}
-      </td>
-      <td>
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 6 }}>
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                className="btn small"
-                onClick={handleSave}
-                disabled={isSaving}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "5px 10px",
-                  fontSize: 12,
-                  fontWeight: 650,
-                }}
-                title="Save changes to Supabase & sync to Google Sheets"
-              >
-                {isSaving ? (
-                  <>
-                    <RefreshCw size={12} className="animate-spin" />
-                    <span>Saving…</span>
-                  </>
-                ) : (
-                  <>
-                    <Check size={12} />
-                    <span>Save</span>
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => {
-                  setOpening(String(cash.opening_balance ?? 0));
-                  setOpeningDate(cash.opening_balance_date ?? todayISO());
-                  setIsEditing(false);
-                }}
-                style={{ fontSize: 12 }}
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="icon-btn"
-                onClick={() => setIsEditing(true)}
-                title="Edit cash opening balance"
-                style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
-              >
-                <Edit size={12} />
-                <span>Edit</span>
-              </button>
-              {savedFlash && <span style={{ fontSize: 11, color: "var(--teal)" }}>Saved!</span>}
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-}
 /* ============================= STYLE (warm charcoal/terracotta palette, matches site design system) ============================= */
 const STYLE = `
 .rohi-ab{--ink:var(--foreground);--ink-2:var(--background);--paper:var(--card);--line:var(--border);--brass:var(--accent-ink);--brass-dark:var(--accent-ink);--teal:var(--success);--teal-dark:var(--success);--crimson:var(--error);--crimson-dark:var(--error);--ink-soft:var(--muted-foreground);--cream:var(--foreground);--cream-dim:var(--muted-foreground);--shadow:var(--shadow-md);--radius:12px;--ease:cubic-bezier(0.16,1,0.3,1);
@@ -1132,7 +1020,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
-  const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
+  const [settingsTab, setSettingsTab] = useState<"banks" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
   const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
   const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
@@ -1147,6 +1035,11 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   const cash = accounts.find((a) => a.kind === "cash");
   const banks = accounts.filter((a) => a.kind !== "cash");
+  const liquidAccounts = useMemo(() => {
+    const cashAcc = accounts.find((a) => a.kind === "cash");
+    const bankAccs = accounts.filter((a) => a.kind !== "cash");
+    return cashAcc ? [cashAcc, ...bankAccs] : bankAccs;
+  }, [accounts]);
   const salesCats = useMemo(() => {
     const stored = services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((s) => s.name);
     return stored.length ? stored : DEFAULT_SALES_CATS;
@@ -1524,6 +1417,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="cards">
                 <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
                 <Card label="Total in Banks & Wallets" value={bankTotal} tone="pos" foot={`${banks.length} accounts`} />
+                <Card label="Total Liquid Capital" value={cashBalance + bankTotal} tone="pos" foot="Cash in Hand + All Banks & Wallets" />
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
@@ -1859,8 +1753,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
                 {[
-                  ["banks", "Banks & Wallets Opening Balances"],
-                  ["cashbook", "Daily Cash Book"],
+                  ["banks", "Banks, Wallets & Cash in Hand"],
                   ["sales", "Sales Accounts"],
                   ["expenses", "Expenses"],
                 ].map(([id, label]) => (
@@ -1881,9 +1774,9 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                 <section className="settings-section">
                   <div className="settings-section-head">
                     <div>
-                      <h3>Banks &amp; Wallets Opening Balances</h3>
+                      <h3>Banks, Wallets &amp; Cash in Hand</h3>
                       <span className="settings-note">
-                        Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.
+                        Unified liquid accounts · Set opening balances and dates for Cash in Hand, Banks, and Wallets in one place.
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -1896,7 +1789,18 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                         title="Open live Banks & Wallets Google Spreadsheet"
                       >
                         <ExternalLink size={13} />
-                        <span>Open Google Sheet</span>
+                        <span>Banks &amp; Wallets Sheet</span>
+                      </a>
+                      <a
+                        className="btn ghost small"
+                        href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                        title="Open live Daily Cash Book Google Spreadsheet"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Cash in Hand Sheet</span>
                       </a>
                       <button
                         type="button"
@@ -1911,7 +1815,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                     </div>
                   </div>
                   <BanksWalletsOpeningTable
-                    banks={banks}
+                    banks={liquidAccounts}
                     txns={txns}
                     onSaveOpening={async (id, opening_balance, opening_balance_date) => {
                       queryClient.setQueryData(["accounts-book"], (old: any) => {
@@ -1980,66 +1884,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       setDeleteGuard({ kind: "account", id: acc.id, label: acc.name });
                     }}
                   />
-                </section>
-              )}
-
-              {settingsTab === "cashbook" && (
-                <section className="settings-section">
-                  <div className="settings-section-head">
-                    <div>
-                      <h3>Daily Cash Book</h3>
-                      <span className="settings-note">Cash account settings · Supabase → Daily Cash Book only</span>
-                    </div>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <a
-                        className="btn ghost small"
-                        href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                        title="Open live Daily Cash Book Google Spreadsheet"
-                      >
-                        <ExternalLink size={13} />
-                        <span>Open Google Sheet</span>
-                      </a>
-                    </div>
-                  </div>
-                  {cash ? (
-                    <table className="dashboard-table" style={{ marginTop: 8 }}>
-                      <thead><tr><th>Cash Account</th><th className="num">Opening Balance (PKR)</th><th>Opening Date</th><th style={{ textAlign: "right" }}>Actions</th></tr></thead>
-                      <tbody>
-                        <CashOpeningRow
-                          cash={cash}
-                          onSave={async (id, opening_balance, opening_balance_date) => {
-                            queryClient.setQueryData(["accounts-book"], (old: any) => {
-                              if (!old || !Array.isArray(old.accounts)) return old;
-                              return {
-                                ...old,
-                                accounts: old.accounts.map((acc: any) =>
-                                  acc.id === id ? { ...acc, opening_balance, opening_balance_date } : acc
-                                ),
-                              };
-                            });
-                            try {
-                              const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
-                              refresh();
-                              if (res?.sheetSync?.status === "failed") {
-                                toast.warning("Cash opening balance saved. Google Sheets sync pending.");
-                              } else {
-                                toast.success("Cash opening balance saved.");
-                              }
-                            } catch (err) {
-                              refresh();
-                              toast.error("Failed to save cash opening balance: " + (err instanceof Error ? err.message : String(err)));
-                              throw err;
-                            }
-                          }}
-                        />
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="settings-note">No cash account is configured yet.</p>
-                  )}
                 </section>
               )}
 
@@ -2398,7 +2242,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
     <>
       <div className="cashbook-head">
         <div>
-          <h2>Daily Cash Book</h2>
+          <h2>Cash in Hand</h2>
           <p>All cash, bank &amp; wallet movements · {monthName}</p>
         </div>
         <div className="cashbook-tools">
