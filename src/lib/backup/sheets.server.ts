@@ -272,6 +272,9 @@ export function buildRohiExportFormattingRequests(
     numericColumnIndexes?: number[];
     dateColumnIndexes?: number[];
     isServiceOnly?: boolean;
+    hasOpeningRow?: boolean;
+    hasTotalRow?: boolean;
+    totalRowIndex?: number;
   },
 ): any[] {
   const endCol = Math.max(opts.columnCount, 1);
@@ -488,7 +491,14 @@ export function buildRohiExportFormattingRequests(
   const textColor = { red: 28/255, green: 25/255, blue: 23/255 };
   const openingTint = { red: 251/255, green: 245/255, blue: 242/255 };
 
-  if (!opts.isServiceOnly) {
+  const hasOpening = opts.hasOpeningRow === true;
+  const hasTotal = opts.hasTotalRow === true;
+  const totalRowIdx = hasTotal ? (opts.totalRowIndex ?? (dataEndRow - 1)) : -1;
+  const separatorRowIdx = hasTotal ? totalRowIdx - 1 : -1;
+  const regularRowsEnd = hasTotal ? Math.max(5, separatorRowIdx) : dataEndRow;
+
+  if (hasOpening) {
+    // Opening balance row (Row 6, index 5)
     requests.push({
       repeatCell: {
         range: { sheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: endCol },
@@ -503,7 +513,7 @@ export function buildRohiExportFormattingRequests(
         fields: "userEnteredFormat(backgroundColor,textFormat,borders,verticalAlignment)",
       },
     });
-    for (let r = 6; r < Math.max(25, dataEndRow); r++) {
+    for (let r = 6; r < Math.max(25, regularRowsEnd); r++) {
       const bg = (r % 2 === 0) ? BRAND.white : creamColor;
       requests.push({
         repeatCell: {
@@ -521,7 +531,8 @@ export function buildRohiExportFormattingRequests(
       });
     }
   } else {
-    for (let r = 5; r < Math.max(25, dataEndRow); r++) {
+    // Standard rows: start from row 6 (index 5) as crisp white
+    for (let r = 5; r < Math.max(25, regularRowsEnd); r++) {
       const bg = (r % 2 === 1) ? BRAND.white : creamColor;
       requests.push({
         repeatCell: {
@@ -540,13 +551,76 @@ export function buildRohiExportFormattingRequests(
     }
   }
 
+  // Format Total Row if requested
+  if (hasTotal && totalRowIdx >= 5) {
+    if (separatorRowIdx >= 5) {
+      requests.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: "ROWS", startIndex: separatorRowIdx, endIndex: separatorRowIdx + 1 },
+          properties: { pixelSize: 14 },
+          fields: "pixelSize",
+        },
+      });
+    }
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: totalRowIdx, endIndex: totalRowIdx + 1 },
+        properties: { pixelSize: 36 },
+        fields: "pixelSize",
+      },
+    });
+    // Dark background and border for the total row
+    requests.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: totalRowIdx, endRowIndex: totalRowIdx + 1, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.dark,
+            textFormat: { foregroundColor: BRAND.white, fontSize: 11, bold: true },
+            verticalAlignment: "MIDDLE",
+            borders: {
+              top: { style: "SOLID_MEDIUM", color: BRAND.accent },
+              bottom: { style: "DOUBLE", color: BRAND.accent },
+            },
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment,borders)",
+      },
+    });
+    // Distinctive terracotta accent for numeric columns in the total row
+    for (const numCol of numericColumnIndexes) {
+      requests.push({
+        repeatCell: {
+          range: { sheetId, startRowIndex: totalRowIdx, endRowIndex: totalRowIdx + 1, startColumnIndex: numCol, endColumnIndex: numCol + 1 },
+          cell: {
+            userEnteredFormat: {
+              horizontalAlignment: "RIGHT",
+              numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);0" },
+              textFormat: { foregroundColor: BRAND.accent, fontSize: 12, bold: true },
+            },
+          },
+          fields: "userEnteredFormat(horizontalAlignment,numberFormat,textFormat)",
+        },
+      });
+    }
+  }
   return [...requests, ...numericFormatRequests, ...dateFormatRequests];
 }
 
 export async function applyRohiExportFormatting(
   spreadsheetId: string,
   sheetId: number,
-  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number; numericColumnIndexes?: number[]; dateColumnIndexes?: number[]; isServiceOnly?: boolean },
+  opts: {
+    columnCount: number;
+    dataEndRow: number;
+    numericColumnStart?: number;
+    numericColumnIndexes?: number[];
+    dateColumnIndexes?: number[];
+    isServiceOnly?: boolean;
+    hasOpeningRow?: boolean;
+    hasTotalRow?: boolean;
+    totalRowIndex?: number;
+  },
 ): Promise<void> {
   const requests = buildRohiExportFormattingRequests(sheetId, opts);
   await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });

@@ -750,6 +750,18 @@ export async function reconcileBanksWalletsToSheets() {
       ]);
     }
 
+    if (accounts.length > 0) {
+      masterRows.push([]);
+      masterRows.push([
+        "TOTAL COMBINED BALANCE (PKR)",
+        "",
+        "",
+        `=SUM(D6:D${5 + accounts.length})`,
+        "",
+        `=SUM(F6:F${5 + accounts.length})`,
+      ]);
+    }
+
     // Disambiguate account tab names
     const nameCounts = new Map<string, number>();
     for (const account of accounts) {
@@ -853,6 +865,9 @@ export async function reconcileBanksWalletsToSheets() {
         dataEndRow: masterRows.length,
         numericColumnIndexes: [3, 5],
         dateColumnIndexes: [4],
+        hasOpeningRow: false,
+        hasTotalRow: accounts.length > 0,
+        totalRowIndex: masterRows.length - 1,
       }));
       if (accounts.length) {
         allFormattingRequests.push(
@@ -871,6 +886,7 @@ export async function reconcileBanksWalletsToSheets() {
           dataEndRow: item.rows.length,
           numericColumnIndexes: [2, 3, 4],
           dateColumnIndexes: [0],
+          hasOpeningRow: true,
         }));
       }
     }
@@ -1003,15 +1019,34 @@ export async function reconcileSalesAccountsToSheets() {
 
     const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
 
+    const normalizeSalesCategory = (raw: string): string => {
+      const trimmed = String(raw ?? "").trim();
+      if (/kv\s*vi?st?\s*visit/i.test(trimmed) || /kv\s*visit\s*visa/i.test(trimmed)) {
+        return "Visit Visa";
+      }
+      return trimmed;
+    };
+
+    // Clean up any legacy KV tabs in Sales Accounts
+    for (const [title, sId] of existingSheets.entries()) {
+      if ((/kv\s*vi?st?\s*visit/i.test(title) || /kv\s*visit\s*visa/i.test(title)) && sId !== undefined) {
+        try {
+          await deleteSheet(target.id, sId);
+        } catch (e) {
+          console.warn("[backup] Notice while cleaning obsolete KV tab:", title, e);
+        }
+      }
+    }
+
     const salesCategories = new Set<string>(
       (servicesResult.data ?? [])
-        .map((s) => String(s.name ?? ""))
+        .map((s) => normalizeSalesCategory(String(s.name ?? "")))
         .filter((name) => name && !name.startsWith("EXP: "))
     );
 
     const allSales = inCreationOrder(txnsResult.data ?? []);
     for (const row of allSales) {
-      const cat = String(row.category ?? "").trim();
+      const cat = normalizeSalesCategory(String(row.category ?? ""));
       if (cat) salesCategories.add(cat);
     }
 
@@ -1035,7 +1070,7 @@ export async function reconcileSalesAccountsToSheets() {
         String(formatSheetDate(t.entry_date) || ""),
         String(t.description || "Sale"),
         String(t.party || "—"),
-        String(t.category || "General"),
+        normalizeSalesCategory(String(t.category || "General")),
         accName,
         saleAmt,
         costAmt,
@@ -1056,7 +1091,7 @@ export async function reconcileSalesAccountsToSheets() {
     const categorySheetData: Array<{ sheet: string; rows: (string | number)[][]; count: number }> = [];
     for (const category of salesCategories) {
       const sheet = safeSheetPart(category);
-      const catSales = allSales.filter((t) => String(t.category ?? "").trim().toLowerCase() === category.toLowerCase());
+      const catSales = allSales.filter((t) => normalizeSalesCategory(String(t.category ?? "")).toLowerCase() === category.toLowerCase());
       let catSalesAmt = 0;
       let catProfitAmt = 0;
       let catSr = 1;
@@ -1128,6 +1163,7 @@ export async function reconcileSalesAccountsToSheets() {
         dataEndRow: masterRows.length,
         numericColumnIndexes: [6, 7, 8],
         dateColumnIndexes: [1],
+        hasOpeningRow: false,
       }));
     }
 
@@ -1139,6 +1175,7 @@ export async function reconcileSalesAccountsToSheets() {
           dataEndRow: item.rows.length,
           numericColumnIndexes: [6, 7, 8],
           dateColumnIndexes: [1],
+          hasOpeningRow: false,
         }));
       }
     }
@@ -1258,15 +1295,26 @@ export async function reconcileDailyCashBookToSheets() {
       }
     }
 
-    // Fetch all active cash, bank, and wallet accounts (matching Banks & Wallets query)
+    // Fetch all active cash, bank, and wallet accounts with opening balances
     const { data: accounts, error: accError } = await db
       .from("accounts_book_accounts")
-      .select("id,name,kind")
+      .select("id,name,kind,opening_balance,opening_balance_date")
       .in("kind", ["cash", "bank", "wallet"]);
     if (accError) throw new Error(accError.message);
 
     const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
     const accountIds = Array.from(accountMap.keys());
+
+    // Aggregate total opening balance and earliest date
+    const totalOpeningBalance = (accounts ?? []).reduce(
+      (sum, a) => sum + Number((a as any).opening_balance || 0),
+      0
+    );
+    const openingDates = (accounts ?? [])
+      .map((a) => (a as any).opening_balance_date)
+      .filter(Boolean)
+      .sort();
+    const earliestOpeningDate = openingDates[0] ? (formatSheetDate(openingDates[0]) || "08-OCT-26") : "08-OCT-26";
 
     // Fetch transactions for money accounts
     const { data: txns, error: txError } = await db
@@ -1276,9 +1324,21 @@ export async function reconcileDailyCashBookToSheets() {
       .order("created_at", { ascending: true });
     if (txError) throw new Error(txError.message);
 
-    let runningBalance = 0;
+    let runningBalance = totalOpeningBalance;
     const dataRows: (string | number)[][] = [];
     let sr = 1;
+
+    // Row 6: Combined opening balance row
+    dataRows.push([
+      sr++,
+      earliestOpeningDate,
+      "OPENING BALANCE",
+      "All Accounts (Cash, Banks & Wallets)",
+      "Opening Balance",
+      totalOpeningBalance > 0 ? totalOpeningBalance : "",
+      totalOpeningBalance < 0 ? Math.abs(totalOpeningBalance) : "",
+      totalOpeningBalance,
+    ]);
 
     for (const t of inCreationOrder(txns ?? [])) {
       const amt = Number(t.amount || 0);
@@ -1287,17 +1347,12 @@ export async function reconcileDailyCashBookToSheets() {
       else runningBalance -= amt;
 
       const accName = accountMap.get(String(t.account_id)) || "Account";
-      const descParts: string[] = ["[" + accName + "]"];
-      if (t.description) descParts.push(String(t.description));
-      if (t.party) descParts.push("(" + t.party + ")");
-      const fullDesc = descParts.join(" ");
-
       dataRows.push([
         sr++,
         String(formatSheetDate(t.entry_date) || ""),
         String(t.description || ""),
         accName,
-        String(t.category || "General"),
+        normalizeSalesCategory(String(t.category || "General")),
         isCashIn ? amt : "",
         !isCashIn ? amt : "",
         runningBalance
@@ -1308,7 +1363,7 @@ export async function reconcileDailyCashBookToSheets() {
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", ""],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", ""],
       ["Daily Cash Book", "", "", "", "", "", "", ""],
-      [`Master Cash & Bank Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Balance: Rs ${runningBalance.toLocaleString()}`, "", "", "", "", "", "", ""],
+      [`Master Cash & Bank Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Current Total Balance: Rs ${runningBalance.toLocaleString()}`, "", "", "", "", "", "", ""],
       ["SR #", "Date", "Description / Particulars", "Account / Ledger", "Category", "Cash In (PKR)", "Cash Out (PKR)", "Running Balance (PKR)"],
       ...dataRows
     ];
@@ -1326,6 +1381,7 @@ export async function reconcileDailyCashBookToSheets() {
         dataEndRow: rows.length,
         numericColumnIndexes: [5, 6, 7],
         dateColumnIndexes: [1],
+        hasOpeningRow: true,
       });
     }
 
@@ -1462,6 +1518,19 @@ export async function reconcileExpensesToSheets() {
         ]);
       }
 
+      if (partTxns.length > 0) {
+        dataRows.push([]);
+        dataRows.push([
+          "TOTAL EXPENSES (PKR)",
+          "",
+          "",
+          "",
+          "",
+          `=SUM(F6:F${5 + partTxns.length})`,
+          `=MAX(G6:G${5 + partTxns.length})`,
+        ]);
+      }
+
       const rows: (string | number)[][] = [
         ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", ""],
         ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", ""],
@@ -1498,6 +1567,9 @@ export async function reconcileExpensesToSheets() {
           dataEndRow: item.rows.length,
           numericColumnIndexes: [5, 6],
           dateColumnIndexes: [1],
+          hasOpeningRow: false,
+          hasTotalRow: item.count > 0,
+          totalRowIndex: item.rows.length - 1,
         }));
       }
     }

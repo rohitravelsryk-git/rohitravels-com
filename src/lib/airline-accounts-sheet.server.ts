@@ -1,5 +1,5 @@
 import { addSheet, applyRohiExportFormatting, batchUpdateSpreadsheet, batchWrite, buildRohiExportFormattingRequests, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
-import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
+import { airlineIataCode, airlineLogoUrl, airlineSheetLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), per-airline statement tabs, and
@@ -474,12 +474,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
       runningForeign -= txForeignCr;
     }
 
-    const explicitCode = String(air.code ?? "").trim().toUpperCase();
-    const isSial = explicitCode === "PF" || /sial/i.test(air.name);
-    const iata = airlineIataCode(air.name, air.code);
-    const logoPng = isSial
-      ? "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png"
-      : (iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "");
+    const logoPng = isServiceOnly ? "" : airlineSheetLogoUrl(air.code, air.name);
     const logoFormula = logoPng ? `=IMAGE("${logoPng}", 1)` : "";
 
     if (isServiceOnly) {

@@ -42,3 +42,17 @@ export function airlineLogoUrl(code: string | null | undefined, name?: string | 
   const normalized = airlineIataCode(name, code);
   return AIRLINE_LOGOS[normalized] ?? (normalized ? `https://images.kiwi.com/airlines/128/${normalized}.png` : null);
 }
+
+export const AIRLINE_SHEET_LOGOS: Record<string, string> = {
+  FZ: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Fly_Dubai_logo_2010_05.svg/500px-Fly_Dubai_logo_2010_05.svg.png",
+  PF: "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png",
+  J9: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6d/Jazeera_Airways_logo.svg/500px-Jazeera_Airways_logo.svg.png",
+  F3: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Flyadeal_Logo.svg/500px-Flyadeal_Logo.svg.png",
+};
+
+export function airlineSheetLogoUrl(code: string | null | undefined, name?: string | null | undefined): string {
+  const normalized = airlineIataCode(name, code);
+  if (!normalized) return "";
+  if (AIRLINE_SHEET_LOGOS[normalized]) return AIRLINE_SHEET_LOGOS[normalized];
+  return `https://images.kiwi.com/airlines/128/${normalized}.png`;
+}
