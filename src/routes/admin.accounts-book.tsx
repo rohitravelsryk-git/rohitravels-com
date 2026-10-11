@@ -27,6 +27,7 @@ import {
   updateAccountsBookOpening,
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
+  updateAccountsBookAccountLogo,
 } from "@/lib/accounts-book.functions";
 import { formatDateShort } from "@/lib/date-format";
 
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/admin/accounts-book")({
 
 /* ============================= TYPES ============================= */
 type Kind = "cash" | "bank" | "wallet";
-type Account = { id: string; name: string; kind: Kind; opening_balance: number; opening_balance_date?: string | null };
+type Account = { id: string; name: string; kind: Kind; opening_balance: number; opening_balance_date?: string | null; logo_url?: string | null };
 type Txn = {
   id: string;
   account_id: string;
@@ -170,17 +171,28 @@ function accountBrand(name: string, kind: Kind) {
   return { short: initials, bg: kind === "wallet" ? "#6D597A" : "#355070", fg: "#fff" };
 }
 
-function BankWalletLogo({ account }: { account: Account }) {
+function BankWalletLogo({ account, size = 46 }: { account: Account; size?: number }) {
   const brand = accountBrand(account.name, account.kind);
+  const radius = Math.round(size * 0.26);
+  const fontSize = size <= 32 ? 10 : brand.short.length > 3 ? 10 : 13;
   return (
     <div
       aria-label={account.name + " logo"}
       title={account.name}
       style={{
-        width: 54, height: 54, borderRadius: 14, background: brand.bg, color: brand.fg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontWeight: 900, fontSize: brand.short.length > 3 ? 10 : 13,
-        letterSpacing: ".02em", boxShadow: "0 6px 16px rgba(20,20,19,.14)", flexShrink: 0,
+        width: size,
+        height: size,
+        borderRadius: radius,
+        background: brand.bg,
+        color: brand.fg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 900,
+        fontSize,
+        letterSpacing: ".02em",
+        boxShadow: size <= 32 ? "none" : "0 6px 16px rgba(20,20,19,.14)",
+        flexShrink: 0,
       }}
     >
       {brand.short}
@@ -223,19 +235,23 @@ function bankDomain(name: string): string | null {
 
 function BankLogo({ account, size = 46 }: { account: Account; size?: number }) {
   const domain = bankDomain(account.name);
+  const customLogo = account.logo_url?.trim() || null;
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [domain]);
-  if (!domain || failed) return <BankWalletLogo account={account} />;
+  useEffect(() => setFailed(false), [domain, customLogo]);
+
+  const targetSrc = customLogo || (domain ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128` : null);
+
+  if (!targetSrc || failed) return <BankWalletLogo account={account} size={size} />;
   return (
     <img
-      src={`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128`}
+      src={targetSrc}
       alt={`${account.name} logo`}
       title={account.name}
       loading="lazy"
       decoding="async"
       width={size}
       height={size}
-      style={{ width: size, height: size, objectFit: "contain" }}
+      style={{ width: size, height: size, objectFit: "contain", borderRadius: Math.round(size * 0.22) }}
       onError={() => setFailed(true)}
     />
   );
@@ -358,6 +374,7 @@ function BankWalletOpeningRow({
   account,
   txns,
   onSave,
+  onSaveLogo,
   onRemove,
   isDragging,
   isOver,
@@ -370,6 +387,7 @@ function BankWalletOpeningRow({
   account: Account;
   txns: Txn[];
   onSave: (id: string, opening: number, date: string) => Promise<void>;
+  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onRemove: () => void;
   isDragging: boolean;
   isOver: boolean;
@@ -381,6 +399,7 @@ function BankWalletOpeningRow({
 }) {
   const [opening, setOpening] = useState(String(account.opening_balance ?? 0));
   const [openingDate, setOpeningDate] = useState(account.opening_balance_date ?? todayISO());
+  const [logoUrl, setLogoUrl] = useState(account.logo_url ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -388,15 +407,30 @@ function BankWalletOpeningRow({
   useEffect(() => {
     setOpening(String(account.opening_balance ?? 0));
     setOpeningDate(account.opening_balance_date ?? todayISO());
-  }, [account.opening_balance, account.opening_balance_date]);
+    setLogoUrl(account.logo_url ?? "");
+  }, [account.opening_balance, account.opening_balance_date, account.logo_url]);
 
   const numOpening = Number(opening) || 0;
-  const isDirty = numOpening !== Number(account.opening_balance ?? 0) || openingDate !== (account.opening_balance_date ?? todayISO());
+  const isDirty =
+    numOpening !== Number(account.opening_balance ?? 0) ||
+    openingDate !== (account.opening_balance_date ?? todayISO()) ||
+    logoUrl.trim() !== (account.logo_url ?? "");
 
   const handleSave = async () => {
+    const trimmedLogo = logoUrl.trim();
+    if (trimmedLogo && !/^https:\/\//i.test(trimmedLogo)) {
+      toast.error("Logo URL must start with https://");
+      return;
+    }
     setIsSaving(true);
     try {
-      await onSave(account.id, numOpening, openingDate);
+      const promises: Promise<unknown>[] = [
+        onSave(account.id, numOpening, openingDate),
+      ];
+      if (trimmedLogo !== (account.logo_url ?? "")) {
+        promises.push(onSaveLogo(account.id, trimmedLogo || null));
+      }
+      await Promise.all(promises);
       setSavedFlash(true);
       setIsEditing(false);
       setTimeout(() => setSavedFlash(false), 2400);
@@ -436,12 +470,33 @@ function BankWalletOpeningRow({
       </td>
       <td>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", borderRadius: 8 }}>
             <BankLogo account={account} size={30} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div>
-            <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div>
+            {isEditing && (
+              <div style={{ marginTop: 4 }}>
+                <input
+                  aria-label={`${account.name} logo URL`}
+                  type="url"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://... logo URL (optional)"
+                  style={{
+                    width: "100%",
+                    minWidth: 160,
+                    maxWidth: 240,
+                    fontSize: 11,
+                    padding: "3px 6px",
+                    border: "1px solid var(--border)",
+                    borderRadius: 4,
+                    background: "var(--background)",
+                    color: "var(--foreground)",
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </td>
@@ -535,6 +590,7 @@ function BankWalletOpeningRow({
                 onClick={() => {
                   setOpening(String(account.opening_balance ?? 0));
                   setOpeningDate(account.opening_balance_date ?? todayISO());
+                  setLogoUrl(account.logo_url ?? "");
                   setIsEditing(false);
                 }}
                 style={{ fontSize: 12 }}
@@ -548,7 +604,7 @@ function BankWalletOpeningRow({
                 type="button"
                 className="icon-btn"
                 onClick={() => setIsEditing(true)}
-                title={`Edit opening balance for ${account.name}`}
+                title={`Edit ${account.name}`}
                 style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
               >
                 <Edit size={12} />
@@ -571,16 +627,19 @@ function BankWalletOpeningRow({
     </tr>
   );
 }
+
 function BanksWalletsOpeningTable({
   banks,
   txns,
   onSaveOpening,
+  onSaveLogo,
   onReorder,
   onDeleteAccount,
 }: {
   banks: Account[];
   txns: Txn[];
   onSaveOpening: (id: string, opening: number, date: string) => Promise<void>;
+  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onReorder: (ids: string[]) => void;
   onDeleteAccount: (account: Account) => void;
 }) {
@@ -631,6 +690,7 @@ function BanksWalletsOpeningTable({
             account={account}
             txns={txns}
             onSave={onSaveOpening}
+            onSaveLogo={onSaveLogo}
             onRemove={() => onDeleteAccount(account)}
             isDragging={draggedId === account.id}
             isOver={dragOverId === account.id && draggedId !== account.id}
@@ -1010,6 +1070,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
   const openingFn = useServerFn(updateAccountsBookOpening);
+  const saveAccountLogoFn = useServerFn(updateAccountsBookAccountLogo);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
@@ -1256,7 +1317,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
-  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
+  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added");
 
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
@@ -1504,16 +1565,12 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                           </td>
                           <td className="actions-cell">
                             <div className="dashboard-actions">
-                              {row.entry_type !== "expense" && (
-                                <>
-                                  <button type="button" className="icon-btn" title="Edit entire linked transaction" onClick={() => editTransaction(row)}>
-                                    Edit
-                                  </button>
-                                  <button type="button" className="icon-btn danger" title="Delete entire linked transaction" onClick={() => deleteGroup(row)}>
-                                    Delete
-                                  </button>
-                                </>
-                              )}
+                              <button type="button" className="icon-btn" title="Edit entire linked transaction" onClick={() => editTransaction(row)}>
+                                Edit
+                              </button>
+                              <button type="button" className="icon-btn danger" title="Delete entire linked transaction" onClick={() => deleteGroup(row)}>
+                                Delete
+                              </button>
                               {accountName(row.account_id) && (
                                 <button type="button" className="icon-btn" title="View Account Ledger" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>
                                   Ledger
@@ -1831,6 +1888,30 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       } catch (err) {
                         refresh();
                         toast.error("Failed to save opening balance: " + (err instanceof Error ? err.message : String(err)));
+                        throw err;
+                      }
+                    }}
+                    onSaveLogo={async (id, logo_url) => {
+                      queryClient.setQueryData(["accounts-book"], (old: any) => {
+                        if (!old || !Array.isArray(old.accounts)) return old;
+                        return {
+                          ...old,
+                          accounts: old.accounts.map((acc: any) =>
+                            acc.id === id ? { ...acc, logo_url } : acc
+                          ),
+                        };
+                      });
+                      try {
+                        const res: any = await saveAccountLogoFn({ data: { id, logo_url } });
+                        refresh();
+                        if (res?.sheetSync?.status === "failed") {
+                          toast.warning("Logo URL saved in Supabase. Google Sheets sync pending.");
+                        } else {
+                          toast.success("Account logo updated.");
+                        }
+                      } catch (err) {
+                        refresh();
+                        toast.error("Failed to save logo URL: " + (err instanceof Error ? err.message : String(err)));
                         throw err;
                       }
                     }}
@@ -2603,12 +2684,8 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { row
             <td className="num">{fmt(row.balance)}</td>
             <td>{badge(row)}</td>
             <td>
-              {row.entry_type !== "expense" && (
-                <>
-                  <button type="button" className="icon-btn" onClick={() => onEdit(row)}>Edit</button>
-                  <button type="button" className="icon-btn" onClick={() => onDelete(row)}>Delete</button>
-                </>
-              )}
+              <button type="button" className="icon-btn" onClick={() => onEdit(row)}>Edit</button>
+              <button type="button" className="icon-btn" onClick={() => onDelete(row)}>Delete</button>
             </td>
           </tr>
         ))}
@@ -2637,7 +2714,7 @@ function Modals(props: {
   onExtra: (payload: Record<string, unknown>) => void;
   onTransfer: (payload: Record<string, unknown>) => void;
   onGroup: (payload: Record<string, unknown>) => void;
-  onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => void;
+  onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => void;
   onCategory: (name: string) => void;
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
@@ -2657,6 +2734,7 @@ function Modals(props: {
   const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("expense");
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
+  const [accountLogoUrl, setAccountLogoUrl] = useState("");
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
 
@@ -2668,6 +2746,7 @@ function Modals(props: {
       setAccountKind("bank");
       setOpening("0");
       setOpeningDate(todayISO());
+      setAccountLogoUrl("");
     } else if (kind === "addSalesCat" || kind === "addExpenseCat") {
       setName("");
     }
@@ -2964,11 +3043,14 @@ function Modals(props: {
       <>
         <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
         <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
+        <div className="field"><label>Logo URL (optional)</label><input type="url" value={accountLogoUrl} onChange={(e) => setAccountLogoUrl(e.target.value)} placeholder="https://... image link (optional)" /></div>
         <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
       </>
     ), "Add Account", () => {
       if (!name.trim()) { toast.error("Enter an account name"); return; }
-      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate });
+      const trimmedLogo = accountLogoUrl.trim();
+      if (trimmedLogo && !/^https:\/\//i.test(trimmedLogo)) { toast.error("Logo URL must start with https://"); return; }
+      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate, logo_url: trimmedLogo || null });
     });
 
   const categoryTitle = kind === "addSalesCat" ? "Add Sales Category" : "Add Expense Category";

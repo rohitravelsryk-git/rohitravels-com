@@ -324,7 +324,8 @@ export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
   if (error) throw new Error(mentionsLogoColumn(error.message) ? LOGO_COLUMN_HELP : error.message);
-  return { success: true, sheetSync: SHEET_SYNC_QUEUED };
+  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+  return { success: true, sheetSync };
 });
 
 export const updateAccountsBookAccount = createServerFn({ method: "POST" })
@@ -642,7 +643,7 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
     } else {
       const { data: acct, error: acctError } = await supabaseAdmin.from("accounts_book_accounts").select("kind").eq("id", data.account_id).single();
       if (acctError) throw new Error(acctError.message);
-      rows = [{ ...base, account_id: data.account_id, entry_type: "manual", category: acct?.kind === "cash" ? "Cash Book" : "Bank Ledger", amount: data.amount, direction: data.direction!, source_type: undefined, source_id: undefined }];
+      rows = [{ ...base, account_id: data.account_id, entry_type: "manual", category: data.category || (acct?.kind === "cash" ? "Cash Book" : "Bank Ledger"), amount: data.amount, direction: data.direction!, source_type: "manual", source_id: data.source_id }];
     }
 
     const keyed = rows.map((row) => ({
