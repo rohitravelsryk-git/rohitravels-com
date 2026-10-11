@@ -251,7 +251,8 @@ export const createAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row, error } = await supabaseAdmin.from("accounts_book_services").insert(data).select().single();
   if (error) throw new Error(error.message);
-  return row;
+  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  return { ...row, sheetSync };
 });
 
 export const updateAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {
@@ -259,7 +260,8 @@ export const updateAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ name: data.name }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  return { success: true };
+  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  return { success: true, sheetSync };
 });
 
 export const deleteAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), password: z.string().min(1) }).parse(data)).handler(async ({ data }) => {
@@ -268,7 +270,8 @@ export const deleteAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
-  return { success: true };
+  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  return { success: true, sheetSync };
 });
 
 export const reorderAccountsBookServices = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
@@ -279,7 +282,8 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  return { success: true };
+  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  return { success: true, sheetSync };
 });
 
 /**

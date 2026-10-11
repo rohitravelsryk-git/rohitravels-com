@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronDown, Copy, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Save, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Edit, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Save, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -383,6 +383,7 @@ function BankWalletOpeningRow({
   const [openingDate, setOpeningDate] = useState(account.opening_balance_date ?? todayISO());
   const [isSaving, setIsSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setOpening(String(account.opening_balance ?? 0));
@@ -397,6 +398,7 @@ function BankWalletOpeningRow({
     try {
       await onSave(account.id, numOpening, openingDate);
       setSavedFlash(true);
+      setIsEditing(false);
       setTimeout(() => setSavedFlash(false), 2400);
     } finally {
       setIsSaving(false);
@@ -460,86 +462,115 @@ function BankWalletOpeningRow({
         </span>
       </td>
       <td className="num">
-        <input
-          className="opening-input"
-          type="number"
-          value={opening}
-          onChange={(e) => setOpening(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
-          style={{
-            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
-            fontWeight: 650,
-          }}
-        />
+        {isEditing ? (
+          <input
+            autoFocus
+            className="opening-input"
+            type="number"
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+            style={{
+              borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
+              fontWeight: 650,
+            }}
+          />
+        ) : (
+          <span style={{ fontWeight: 650 }}>{fmt(numOpening)} PKR</span>
+        )}
       </td>
       <td>
-        <input
-          className="opening-input"
-          type="date"
-          value={openingDate}
-          onChange={(e) => setOpeningDate(e.target.value)}
-          style={{
-            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
-          }}
-        />
+        {isEditing ? (
+          <input
+            className="opening-input"
+            type="date"
+            value={openingDate}
+            onChange={(e) => setOpeningDate(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+            style={{
+              borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
+            }}
+          />
+        ) : (
+          <span style={{ color: "var(--muted-foreground)" }}>{formatDateShort(openingDate)}</span>
+        )}
       </td>
       <td className="num" style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: currentBal >= 0 ? "inherit" : "var(--error, #e03131)" }}>
         {fmt(currentBal)} PKR
       </td>
       <td>
         <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            className={`btn small ${savedFlash ? "success" : isDirty ? "primary" : "ghost"}`}
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "6px 12px",
-              minWidth: 80,
-              fontSize: 12,
-              fontWeight: 650,
-              background: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              color: savedFlash || isDirty ? "#FAF9F5" : undefined,
-              borderColor: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              transition: "all 0.18s ease",
-            }}
-            title={isDirty ? "Save changes to Supabase & sync to Google Sheets" : "Opening balance is saved"}
-          >
-            {isSaving ? (
-              <>
-                <RefreshCw size={12} className="animate-spin" />
-                <span>Saving…</span>
-              </>
-            ) : savedFlash ? (
-              <>
-                <Check size={12} />
-                <span>Saved!</span>
-              </>
-            ) : (
-              <>
-                <Save size={12} />
-                <span>Save</span>
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="icon-btn danger"
-            onClick={onRemove}
-            title={`Remove ${account.name}`}
-            style={{ fontSize: 12 }}
-          >
-            Remove
-          </button>
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                className="btn small"
+                onClick={handleSave}
+                disabled={isSaving}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "5px 10px",
+                  fontSize: 12,
+                  fontWeight: 650,
+                }}
+                title="Save changes to Supabase & sync to Google Sheets"
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    <span>Saving…</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} />
+                    <span>Save</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => {
+                  setOpening(String(account.opening_balance ?? 0));
+                  setOpeningDate(account.opening_balance_date ?? todayISO());
+                  setIsEditing(false);
+                }}
+                style={{ fontSize: 12 }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setIsEditing(true)}
+                title={`Edit opening balance for ${account.name}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
+              >
+                <Edit size={12} />
+                <span>Edit</span>
+              </button>
+              {savedFlash && <span style={{ fontSize: 11, color: "var(--teal)" }}>Saved!</span>}
+              <button
+                type="button"
+                className="icon-btn danger"
+                onClick={onRemove}
+                title={`Delete ${account.name}`}
+                style={{ fontSize: 12 }}
+              >
+                Delete
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
   );
 }
-
 function BanksWalletsOpeningTable({
   banks,
   txns,
@@ -645,6 +676,7 @@ function CashOpeningRow({
   const [openingDate, setOpeningDate] = useState(cash.opening_balance_date ?? todayISO());
   const [isSaving, setIsSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setOpening(String(cash.opening_balance ?? 0));
@@ -659,6 +691,7 @@ function CashOpeningRow({
     try {
       await onSave(cash.id, numOpening, openingDate);
       setSavedFlash(true);
+      setIsEditing(false);
       setTimeout(() => setSavedFlash(false), 2400);
     } finally {
       setIsSaving(false);
@@ -669,70 +702,98 @@ function CashOpeningRow({
     <tr>
       <td style={{ fontWeight: 650 }}>{cash.name}</td>
       <td className="num">
-        <input
-          className="opening-input"
-          type="number"
-          value={opening}
-          onChange={(e) => setOpening(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
-          style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined, fontWeight: 650 }}
-        />
+        {isEditing ? (
+          <input
+            autoFocus
+            className="opening-input"
+            type="number"
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+            style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined, fontWeight: 650 }}
+          />
+        ) : (
+          <span style={{ fontWeight: 650 }}>{fmt(numOpening)} PKR</span>
+        )}
       </td>
       <td>
-        <input
-          className="opening-input"
-          type="date"
-          value={openingDate}
-          onChange={(e) => setOpeningDate(e.target.value)}
-          style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined }}
-        />
+        {isEditing ? (
+          <input
+            className="opening-input"
+            type="date"
+            value={openingDate}
+            onChange={(e) => setOpeningDate(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+            style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined }}
+          />
+        ) : (
+          <span style={{ color: "var(--muted-foreground)" }}>{formatDateShort(openingDate)}</span>
+        )}
       </td>
       <td>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            className={`btn small ${savedFlash ? "success" : isDirty ? "primary" : "ghost"}`}
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "6px 12px",
-              minWidth: 80,
-              fontSize: 12,
-              fontWeight: 650,
-              background: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              color: savedFlash || isDirty ? "#FAF9F5" : undefined,
-              borderColor: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              transition: "all 0.18s ease",
-            }}
-            title={isDirty ? "Save changes to Supabase & sync to Google Sheets" : "Cash opening balance is saved"}
-          >
-            {isSaving ? (
-              <>
-                <RefreshCw size={12} className="animate-spin" />
-                <span>Saving…</span>
-              </>
-            ) : savedFlash ? (
-              <>
-                <Check size={12} />
-                <span>Saved!</span>
-              </>
-            ) : (
-              <>
-                <Save size={12} />
-                <span>Save</span>
-              </>
-            )}
-          </button>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 6 }}>
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                className="btn small"
+                onClick={handleSave}
+                disabled={isSaving}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "5px 10px",
+                  fontSize: 12,
+                  fontWeight: 650,
+                }}
+                title="Save changes to Supabase & sync to Google Sheets"
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" />
+                    <span>Saving…</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} />
+                    <span>Save</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => {
+                  setOpening(String(cash.opening_balance ?? 0));
+                  setOpeningDate(cash.opening_balance_date ?? todayISO());
+                  setIsEditing(false);
+                }}
+                style={{ fontSize: 12 }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setIsEditing(true)}
+                title="Edit cash opening balance"
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
+              >
+                <Edit size={12} />
+                <span>Edit</span>
+              </button>
+              {savedFlash && <span style={{ fontSize: 11, color: "var(--teal)" }}>Saved!</span>}
+            </>
+          )}
         </div>
       </td>
     </tr>
   );
 }
-
-
 /* ============================= STYLE (warm charcoal/terracotta palette, matches site design system) ============================= */
 const STYLE = `
 .rohi-ab{--ink:var(--foreground);--ink-2:var(--background);--paper:var(--card);--line:var(--border);--brass:var(--accent-ink);--brass-dark:var(--accent-ink);--teal:var(--success);--teal-dark:var(--success);--crimson:var(--error);--crimson-dark:var(--error);--ink-soft:var(--muted-foreground);--cream:var(--foreground);--cream-dim:var(--muted-foreground);--shadow:var(--shadow-md);--radius:12px;--ease:cubic-bezier(0.16,1,0.3,1);
@@ -929,11 +990,11 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
     <form className="protected-delete-dialog" onSubmit={submit}>
       <h3>Admin Password Required</h3>
       <p>{guard.kind === "account"
-        ? <>Removing <strong>{guard.label}</strong> is protected. Accounts with ledger entries are archived — <strong>their transactions and transfer history are never deleted.</strong></>
+        ? <>Deleting <strong>{guard.label}</strong> is protected. Accounts with ledger entries are archived — <strong>their transactions and transfer history are never deleted.</strong></>
         : <>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</>}</p>
       <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
       {error && <p className="protected-delete-error">{error}</p>}
-      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : guard.kind === "account" ? "Remove / Archive" : "Delete"}</button></div>
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
     </form>
   </div>;
 }
@@ -1354,17 +1415,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button
-                    type="button"
-                    className="btn outline"
-                    onClick={syncAllSheets}
-                    disabled={isSyncingAll}
-                    title="Force synchronize all ledgers to Google Sheets"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-                  >
-                    <RefreshCw size={13} className={isSyncingAll ? "animate-spin" : ""} />
-                    {isSyncingAll ? "Syncing..." : "Sync Sheets"}
-                  </button>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 </div>
               </div>
@@ -1887,24 +1937,6 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                     <div>
                       <h3>Expenses</h3>
                       <span className="settings-note">Expense category settings · Supabase → Expenses workbook</span>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        className={`btn small reconcile-btn ${isReconcilingExpenses ? "is-running" : ""}`}
-                        onClick={reconcileExpenses}
-                        disabled={isReconcilingExpenses}
-                        aria-busy={isReconcilingExpenses}
-                      >
-                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingExpenses ? "spin" : ""}`} />
-                        <span>{isReconcilingExpenses ? "Reconciling…" : "Reconcile Expenses"}</span>
-                      </button>
-                      {isReconcilingExpenses && (
-                        <div className="reconcile-status" role="status" aria-live="polite">
-                          <span className="status-dot" />
-                          Updating Google Sheets from Supabase — please wait…
-                        </div>
-                      )}
                     </div>
                   </div>
                   <DraggablePills
