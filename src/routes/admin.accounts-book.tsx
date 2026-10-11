@@ -1453,7 +1453,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
+                  <p>Overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
