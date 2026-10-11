@@ -251,7 +251,7 @@ export const createAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row, error } = await supabaseAdmin.from("accounts_book_services").insert(data).select().single();
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  const sheetSync = queuedSync(["sales", "expenses"]);
   return { ...row, sheetSync };
 });
 
@@ -260,7 +260,7 @@ export const updateAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ name: data.name }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  const sheetSync = queuedSync(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -270,7 +270,7 @@ export const deleteAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  const sheetSync = queuedSync(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -282,7 +282,7 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["sales", "expenses"]);
+  const sheetSync = queuedSync(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -292,7 +292,22 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
  * right away, so the Save button never waits on Sheets API quotas/retries, yet the sheets
  * still update within seconds.
  */
-const SHEET_SYNC_QUEUED = { status: "pending" as const, sheets: "", failures: [] as string[], syncPending: true };
+/**
+ * Saves are instant: the database commit is authoritative, so the server answers right away and
+ * tells the browser WHICH Google Sheets to refresh. The browser then runs syncAccountsBookSheets
+ * (one coalesced request, below) so the Save / Edit / Delete buttons never wait on the Sheets API.
+ */
+function queuedSync(scopes?: LiveSyncScope[]) {
+  return { status: "pending" as const, sheets: "", failures: [] as string[], syncPending: true, scopes };
+}
+const SHEET_SYNC_QUEUED = queuedSync();
+
+export const syncAccountsBookSheets = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({ scopes: z.array(z.enum(["banks", "cash", "sales", "expenses"])).max(4).optional() }).parse(data ?? {}))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    return triggerLiveAccountsSync(true, data.scopes?.length ? data.scopes : undefined);
+  });
 
 export const syncAccountsBookAccountSettingsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
@@ -313,7 +328,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   let sheetSync: Awaited<ReturnType<typeof triggerLiveAccountsSync>> | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
-    sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+    sheetSync = queuedSync(["banks", "cash"]);
   }
 
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
@@ -324,7 +339,7 @@ export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
   if (error) throw new Error(mentionsLogoColumn(error.message) ? LOGO_COLUMN_HELP : error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+  const sheetSync = queuedSync(["banks", "cash"]);
   return { success: true, sheetSync };
 });
 
@@ -367,7 +382,7 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
     }
     if (error) throw new Error(error.message);
     if (!updated) throw new Error("Bank / wallet account was not found or is no longer editable. Refresh and try again.");
-    const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+    const sheetSync = queuedSync(["banks", "cash"]);
     return { success: true, sheetSync };
   });
 
@@ -376,7 +391,7 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+  const sheetSync = queuedSync(["banks", "cash"]);
   return { success: true, sheetSync };
 });
 
@@ -388,7 +403,7 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  const sheetSync = await triggerLiveAccountsSync(true);
+  const sheetSync = queuedSync();
   return { success: true, sheetSync };
 });
 
@@ -422,7 +437,7 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   const sheetSync = account && (account.kind === "bank" || account.kind === "wallet")
-    ? await triggerLiveAccountsSync(true)
+    ? queuedSync()
     : undefined;
 
   return { success: true, ...(sheetSync ? { sheetSync } : {}) };
@@ -529,7 +544,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     : data.source_type === "transfer"
     ? ["banks", "cash"]
     : ["banks", "cash", "sales", "expenses"];
-  const sheetSync = await triggerLiveAccountsSync(true, scopes);
+  const sheetSync = queuedSync(scopes);
   return { ...row, sheetSync };
 });
 
@@ -556,7 +571,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   // Ensure the target row itself is definitely deleted if it wasn't caught by group query
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true);
+  const sheetSync = queuedSync();
   return { success: true, sheetSync };
 });
 
@@ -576,7 +591,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true);
+  const sheetSync = queuedSync();
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -589,7 +604,7 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
     : data.source_type === "sale"
     ? ["banks", "cash", "sales"]
     : ["banks", "cash"];
-  const sheetSync = await triggerLiveAccountsSync(true, scopes);
+  const sheetSync = queuedSync(scopes);
   return { ...result, sheetSync };
 });
 
@@ -678,7 +693,7 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       : data.kind === "transfer"
       ? ["banks", "cash"]
       : ["banks", "cash", "sales", "expenses"];
-    const sheetSync = await triggerLiveAccountsSync(true, scopes);
+    const sheetSync = queuedSync(scopes);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
@@ -690,7 +705,7 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+  const sheetSync = queuedSync(["banks", "cash"]);
   return { ...result, sheetSync };
 });
 
@@ -699,7 +714,7 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(true);
+  const sheetSync = queuedSync();
   return { success: true, sheetSync };
 });
 

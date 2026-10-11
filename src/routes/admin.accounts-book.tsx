@@ -20,6 +20,7 @@ import {
   listAccountsBook,
   updateAccountsBookTransaction,
   reconcileBanksWalletsToSheets,
+  syncAccountsBookSheets,
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
   reconcileSalesAccountsToSheets,
@@ -423,7 +424,10 @@ function BankWalletOpeningRow({
       toast.error("Logo URL must start with https://");
       return;
     }
+    // Instant: the row leaves edit mode now (the new values are already patched into the table);
+    // if the server rejects the save, the row re-opens so nothing is lost.
     setIsSaving(true);
+    setIsEditing(false);
     try {
       const promises: Promise<unknown>[] = [
         onSave(account.id, numOpening, openingDate),
@@ -433,11 +437,19 @@ function BankWalletOpeningRow({
       }
       await Promise.all(promises);
       setSavedFlash(true);
-      setIsEditing(false);
       setTimeout(() => setSavedFlash(false), 2400);
+    } catch {
+      setIsEditing(true);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const cancelEdit = () => {
+    setOpening(String(account.opening_balance ?? 0));
+    setOpeningDate(account.opening_balance_date ?? todayISO());
+    setLogoUrl(account.logo_url ?? "");
+    setIsEditing(false);
   };
 
   const currentBal = finalBalance(txns.filter((t) => t.account_id === account.id), numOpening);
@@ -525,7 +537,7 @@ function BankWalletOpeningRow({
             type="number"
             value={opening}
             onChange={(e) => setOpening(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); if (e.key === "Escape") cancelEdit(); }}
             style={{
               borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
               fontWeight: 650,
@@ -571,7 +583,7 @@ function BankWalletOpeningRow({
                   fontSize: 12,
                   fontWeight: 650,
                 }}
-                title="Save changes to Supabase & sync to Google Sheets"
+                title="Save now — Google Sheets updates right after"
               >
                 {isSaving ? (
                   <>
@@ -588,12 +600,7 @@ function BankWalletOpeningRow({
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => {
-                  setOpening(String(account.opening_balance ?? 0));
-                  setOpeningDate(account.opening_balance_date ?? todayISO());
-                  setLogoUrl(account.logo_url ?? "");
-                  setIsEditing(false);
-                }}
+                onClick={cancelEdit}
                 style={{ fontSize: 12 }}
               >
                 Cancel
@@ -958,6 +965,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
   const openingFn = useServerFn(updateAccountsBookOpening);
+  const syncSheetsFn = useServerFn(syncAccountsBookSheets);
   const saveAccountLogoFn = useServerFn(updateAccountsBookAccountLogo);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
@@ -1136,8 +1144,41 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
 
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
+  // ---- Instant saves, live Google Sheets -------------------------------------------------------
+  // Every save returns as soon as Supabase has it. The sheets that changed are refreshed right after
+  // by ONE background request: rapid edits are merged (so Google's write quota isn't hammered) and
+  // a progress toast shows the result. Nothing the user clicks waits on Google Sheets.
+  const pendingSyncScopes = useRef<Set<string>>(new Set());
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncInFlight = useRef(false);
+  const runSheetSync = async () => {
+    if (syncInFlight.current) {
+      syncTimer.current = setTimeout(runSheetSync, 1200);
+      return;
+    }
+    const scopes = Array.from(pendingSyncScopes.current);
+    pendingSyncScopes.current.clear();
+    syncInFlight.current = true;
+    const toastId = toast.loading("Updating Google Sheets…");
+    try {
+      const result = await syncSheetsFn({ data: { scopes: scopes.length ? (scopes as ("banks" | "cash" | "sales" | "expenses")[]) : undefined } });
+      if (result.status === "success") toast.success(`Google Sheets updated${result.sheets ? ": " + result.sheets : ""}`, { id: toastId });
+      else toast.warning(`Saved. Google Sheets needs attention — ${result.failures?.filter(Boolean).join(" | ") || "try Sync All"}`, { id: toastId });
+    } catch (e) {
+      toast.error(`Saved, but Google Sheets sync failed: ${e instanceof Error ? e.message : String(e)}`, { id: toastId });
+    } finally {
+      syncInFlight.current = false;
+    }
+  };
+  const scheduleSheetSync = (scopes?: string[]) => {
+    // No scopes = refresh everything.
+    (scopes?.length ? scopes : ["banks", "cash", "sales", "expenses"]).forEach((s) => pendingSyncScopes.current.add(s));
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(runSheetSync, 500);
+  };
+
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
-    useMutationFactory(fn, message, refresh, fail, afterSuccess);
+    useMutationFactory(fn, message, refresh, fail, afterSuccess, scheduleSheetSync);
 
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const reconcileBanksWallets = () => {
@@ -1283,7 +1324,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
       if (sync?.status === "success" && sync.sheets) {
         toast.success(`Entry deleted: removed from Supabase & updated Google Sheets (${sync.sheets})`);
       } else if (sync?.status === "pending") {
-        toast.success("Entry deleted: saved to Supabase");
+        toast.success("Entry deleted");
+        scheduleSheetSync(sync.scopes);
       } else if (sync?.failures?.length) {
         const detail = sync.failures.filter(Boolean).join(" | ");
         toast.warning(`Entry deleted from Supabase, but Google Sheets sync needs attention: ${detail}`);
@@ -1830,11 +1872,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       try {
                         const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
                         refresh();
-                        if (res?.sheetSync?.status === "failed") {
-                          toast.warning("Opening balance saved in Supabase. Google Sheets sync pending.");
-                        } else {
-                          toast.success("Opening balance saved.");
-                        }
+                        toast.success("Opening balance saved.");
+                        scheduleSheetSync(res?.sheetSync?.scopes);
                       } catch (err) {
                         refresh();
                         toast.error("Failed to save opening balance: " + (err instanceof Error ? err.message : String(err)));
@@ -1854,11 +1893,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       try {
                         const res: any = await saveAccountLogoFn({ data: { id, logo_url } });
                         refresh();
-                        if (res?.sheetSync?.status === "failed") {
-                          toast.warning("Logo URL saved in Supabase. Google Sheets sync pending.");
-                        } else {
-                          toast.success("Account logo updated.");
-                        }
+                        toast.success("Account logo updated.");
+                        scheduleSheetSync(res?.sheetSync?.scopes);
                       } catch (err) {
                         refresh();
                         toast.error("Failed to save logo URL: " + (err instanceof Error ? err.message : String(err)));
@@ -1963,12 +1999,12 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 }
 
 /* small factory so every mutation shares toast + refresh behaviour */
-function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void, afterSuccess?: () => void) {
+function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void, afterSuccess?: () => void, scheduleSync?: (scopes?: string[]) => void) {
   return useMutation({
     mutationFn: fn,
     onSuccess: (result) => {
       refresh();
-      const sync = (result as { sheetSync?: { status?: string; sheets?: string; failures?: string[] } } | undefined)?.sheetSync;
+      const sync = (result as { sheetSync?: { status?: string; sheets?: string; failures?: string[]; scopes?: string[] } } | undefined)?.sheetSync;
       if (!sync) {
         toast.success(message);
         return;
@@ -1978,7 +2014,8 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
         return;
       }
       if (sync.status === "pending") {
-        toast.success(`${message}: saved to Supabase`);
+        toast.success(message);
+        scheduleSync?.(sync.scopes);
         afterSuccess?.();
         return;
       }
