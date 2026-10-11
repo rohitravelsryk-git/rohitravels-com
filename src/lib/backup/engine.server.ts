@@ -249,20 +249,28 @@ export async function syncRegistry(): Promise<{ added: string[]; total: number }
 // A cell over 50 000 characters makes Google reject the whole request, which used to
 // fail every append for that table — Settings had been stuck since mid-August because
 // of one row. Values are shortened instead, and the shortening is reported.
-function formatSheetDate(value: unknown): unknown {
+export function normalizeSalesCategory(raw: string): string {
+  const trimmed = String(raw ?? "").trim();
+  if (/kv\s*vi?st?\s*visit/i.test(trimmed) || /kv\s*visit\s*visa/i.test(trimmed)) {
+    return "Visit Visa";
+  }
+  return trimmed;
+}
+
+function formatSheetDate(value: unknown): string {
   const raw = String(value ?? "").trim();
   const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(raw);
-  if (!match) return value;
+  if (!match) return String(value ?? "");
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return value;
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return String(value ?? "");
   const date = new Date(Date.UTC(year, month - 1, day));
   if (
     date.getUTCFullYear() !== year ||
     date.getUTCMonth() !== month - 1 ||
     date.getUTCDate() !== day
-  ) return value;
+  ) return String(value ?? "");
   const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   return `${String(day).padStart(2, "0")}-${months[month - 1]}-${String(year).slice(-2)}`;
 }
@@ -1019,13 +1027,7 @@ export async function reconcileSalesAccountsToSheets() {
 
     const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
 
-    const normalizeSalesCategory = (raw: string): string => {
-      const trimmed = String(raw ?? "").trim();
-      if (/kv\s*vi?st?\s*visit/i.test(trimmed) || /kv\s*visit\s*visa/i.test(trimmed)) {
-        return "Visit Visa";
-      }
-      return trimmed;
-    };
+    // normalizeSalesCategory is defined at top-level
 
     // Clean up any legacy KV tabs in Sales Accounts
     for (const [title, sId] of existingSheets.entries()) {

@@ -479,8 +479,9 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
     }
   };
 
-  const actionPromise = runSyncAction();
-  liveAccountsSyncTail = liveAccountsSyncTail.then(() => actionPromise).catch((error) => {
+  // Chain onto the tail so multiple rapid calls execute sequentially without concurrent quota collisions
+  const currentTask = liveAccountsSyncTail.then(() => runSyncAction());
+  liveAccountsSyncTail = currentTask.catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     failures.push("Live sync queue: " + message);
     console.error("[backup] Live accounts sync queue failed:", error);
@@ -494,7 +495,7 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
 
   // Do not fire-and-forget: keep the server request alive until the queued
   // sequential reconciliations have completed or recorded their failures.
-  await actionPromise;
+  await currentTask;
   return { status: failures.length === 0 ? "success" : "failed", sheets: completed.join(", "), failures };
 }
 
