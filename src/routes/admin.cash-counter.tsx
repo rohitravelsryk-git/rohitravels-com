@@ -7,7 +7,5 @@ export const Route = createFileRoute("/admin/cash-counter")({
 });
 
 function CashCounterPage() {
-  // Accounts Book owns the cash-counter tab when present; open the full book
-  // and let the user switch to Cash Counter from the sidebar.
-  return <AccountsBookClone />;
+  return <AccountsBookClone initialTab="cashcount" />;
 }

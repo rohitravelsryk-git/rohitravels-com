@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronDown, ExternalLink, GripVertical, Home, LogOut, Menu, RefreshCw, Save, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Save, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -54,7 +54,7 @@ type Txn = {
   source_id?: string | null;
 };
 type Service = { id: string; name: string };
-type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "settings";
+type TabId = "dashboard" | "cashbook" | "cashcount" | "bank" | "sales" | "expenses" | "reports" | "settings";
 
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
@@ -62,7 +62,14 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
+  {
+    header: "Cash & Bank",
+    tabs: [
+      { id: "cashbook", label: "Daily Cash Book" },
+      { id: "cashcount", label: "Cash Count" },
+      { id: "bank", label: "Banks & Wallets" },
+    ],
+  },
   { header: "Business Accounts", tabs: [{ id: "expenses", label: "Expenses" }, { id: "sales", label: "Sales Accounts" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
@@ -70,20 +77,21 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
 const TAB_NUMBERS: Record<TabId, string> = {
   dashboard: "01",
   cashbook: "02",
-  bank: "03",
-  expenses: "04",
-  sales: "05",
-  reports: "06",
-  settings: "07",
+  cashcount: "03",
+  bank: "04",
+  expenses: "05",
+  sales: "06",
+  reports: "07",
+  settings: "08",
 };
 
-const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v2";
+const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v3";
 const DEFAULT_SIDEBAR_ORDER: TabId[] = TAB_GROUPS.flatMap((group) => group.tabs.map((t) => t.id));
 
 function loadSidebarOrder(): TabId[] {
   if (typeof window === "undefined") return DEFAULT_SIDEBAR_ORDER;
   try {
-    const raw = window.localStorage.getItem(SIDEBAR_ORDER_KEY);
+    const raw = window.localStorage.getItem(SIDEBAR_ORDER_KEY) || window.localStorage.getItem("rohi-ab-sidebar-order-v2");
     if (!raw) return [...DEFAULT_SIDEBAR_ORDER];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [...DEFAULT_SIDEBAR_ORDER];
@@ -93,6 +101,11 @@ function loadSidebarOrder(): TabId[] {
       if (typeof id === "string" && known.has(id as TabId) && !ordered.includes(id as TabId)) {
         ordered.push(id as TabId);
       }
+    }
+    if (!ordered.includes("cashcount")) {
+      const cashbookIdx = ordered.indexOf("cashbook");
+      if (cashbookIdx >= 0) ordered.splice(cashbookIdx + 1, 0, "cashcount");
+      else ordered.push("cashcount");
     }
     for (const id of DEFAULT_SIDEBAR_ORDER) {
       if (!ordered.includes(id)) ordered.push(id);
@@ -932,7 +945,7 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   </div>;
 }
 
-export function AccountsBookClone() {
+export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const router = useRouter();
   const logoutFn = useServerFn(adminLogout);
   async function onLogout() {
@@ -957,7 +970,7 @@ export function AccountsBookClone() {
   const reorderServicesFn = useServerFn(reorderAccountsBookServices);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
-  const [tab, setTab] = useState<TabId>("dashboard");
+  const [tab, setTab] = useState<TabId>(initialTab ?? "dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -1448,7 +1461,13 @@ export function AccountsBookClone() {
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
               onAdd={() => setModal("quickadd")}
-              onEdit={editTransaction}
+            />
+          )}
+
+          {tab === "cashcount" && (
+            <CashCountView
+              cashBalance={cashBalance}
+              cashAccountName={cash?.name ?? "Cash in Hand"}
             />
           )}
 
@@ -1952,12 +1971,186 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
   });
 }
 
-function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void; onEdit: (row: Txn) => void }) {
+const PAK_DENOMINATIONS = [
+  { value: 5000, label: "Rs 5,000", kind: "note" },
+  { value: 1000, label: "Rs 1,000", kind: "note" },
+  { value: 500, label: "Rs 500", kind: "note" },
+  { value: 100, label: "Rs 100", kind: "note" },
+  { value: 50, label: "Rs 50", kind: "note" },
+  { value: 20, label: "Rs 20", kind: "note" },
+  { value: 10, label: "Rs 10", kind: "note" },
+  { value: 5, label: "Rs 5 (Coins)", kind: "coin" },
+  { value: 2, label: "Rs 2 (Coins)", kind: "coin" },
+  { value: 1, label: "Rs 1 (Coins)", kind: "coin" },
+] as const;
+
+const CASH_COUNT_STORAGE_KEY = "rohi-cash-count-v1";
+
+function CashCountView({
+  cashBalance,
+  cashAccountName,
+}: {
+  cashBalance: number;
+  cashAccountName: string;
+}) {
+  const [counts, setCounts] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = window.localStorage.getItem(CASH_COUNT_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const updateCount = (denom: number, val: number) => {
+    const next = { ...counts, [denom]: Math.max(0, val) };
+    setCounts(next);
+    try {
+      window.localStorage.setItem(CASH_COUNT_STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+  };
+
+  const addPreset = (denom: number, delta: number) => {
+    updateCount(denom, (counts[denom] || 0) + delta);
+  };
+
+  const resetAll = () => {
+    if (window.confirm("Are you sure you want to reset all denomination counts to zero?")) {
+      setCounts({});
+      try {
+        window.localStorage.removeItem(CASH_COUNT_STORAGE_KEY);
+      } catch {}
+      toast.success("Cash counts reset to zero.");
+    }
+  };
+
+  const countedNotes = useMemo(
+    () => PAK_DENOMINATIONS.filter((d) => d.kind === "note").reduce((sum, d) => sum + (counts[d.value] || 0), 0),
+    [counts]
+  );
+  const countedCoins = useMemo(
+    () => PAK_DENOMINATIONS.filter((d) => d.kind === "coin").reduce((sum, d) => sum + (counts[d.value] || 0), 0),
+    [counts]
+  );
+  const countedTotal = useMemo(
+    () => PAK_DENOMINATIONS.reduce((sum, d) => sum + d.value * (counts[d.value] || 0), 0),
+    [counts]
+  );
+  const difference = countedTotal - cashBalance;
+
+  const copyBreakdown = async () => {
+    const activeEntries = PAK_DENOMINATIONS.filter((d) => (counts[d.value] || 0) > 0);
+    const lines = [
+      "ROHI INTERNATIONAL TRAVELS — CASH COUNT",
+      `Date: ${new Date().toLocaleDateString("en-PK", { dateStyle: "medium" })}`,
+      "--------------------------------------",
+      ...(activeEntries.length === 0
+        ? ["No denominations counted yet."]
+        : activeEntries.map((d) => `${d.label} × ${counts[d.value] || 0} = Rs ${fmt(d.value * (counts[d.value] || 0))}`)),
+      "--------------------------------------",
+      `Total Counted Cash: Rs ${fmt(countedTotal)} (${countedNotes} notes, ${countedCoins} coins)`,
+      `System Cash Balance: Rs ${fmt(cashBalance)} (${cashAccountName})`,
+      `Difference: ${difference === 0 ? "Rs 0 (Balanced / Matched)" : difference > 0 ? `+Rs ${fmt(difference)} (Surplus)` : `-Rs ${fmt(Math.abs(difference))} (Shortage)`}`,
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      toast.success("Cash count breakdown copied to clipboard!");
+    } catch {
+      toast.error("Clipboard access is unavailable. Use Print to save the count.");
+    }
+  };
+
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h2>Cash Count</h2>
+          <p>Physical cash denomination counter · Drawer count compared with the system cash balance</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <button type="button" className="btn ghost small" onClick={copyBreakdown} title="Copy breakdown to clipboard"><Copy size={13} style={{ marginRight: 5 }} /> Copy Summary</button>
+          <button type="button" className="btn ghost small" onClick={() => window.print()} title="Print Cash Count Slip"><Printer size={13} style={{ marginRight: 5 }} /> Print</button>
+          <button type="button" className="btn ghost small" onClick={resetAll} title="Reset note and coin counts to zero"><RotateCcw size={13} style={{ marginRight: 5 }} /> Reset Count</button>
+        </div>
+      </div>
+
+      <div className="cards">
+        <Card label="Total Counted Cash" value={countedTotal} foot={`${countedNotes} notes · ${countedCoins} coins counted`} />
+        <Card label="System Cash in Hand" value={cashBalance} tone="pos" foot={`${cashAccountName} ledger balance`} />
+        <div className="card">
+          <div className="card-lbl">Difference vs Book</div>
+          <div className="card-val" style={{ color: difference === 0 ? "var(--success, #16a34a)" : difference > 0 ? "var(--accent, #d97757)" : "var(--danger, #dc2626)" }}>
+            {difference === 0 ? "Rs 0" : difference > 0 ? `+Rs ${fmt(difference)}` : `-Rs ${fmt(Math.abs(difference))}`}
+          </div>
+          <div className="card-foot" style={{ fontWeight: 600 }}>
+            {difference === 0 ? "Exact match with Cash Book" : difference > 0 ? "Surplus (excess cash in drawer)" : "Shortage (missing from drawer)"}
+          </div>
+        </div>
+      </div>
+
+      <Panel title="Physical Denominations Counter" action={<div style={{ fontSize: "0.82rem", color: "var(--muted-foreground)" }}>Pakistani Currency (PKR)</div>}>
+        <div style={{ overflowX: "auto" }}>
+          <table className="dashboard-table">
+            <thead>
+              <tr>
+                <th style={{ width: 140 }}>Denomination</th>
+                <th style={{ width: 120 }}>Unit Value</th>
+                <th style={{ width: 220, textAlign: "center" }}>Note / Coin Count</th>
+                <th style={{ minWidth: 260 }}>Quick Presets</th>
+                <th className="num" style={{ width: 160 }}>Subtotal (PKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PAK_DENOMINATIONS.map((d) => {
+                const count = counts[d.value] || 0;
+                const subtotal = d.value * count;
+                const isNote = d.kind === "note";
+                return (
+                  <tr key={d.value} style={count > 0 ? { background: "var(--bg-accent-tint, rgba(217, 119, 87, 0.04))" } : undefined}>
+                    <td><span className="badge" style={{ fontWeight: 700, fontSize: "0.85rem", background: isNote ? "var(--foreground)" : "var(--muted)", color: isNote ? "#fff" : "var(--foreground)", padding: "4px 10px", borderRadius: 6, display: "inline-block" }}>{d.label}</span></td>
+                    <td style={{ fontWeight: 600, color: "var(--foreground)" }}>Rs {fmt(d.value)}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <button type="button" className="btn ghost small" style={{ minWidth: 30, height: 32, padding: "0 8px", fontWeight: 700 }} onClick={() => updateCount(d.value, count - 1)} disabled={count <= 0} title="Decrease 1">-</button>
+                        <input type="number" min={0} step={1} inputMode="numeric" value={count || ""} placeholder="0" aria-label={`${d.label} count`} onChange={(e) => updateCount(d.value, parseInt(e.target.value, 10) || 0)} style={{ width: 80, textAlign: "center", height: 32, borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontWeight: 600, fontSize: "0.95rem" }} />
+                        <button type="button" className="btn ghost small" style={{ minWidth: 30, height: 32, padding: "0 8px", fontWeight: 700 }} onClick={() => updateCount(d.value, count + 1)} title="Increase 1">+</button>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        <button type="button" className="btn ghost small" style={{ padding: "2px 8px", fontSize: "0.74rem", height: 26 }} onClick={() => addPreset(d.value, 1)}>+1</button>
+                        <button type="button" className="btn ghost small" style={{ padding: "2px 8px", fontSize: "0.74rem", height: 26 }} onClick={() => addPreset(d.value, 5)}>+5</button>
+                        <button type="button" className="btn ghost small" style={{ padding: "2px 8px", fontSize: "0.74rem", height: 26 }} onClick={() => addPreset(d.value, 10)}>+10</button>
+                        {isNote && <button type="button" className="btn ghost small" style={{ padding: "2px 8px", fontSize: "0.74rem", height: 26 }} onClick={() => addPreset(d.value, 100)} title="Add packet (100 notes)">+100 (Pkt)</button>}
+                        {count > 0 && <button type="button" className="btn ghost small" style={{ padding: "2px 6px", fontSize: "0.74rem", height: 26, color: "var(--danger)" }} onClick={() => updateCount(d.value, 0)} title="Clear">✕</button>}
+                      </div>
+                    </td>
+                    <td className="num" style={{ fontWeight: 700, fontSize: "0.95rem", color: subtotal > 0 ? "var(--foreground)" : "var(--muted-foreground)" }}>Rs {fmt(subtotal)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: "var(--muted)", fontWeight: 700, fontSize: "1rem" }}>
+                <td colSpan={2}>Grand Total</td>
+                <td style={{ textAlign: "center", fontSize: "0.85rem", color: "var(--muted-foreground)" }}>{countedNotes} Notes · {countedCoins} Coins</td>
+                <td />
+                <td className="num" style={{ fontSize: "1.08rem", color: "var(--accent)" }}>Rs {fmt(countedTotal)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
+function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
-  const [counts, setCounts] = useState<Record<number, number>>({});
-  const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
+
 
   const sorted = useMemo(() => byDate(rows), [rows]);
   const accountMap = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
@@ -2018,7 +2211,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
     return { d, incoming: sum(list, "in"), outgoing: sum(list, "out") };
   });
   const max = Math.max(1, ...daily.flatMap((x) => [x.incoming, x.outgoing]));
-  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
+
   const monthName = monthLabel(month);
 
   return (
@@ -2080,7 +2273,6 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
                 <th className="num">Received</th>
                 <th className="num">Payment</th>
                 <th className="num">Current Total Balance</th>
-                <th />
               </tr>
             </thead>
             <tbody>
@@ -2091,7 +2283,6 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
                 <td className="num">—</td>
                 <td className="num">—</td>
                 <td className="num"><strong>{fmt(previousBalance)}</strong></td>
-                <td />
               </tr>
               {visibleRows.map((t, i) => (
                 <tr key={t.id}>
@@ -2101,12 +2292,11 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
                   <td className="num"><strong>{fmt(t.runningBalance)}</strong></td>
-                  <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button></td>
                 </tr>
               ))}
               {visibleRows.length === 0 && (
                 <tr className="empty-row">
-                  <td colSpan={7}>{search ? "No matching entries found." : "No transactions for this day."}</td>
+                  <td colSpan={6}>{search ? "No matching entries found." : "No transactions for this day."}</td>
                 </tr>
               )}
             </tbody>
@@ -2128,39 +2318,21 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
         </div>
       </section>
 
-      <div className="cashbook-two-col">
-        <section className="cashbook-panel">
-          <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments</div>
-          {monthRows.length === 0 ? (
-            <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
-          ) : (
-            <div className="cashbook-chart">
-              {daily.map((x) => (
-                <button key={x.d} type="button" className="cashbook-bar" title={`${x.d} · In ${fmt(x.incoming)} · Out ${fmt(x.outgoing)}`} onClick={() => setDay(x.d)}>
-                  <span style={{ height: `${(x.incoming / max) * 100}%` }} />
-                  <span style={{ height: `${(x.outgoing / max) * 100}%` }} />
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="cashbook-panel">
-          <h3>Cash count</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Count notes currently in hand</div>
-          <div className="cashbook-denoms">
-            {DENOMS.map((denomination) => (
-              <label key={denomination} className="cashbook-denom">
-                <span>Rs {fmt(denomination)}</span>
-                <input type="number" min={0} value={counts[denomination] || ""} onChange={(e) => setCounts({ ...counts, [denomination]: Number(e.target.value) || 0 })} />
-              </label>
+      <section className="cashbook-panel" style={{ marginTop: 18 }}>
+        <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments · {monthName}</div>
+        {monthRows.length === 0 ? (
+          <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
+        ) : (
+          <div className="cashbook-chart">
+            {daily.map((x) => (
+              <button key={x.d} type="button" className="cashbook-bar" title={`${x.d} · In ${fmt(x.incoming)} · Out ${fmt(x.outgoing)}`} onClick={() => setDay(x.d)}>
+                <span style={{ height: `${(x.incoming / max) * 100}%` }} />
+                <span style={{ height: `${(x.outgoing / max) * 100}%` }} />
+              </button>
             ))}
-            <div className="cashbook-cash-total"><span>Cash in hand</span><span>Rs {fmt(countedCash)}</span></div>
-            <div style={{ gridColumn: "1/-1", fontSize: 11, color: countedCash === available ? "var(--teal-dark)" : "var(--ink-soft)" }}>
-              Difference vs book: Rs {fmt(countedCash - available)}
-            </div>
           </div>
-        </section>
-      </div>
+        )}
+      </section>
     </>
   );
 }
