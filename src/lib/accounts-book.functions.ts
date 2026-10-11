@@ -544,15 +544,16 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
 
   // A logical transaction is deleted as one unit. This prevents orphaned
   // Sale cost rows or the second side of a Transfer from surviving.
-  let query = supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (row.source_id) {
-    query = supabaseAdmin
-      .from("accounts_book_transactions")
-      .delete()
-      .eq("source_type", row.source_type ?? "")
-      .eq("source_id", row.source_id);
+    let query = supabaseAdmin.from("accounts_book_transactions").delete().eq("source_id", row.source_id);
+    if (row.source_type) {
+      query = query.eq("source_type", row.source_type);
+    }
+    const { error: groupError } = await query;
+    if (groupError) throw new Error(groupError.message);
   }
-  const { error } = await query;
+  // Ensure the target row itself is definitely deleted if it wasn't caught by group query
+  const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
   const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };

@@ -1325,7 +1325,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
 
-  const removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted");
+  const _removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted");
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
@@ -1360,8 +1360,50 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   const editTransaction = (row: Txn) => { setEditingTxn(row); setModal("editTransaction"); };
 
-  const deleteGroup = (row: Txn) => {
-    if (window.confirm("Delete this transaction and every linked ledger projection? This cannot be undone.")) removeTxn.mutate(row.id);
+  const deleteGroup = async (row: Txn) => {
+    if (!window.confirm("Delete this transaction and every linked ledger projection? This cannot be undone.")) return;
+
+    const previousData = queryClient.getQueryData(["accounts-book"]);
+    const targetId = row.id;
+    const targetSourceId = row.source_id;
+    const targetSourceType = row.source_type;
+
+    // 1. Immediately update UI cache — takes effect instantly without page refresh
+    queryClient.setQueryData(["accounts-book"], (old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      return {
+        ...old,
+        transactions: old.transactions.filter((t: any) => {
+          if (t.id === targetId) return false;
+          if (targetSourceId && t.source_id === targetSourceId) {
+            if (!targetSourceType || t.source_type === targetSourceType) return false;
+          }
+          return true;
+        }),
+      };
+    });
+
+    try {
+      const res: any = await deleteTxnFn({ data: row.id });
+      refresh();
+      const sync = res?.sheetSync;
+      if (sync?.status === "success" && sync.sheets) {
+        toast.success(`Entry deleted: removed from Supabase & updated Google Sheets (${sync.sheets})`);
+      } else if (sync?.status === "pending") {
+        toast.success("Entry deleted: saved to Supabase");
+      } else if (sync?.failures?.length) {
+        const detail = sync.failures.filter(Boolean).join(" | ");
+        toast.warning(`Entry deleted from Supabase, but Google Sheets sync needs attention: ${detail}`);
+      } else {
+        toast.success("Entry deleted & Google Sheets updated");
+      }
+    } catch (err) {
+      if (previousData) {
+        queryClient.setQueryData(["accounts-book"], previousData);
+      }
+      refresh();
+      toast.error("Failed to delete entry: " + (err instanceof Error ? err.message : String(err)));
+    }
   };
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "—";
   const sourceBadge = (row: Txn) =>
@@ -1747,7 +1789,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                     </div>
                     <Panel title={activeExpCat ?? "Expenses"}>
                       <table>
-                        <thead><tr><th>Date</th><th>Description</th><th className="num">Amount</th><th>Paid via</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Description</th><th className="num">Amount</th><th>Paid via</th><th /></tr></thead>
                         <tbody>
                           {rows.map((row) => (
                             <tr key={row.id}>
@@ -1755,9 +1797,13 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
+                              <td>
+                                <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
+                                <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
+                              </td>
                             </tr>
                           ))}
-                          {rows.length === 0 && <tr className="empty-row"><td colSpan={4}>No entries yet for {activeExpCat ?? "this category"}.</td></tr>}
+                          {rows.length === 0 && <tr className="empty-row"><td colSpan={5}>No entries yet for {activeExpCat ?? "this category"}.</td></tr>}
                         </tbody>
                       </table>
                     </Panel>
