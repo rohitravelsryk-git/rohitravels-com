@@ -1003,8 +1003,8 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   // Auto-sync Google Sheets on page load, matching Airline Accounts
   useEffect(() => {
-    void reconcileBanksWalletsFn({ data: {} }).catch((error) => {
-      console.warn("Banks & Wallets Google Sheet background auto-sync:", error);
+    void reconcileAllFn({ data: {} }).catch((error) => {
+      console.warn("Accounts Book Google Sheets background auto-sync:", error);
     });
   }, []);
   const [bankSel, setBankSel] = useState<string | null>(null);

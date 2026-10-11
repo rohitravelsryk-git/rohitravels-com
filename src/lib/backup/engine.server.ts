@@ -1247,12 +1247,22 @@ export async function reconcileDailyCashBookToSheets() {
     const sheet = "Daily Cash Book";
     await ensureSheetTab(target.id, sheet, existingSheets);
 
-    // Fetch all active cash, bank, and wallet accounts
+    // Clean up any obsolete/leftover tabs in Daily Cash Book spreadsheet
+    for (const [title, sId] of existingSheets.entries()) {
+      if (title !== sheet && sId !== undefined) {
+        try {
+          await deleteSheet(target.id, sId);
+        } catch (e) {
+          console.warn("[backup] Notice while cleaning obsolete tab:", title, e);
+        }
+      }
+    }
+
+    // Fetch all active cash, bank, and wallet accounts (matching Banks & Wallets query)
     const { data: accounts, error: accError } = await db
       .from("accounts_book_accounts")
       .select("id,name,kind")
-      .in("kind", ["cash", "bank", "wallet"])
-      .eq("is_active", true);
+      .in("kind", ["cash", "bank", "wallet"]);
     if (accError) throw new Error(accError.message);
 
     const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
@@ -1303,8 +1313,11 @@ export async function reconcileDailyCashBookToSheets() {
       ...dataRows
     ];
 
-    await clearSheet(target.id, sheet);
-    await writeRange(target.id, `'${sheet}'!A1:H${rows.length}`, rows);
+    await batchClear(target.id, [quoteSheet(sheet)]);
+    await batchWrite(target.id, [{
+      range: `'${sheet}'!A1:H${rows.length}`,
+      values: rows,
+    }], "USER_ENTERED");
 
     const sheetId = existingSheets.get(sheet);
     if (sheetId !== undefined) {
@@ -1403,12 +1416,18 @@ export async function reconcileExpensesToSheets() {
       db.from("accounts_book_accounts").select("id,name,kind"),
       db.from("accounts_book_transactions")
         .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type,entry_type")
-        .or("entry_type.eq.expense,source_type.eq.expense")
+        .or("entry_type.eq.expense,source_type.eq.expense,category.ilike.%expense%,category.ilike.%office%,category.ilike.%home%")
         .order("created_at", { ascending: true }),
     ]);
 
     const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
-    const allExpenses = inCreationOrder(txnsResult.data ?? []);
+    const allExpenses = inCreationOrder(
+      (txnsResult.data ?? []).filter((t) => {
+        if (t.entry_type === "transfer" || t.source_type === "transfer") return false;
+        if (t.entry_type === "sale" || t.source_type === "sale") return false;
+        return true;
+      })
+    );
 
     const partitions: Array<{ title: string; filter: (t: any) => boolean }> = [
       {

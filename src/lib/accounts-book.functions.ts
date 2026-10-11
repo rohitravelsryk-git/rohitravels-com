@@ -73,10 +73,11 @@ const linkedEntryInput = z.object({
 async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
-    const [bankResult, cashResult, salesResult] = await Promise.allSettled([
+    const [bankResult, cashResult, salesResult, expensesResult] = await Promise.allSettled([
       engine.reconcileBanksWalletsToSheets(),
       engine.reconcileDailyCashBookToSheets(),
       engine.reconcileSalesAccountsToSheets(),
+      engine.reconcileExpensesToSheets(),
     ]);
 
     const failures: string[] = [];
@@ -86,15 +87,17 @@ async function runAccountsBookSheetSync() {
     if (cashResult.status === "rejected") failures.push("Daily Cash Book: " + (cashResult.reason?.message || String(cashResult.reason)));
     else if (cashResult.value.status === "failed") failures.push(...cashResult.value.failures.map((f: any) => "Daily Cash Book: " + f.message));
 
-    // A failed Sales Accounts reconciliation must not be reported as a successful overall sync.
     if (salesResult.status === "rejected") failures.push("Sales Accounts: " + (salesResult.reason?.message || String(salesResult.reason)));
     else if (salesResult.value.status === "failed") failures.push(...salesResult.value.failures.map((f: any) => "Sales Accounts: " + f.message));
+
+    if (expensesResult.status === "rejected") failures.push("Expenses: " + (expensesResult.reason?.message || String(expensesResult.reason)));
+    else if (expensesResult.value.status === "failed") failures.push(...expensesResult.value.failures.map((f: any) => "Expenses: " + f.message));
 
     const allSucceeded = failures.length === 0;
     return {
       status: allSucceeded ? "success" : "failed",
       spreadsheetUrl: bankResult.status === "fulfilled" ? bankResult.value.spreadsheetUrl : null,
-      sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts",
+      sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts, Expenses",
       warningCount: 0,
       failures,
     };
@@ -306,8 +309,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   let sheetSync: Awaited<ReturnType<typeof triggerLiveAccountsSync>> | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
-    // Instant: the DB row is saved; the client immediately runs syncAccountsBookAccountSettingsToSheets.
-    sheetSync = SHEET_SYNC_QUEUED;
+    sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
   }
 
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
@@ -360,7 +362,8 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
     }
     if (error) throw new Error(error.message);
     if (!updated) throw new Error("Bank / wallet account was not found or is no longer editable. Refresh and try again.");
-    return { success: true, sheetSync: SHEET_SYNC_QUEUED };
+    const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+    return { success: true, sheetSync };
   });
 
 export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number(), opening_balance_date: z.string().optional() }).parse(data)).handler(async ({ data }) => {
@@ -368,7 +371,8 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  return { success: true, sheetSync: SHEET_SYNC_QUEUED };
+  const sheetSync = await triggerLiveAccountsSync(true, ["banks", "cash"]);
+  return { success: true, sheetSync };
 });
 
 export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
@@ -427,7 +431,8 @@ export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses";
 export async function triggerLiveAccountsSync(waitForCompletion: boolean = true, scopes?: LiveSyncScope[]): Promise<{ status: "success" | "failed" | "pending"; sheets: string; failures: string[]; syncPending?: boolean }> {
   const failures: string[] = [];
   const completed: string[] = [];
-  liveAccountsSyncTail = liveAccountsSyncTail.then(async () => {
+
+  const runSyncAction = async () => {
     const mod = await import("@/lib/backup/engine.server");
 
     // IMPORTANT: Google Sheets has per-user/per-project write quotas. These
@@ -450,7 +455,7 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
     for (const [name, sync] of syncs) {
       try {
         const result = await sync();
-        if (result.status !== "success") {
+        if (result && result.status !== "success") {
           const detail = Array.isArray(result.failures) && result.failures.length
             ? result.failures.map((item: any) => item.message || String(item)).join("; ")
             : String(result.status || "unknown status");
@@ -467,7 +472,10 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
         console.error("[backup] Live accounts sync failed:", name, error);
       }
     }
-  }).catch((error) => {
+  };
+
+  const actionPromise = runSyncAction();
+  liveAccountsSyncTail = liveAccountsSyncTail.then(() => actionPromise).catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     failures.push("Live sync queue: " + message);
     console.error("[backup] Live accounts sync queue failed:", error);
@@ -481,7 +489,7 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
 
   // Do not fire-and-forget: keep the server request alive until the queued
   // sequential reconciliations have completed or recorded their failures.
-  await liveAccountsSyncTail;
+  await actionPromise;
   return { status: failures.length === 0 ? "success" : "failed", sheets: completed.join(", "), failures };
 }
 
