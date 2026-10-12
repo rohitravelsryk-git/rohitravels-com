@@ -250,7 +250,7 @@ export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses";
 
 let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 
-export async function triggerLiveAccountsSync(waitForCompletion: boolean = true, scopes?: LiveSyncScope[]): Promise<{ status: "success" | "failed" | "pending"; sheets: string; failures: string[]; syncPending?: boolean }> {
+export async function triggerLiveAccountsSync(waitForCompletion: boolean = true, scopes?: LiveSyncScope[]): Promise<{ status: "success" | "failed" | "pending"; sheets: string; failures: string[]; syncPending?: boolean; scopes?: LiveSyncScope[] }> {
   const failures: string[] = [];
   const completed: string[] = [];
 
