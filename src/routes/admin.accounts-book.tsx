@@ -1814,7 +1814,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               >
                 <div style={{ padding: "10px 16px", background: "var(--background)", borderBottom: "1px solid var(--border)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
                   <span>
-                    <strong>1-Step Unified Linkage:</strong> Every transaction is recorded as a complete unit and automatically posted across Cash Book, Category, and Account ledgers, then synced to Google Sheets.
+                    <strong>1-Step Unified Linkage:</strong> Every transaction is recorded as 1 atomic record in its specific account (Cash in Hand or Bank/Wallet) and reflected across the master Daily Cash Book journal and category ledgers without double counting.
                   </span>
                   <span className="badge link" style={{ fontSize: "0.72rem", padding: "2px 8px" }}>
                     Atomic Edit &amp; Delete
@@ -1876,14 +1876,14 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                           </td>
                           <td>
                             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, fontSize: "0.72rem" }}>
-                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }}>Cash Book</span>
+                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }} title="Consolidated Day Book entry">Daily Journal</span>
                               <span>•</span>
                               <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(217,119,87,0.12)", color: "#D97757", fontWeight: 600 }}>
                                 {row.entry_type === "expense" ? (isOfficeExp ? "Office Expenses" : "Home Expenses") : (row.category || "Sales")}
                               </span>
                               <span>•</span>
-                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }}>
-                                {acc}
+                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }} title={`Account holding funds: ${acc}`}>
+                                Account: {acc}
                               </span>
                             </div>
                           </td>
@@ -3287,26 +3287,28 @@ function Modals(props: {
     const amt = numeric(amount);
     const costAmt = numeric(cost);
     const isOffice = catValue.toLowerCase().includes("office");
+    const isRecvCash = accounts.find((a) => a.id === recv)?.kind === "cash";
+    const recvName = nameOf(recv);
     const legs: { where: string; what: string }[] = [];
     if (txType === "expense") {
-      legs.push({ where: "Daily Cash Book", what: `Payment ${fmt(amt)} via ${nameOf(recv)}` });
+      legs.push({ where: `Payment Account (${recvName})`, what: `Deduction -${fmt(amt)} (Only this account balance decreases)` });
       legs.push({ where: `${isOffice ? "Office" : "Home"} Expenses › ${catValue || "category"}`, what: `${fmt(amt)} — ${desc.trim() || "description"}` });
-      legs.push({ where: `${nameOf(recv)} ledger`, what: `Credit (out) ${fmt(amt)}` });
+      legs.push({ where: "Daily Cash Book (Master Journal)", what: `Consolidated entry under ${recvName} (${isRecvCash ? "Physical Cash Out" : "Bank/Online Outflow — cash drawer untouched"})` });
     } else if (txType === "sale") {
       const batchSaleTotal = salesRows.reduce((sum, r) => sum + (Number(r.sale_amount) || 0), 0);
       const batchCostTotal = salesRows.reduce((sum, r) => sum + (Number(r.purchase_amount) || 0), 0);
       const batchProfitTotal = batchSaleTotal - batchCostTotal;
-      legs.push({ where: "Daily Cash Book", what: `Received ${fmt(batchSaleTotal)} via ${nameOf(recv)}` });
-      legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(batchSaleTotal)} · profit ${fmt(batchProfitTotal)}` });
-      legs.push({ where: `${nameOf(recv)} ledger`, what: `Debit (in) ${fmt(batchSaleTotal)}` });
-      if (paid && batchCostTotal > 0) legs.push({ where: `${nameOf(paid)} ledger + Daily Cash Book`, what: `Cost paid ${fmt(batchCostTotal)}` });
+      legs.push({ where: `Receiving Account (${recvName})`, what: `Inflow +${fmt(batchSaleTotal)} (Only this account balance increases)` });
+      legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(batchSaleTotal)} · Cost ${fmt(batchCostTotal)} · Net Profit ${fmt(batchProfitTotal)}` });
+      legs.push({ where: "Daily Cash Book (Master Journal)", what: `Consolidated entry under ${recvName} (${isRecvCash ? "Physical Cash In" : "Bank/Online Inflow — cash drawer untouched"})` });
+      if (paid && batchCostTotal > 0) legs.push({ where: `Cost Paid Account (${nameOf(paid)})`, what: `Cost outflow -${fmt(batchCostTotal)}` });
     } else if (txType === "transfer") {
-      legs.push({ where: "Daily Cash Book", what: `${fmt(amt)} ${nameOf(from)} → ${nameOf(to)}` });
-      legs.push({ where: `${nameOf(from)} ledger`, what: `Credit (out) ${fmt(amt)}` });
-      legs.push({ where: `${nameOf(to)} ledger`, what: `Debit (in) ${fmt(amt)}` });
+      legs.push({ where: `Source Account (${nameOf(from)})`, what: `Outflow -${fmt(amt)}` });
+      legs.push({ where: `Destination Account (${nameOf(to)})`, what: `Inflow +${fmt(amt)}` });
+      legs.push({ where: "Daily Cash Book (Master Journal)", what: `Self-transfer ${nameOf(from)} → ${nameOf(to)}` });
     } else {
-      legs.push({ where: "Daily Cash Book", what: `${dir === "in" ? "Received" : "Payment"} ${fmt(amt)}` });
-      legs.push({ where: `${nameOf(recv)} ledger`, what: `${dir === "in" ? "Debit (in)" : "Credit (out)"} ${fmt(amt)}` });
+      legs.push({ where: `Selected Account (${recvName})`, what: `${dir === "in" ? `Inflow +${fmt(amt)}` : `Outflow -${fmt(amt)}`} (Only this account updates)` });
+      legs.push({ where: "Daily Cash Book (Master Journal)", what: `Consolidated entry under ${recvName} (${isRecvCash ? (dir === "in" ? "Physical Cash In" : "Physical Cash Out") : "Bank/Online — cash drawer untouched"})` });
     }
     const types: [typeof txType, string][] = [
       ["expense", "Expense"],
@@ -3322,8 +3324,8 @@ function Modals(props: {
     return shell(
       "New Transaction",
       txType === "sale"
-        ? "B2B Book Fare entry — saves to Supabase and Google Sheets in master and category tabs."
-        : "One entry — it posts to the Cash Book, the category ledger and the account ledger together, then syncs to Google Sheets.",
+        ? "Single-entry sales booking — updates receiving account balance, records sales profit, and syncs across ledgers and Google Sheets without double counting."
+        : "Single-entry transaction — updates your selected account balance and syncs seamlessly across the Daily Cash Book master journal and category ledgers.",
       (
         <>
           <div className="txseg" role="radiogroup" aria-label="Transaction type">
@@ -3493,9 +3495,9 @@ function Modals(props: {
           )}
 
           <div className="posting" aria-live="polite">
-            <h4>This one entry will post to</h4>
+            <h4>1 Single Atomic Entry (No Double Counting)</h4>
             {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
-            <div className="hint">Edit or delete it later and every one of these updates together.</div>
+            <div className="hint">Posts exactly 1 single record to your database. Updates the chosen account balance and synchronizes to your ledgers and Google Sheets together.</div>
           </div>
         </>
       ),
