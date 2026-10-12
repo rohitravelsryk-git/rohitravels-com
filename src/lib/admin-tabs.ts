@@ -1,4 +1,4 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator, Settings, type LucideIcon } from "lucide-react";
+import { Phone, Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator, Settings, type LucideIcon } from "lucide-react";
 
 export type TabDef = {
   id: string;
@@ -30,6 +30,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: false },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-accounts", to: "/admin/airline-accounts", label: "Airline Accounts", icon: Plane },
+  { id: "airline-contacts", to: "/admin/airline-accounts?tab=contacts", label: "Airline Contact Details", icon: Phone },
   { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
   { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck },
   { id: "cash-counter", to: "/admin/cash-counter", label: "Cash Counter", icon: Wallet },
@@ -50,7 +51,7 @@ export type TabGroupDef = {
 export const TAB_GROUPS: TabGroupDef[] = [
   { id: "fares", label: "Fares & Tickets", icon: Plane, tabIds: ["fares", "tickets", "self-groups", "ok-to-board"] },
   { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "ledger", "queries", "visa-links"] },
-  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["airline-accounts", "accounts-book"] },
+  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["airline-accounts", "accounts-book", "airline-contacts"] },
   { id: "bank-details", label: "Bank Details", icon: Landmark, tabIds: ["bank-details"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },

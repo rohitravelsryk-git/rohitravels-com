@@ -9,7 +9,7 @@ import { airlineIataCode, airlineLogoUrl, airlineSheetLogoUrl } from "@/lib/airl
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
 const SETTING_KEY = "airline_accounts_sheet_id";
 const TITLE = "Airline Accounts";
-const TABS = ["Airline Balance", "_DATA"] as const;
+const TABS = ["Airline Balance", "Airline Contact Details", "_DATA"] as const;
 
 function headers() {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -719,4 +719,181 @@ export async function syncAirlineAccountsSheet(revision: number) {
   }
 
   return { spreadsheetId: id, url: airlineAccountsSheetUrl(id), syncedAt };
+}
+
+
+export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Promise<{ status: "success" | "failed"; sheet: string; error?: string }> {
+  try {
+    let contacts = customContacts;
+    if (!contacts || !contacts.length) {
+      try {
+        const db = await getAdmin();
+        const { data, error } = await db
+          .from("airline_contacts")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("airline_name", { ascending: true });
+        if (!error && data && data.length) {
+          contacts = data;
+        }
+      } catch (dbErr) {
+        console.warn("[airline-accounts-sheet] Could not read airline_contacts from DB, using fallback:", dbErr);
+      }
+    }
+
+    if (!contacts || !contacts.length) {
+      const { DEFAULT_AIRLINE_CONTACTS } = await import("@/lib/airline-contacts.functions");
+      contacts = DEFAULT_AIRLINE_CONTACTS;
+    }
+
+    const id = await ensureSpreadsheet();
+    const tabName = "Airline Contact Details";
+
+    // Ensure tab exists and get its sheetId
+    const meta = await gw(`/spreadsheets/${id}?fields=sheets.properties`);
+    const sheetMap = new Map<string, number>(
+      (meta.sheets ?? []).map((x: any) => [x.properties.title as string, x.properties.sheetId as number])
+    );
+
+    let sheetId = sheetMap.get(tabName);
+    if (sheetId === undefined) {
+      const addRes = await gw(`/spreadsheets/${id}:batchUpdate`, {
+        method: "POST",
+        body: JSON.stringify({
+          requests: [
+            {
+              addSheet: {
+                properties: {
+                  title: tabName,
+                  index: 1,
+                  tabColorStyle: { rgbColor: { red: 217 / 255, green: 119 / 255, blue: 87 / 255 } },
+                  gridProperties: { rowCount: Math.max(100, contacts.length + 10), columnCount: 4, frozenRowCount: 2 },
+                },
+              },
+            },
+          ],
+        }),
+      });
+      sheetId = addRes.replies[0].addSheet.properties.sheetId;
+    }
+
+    // Build values
+    const values: unknown[][] = [
+      ["✈  ROHI INTERNATIONAL TRAVELS  |  AIRLINE CONTACT DETAILS", "", "", ""],
+      ["AIRLINE NAME", "AIRLINE CONTACT NUMBER", "SALES SUPPORT", "ADDRESS"],
+    ];
+
+    for (const c of contacts) {
+      values.push([
+        String(c.airline_name || "").trim(),
+        String(c.contact_number || "").trim(),
+        String(c.sales_support || "").trim(),
+        String(c.address || "").trim(),
+      ]);
+    }
+
+    // Clear and write
+    await clearSheet(id, quoteSheet(tabName));
+    await writeRange(id, `${quoteSheet(tabName)}!A1:D${values.length}`, values);
+
+    // Apply Rohi Warm Clay formatting
+    const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 };
+    const BRAND_DARK = { red: 20 / 255, green: 20 / 255, blue: 19 / 255 };
+    const BRAND_CREAM = { red: 250 / 255, green: 249 / 255, blue: 245 / 255 };
+    const BRAND_WHITE = { red: 1.0, green: 1.0, blue: 1.0 };
+    const BRAND_BORDER = { red: 231 / 255, green: 229 / 255, blue: 228 / 255 };
+    const BRAND_TEXT = { red: 28 / 255, green: 25 / 255, blue: 23 / 255 };
+
+    const formatRequests: any[] = [
+      {
+        mergeCells: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+          mergeType: "MERGE_ALL",
+        },
+      },
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: BRAND_ACCENT,
+              horizontalAlignment: "CENTER",
+              verticalAlignment: "MIDDLE",
+              textFormat: { bold: true, fontSize: 12, foregroundColor: BRAND_WHITE },
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+        },
+      },
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: BRAND_DARK,
+              horizontalAlignment: "CENTER",
+              verticalAlignment: "MIDDLE",
+              textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND_CREAM },
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+        },
+      },
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 2, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 4 },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: BRAND_CREAM,
+              verticalAlignment: "MIDDLE",
+              wrapStrategy: "WRAP",
+              textFormat: { fontSize: 10, foregroundColor: BRAND_TEXT },
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment,wrapStrategy)",
+        },
+      },
+      {
+        repeatCell: {
+          range: { sheetId, startRowIndex: 2, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 1 },
+          cell: {
+            userEnteredFormat: {
+              horizontalAlignment: "CENTER",
+              textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND_TEXT },
+            },
+          },
+          fields: "userEnteredFormat(horizontalAlignment,textFormat)",
+        },
+      },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 160 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 260 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 }, properties: { pixelSize: 280 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 }, properties: { pixelSize: 380 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 40 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 34 }, fields: "pixelSize" } },
+      {
+        updateBorders: {
+          range: { sheetId, startRowIndex: 0, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 4 },
+          top: { style: "SOLID", color: BRAND_BORDER },
+          bottom: { style: "SOLID", color: BRAND_BORDER },
+          left: { style: "SOLID", color: BRAND_BORDER },
+          right: { style: "SOLID", color: BRAND_BORDER },
+          innerHorizontal: { style: "SOLID", color: BRAND_BORDER },
+          innerVertical: { style: "SOLID", color: BRAND_BORDER },
+        },
+      },
+    ];
+
+    await gw(`/spreadsheets/${id}:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({ requests: formatRequests }),
+    });
+
+    return { status: "success", sheet: tabName };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[airline-accounts-sheet] syncAirlineContactDetailsSheet error:", err);
+    return { status: "failed", sheet: "Airline Contact Details", error: msg };
+  }
 }

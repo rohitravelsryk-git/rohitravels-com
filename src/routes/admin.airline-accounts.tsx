@@ -1,9 +1,11 @@
+import { AirlineContactDetailsTable } from "@/components/airline-contacts-table";
+import { syncAirlineContactsLive } from "@/lib/airline-contacts.functions";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Home,
+  Home, Phone,
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
   AlertCircle, FileSpreadsheet, LoaderCircle, Save, FileText, Table, ChevronDown, LogOut,
@@ -390,7 +392,39 @@ function AirlineLedgerApp() {
   const [airlines, setAirlines] = useState<any[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Record<string, any[]>>({});
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const param = new URLSearchParams(window.location.search).get("tab");
+      if (param) return param;
+    }
+    return "dashboard";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const handlePopState = () => {
+        const param = new URLSearchParams(window.location.search).get("tab");
+        if (param && param !== activeTab) {
+          setActiveTab(param);
+        }
+      };
+      window.addEventListener("popstate", handlePopState);
+      return () => window.removeEventListener("popstate", handlePopState);
+    }
+  }, [activeTab]);
+
+  const handleSelectTab = (tab: string) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (tab === "dashboard") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", tab);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
   const [loaded, setLoaded] = useState(false);
   const [modal, setModal] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
@@ -1003,7 +1037,7 @@ function AirlineLedgerApp() {
             airlines={airlines}
             transactions={transactions}
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleSelectTab}
             onAddAirline={() => setAddAirlineOpen(true)}
             onReorder={reorderAirlines}
           />
@@ -1028,6 +1062,14 @@ function AirlineLedgerApp() {
                 onUpdateRoe={updateAirlineRoe}
                 onRemoveAirline={removeAirline}
                 saving={saving}
+              />
+            ) : activeTab === "contacts" ? (
+              <AirlineContactDetailsTable
+                sheetSyncStatus={sheetSyncStatus === "synced" ? "success" : sheetSyncStatus === "error" ? "error" : "idle"}
+                onTriggerSheetSync={async () => {
+                  const res = await syncAirlineContactsLive();
+                  if (res.status === "failed") throw new Error(res.error || "Sync failed");
+                }}
               />
             ) : (
               <LedgerTable
@@ -1112,6 +1154,7 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
   return (
     <nav style={styles.tabStrip} aria-label="Airline navigation">
       <TabStub active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} code={<LayoutDashboard size={15} />} label="Dashboard" />
+      <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={15} />} label="Airline Contact Details" />
       <div style={styles.tabDivider} />
       {airlines.map((a: any) => {
         const rows = transactions?.[a.id] ?? [];
