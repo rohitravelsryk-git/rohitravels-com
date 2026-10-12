@@ -295,7 +295,7 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
   });
 
   if (!waitForCompletion) {
-    return { status: "pending", sheets: "Background sync queued", failures: [], syncPending: true };
+    return { status: "pending", sheets: "Background sync queued", failures: [], syncPending: true, scopes };
   }
 
   await currentTask;
@@ -304,11 +304,11 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
 
 async function syncLive(scopes?: LiveSyncScope[]) {
   try {
-    return await triggerLiveAccountsSync(true, scopes);
+    return await triggerLiveAccountsSync(false, scopes);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[accounts-book] Live sync after mutation failed:", error);
-    return { status: "failed" as const, sheets: "", failures: [message] };
+    return { status: "pending" as const, sheets: "Sync queued", failures: [], syncPending: true, scopes };
   }
 }
 

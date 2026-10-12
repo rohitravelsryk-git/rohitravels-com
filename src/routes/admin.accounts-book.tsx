@@ -840,11 +840,11 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .pill[draggable="true"]{cursor:grab;}
 .rohi-ab .pill.dragging{opacity:.4;}
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
-.rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
-.rohi-ab .modal{background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
+.rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.5);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
+.rohi-ab .modal{position:relative;z-index:1;background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
 .rohi-ab .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
 .rohi-ab .modal-head h3{margin:0;}
-.rohi-ab .modal-close{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);background:var(--card);}
+.rohi-ab .modal-close{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);background:var(--card);position:relative;z-index:2;flex-shrink:0;}
 .rohi-ab .modal-close:hover{background:var(--muted);color:var(--ink);}
 @keyframes rohiAbFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes rohiAbScaleIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
@@ -916,7 +916,7 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
 .rohi-ab .settings-note{font-size:12px;color:var(--muted-foreground);}
-.rohi-ab .protected-delete-backdrop{position:fixed;inset:0;z-index:100;background:rgba(20,20,19,.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.rohi-ab .protected-delete-backdrop{position:fixed;inset:0;z-index:1300;background:rgba(20,20,19,.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
 .rohi-ab .protected-delete-dialog{width:min(420px,100%);background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);}
 .rohi-ab .protected-delete-dialog h3{margin:0 0 7px;font-size:18px;}
 .rohi-ab .protected-delete-dialog p{margin:0 0 14px;color:var(--muted-foreground);font-size:13px;line-height:1.5;}
@@ -2677,7 +2677,7 @@ function Modals(props: {
   const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void) => (
     <div className="overlay" onClick={(event) => event.target === event.currentTarget && close()}>
       <div className="modal">
-        <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={close} aria-label="Close"><X size={18} /></button></div>
+        <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={(e) => { e.stopPropagation(); close(); }} aria-label="Close"><X size={18} /></button></div>
         {sub && <div className="modal-sub">{sub}</div>}
         {body}
         <div className="modal-actions">

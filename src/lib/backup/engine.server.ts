@@ -780,11 +780,7 @@ export async function reconcileBanksWalletsToSheets() {
         if (isMoneyIn) runningBalance += amt;
         else runningBalance -= amt;
 
-        const descParts: string[] = [];
-        if (t.category) descParts.push("[" + t.category + "]");
-        if (t.description) descParts.push(String(t.description));
-        if (t.party) descParts.push("(" + t.party + ")");
-        const formattedDesc = descParts.join(" ") || "Transaction";
+        const formattedDesc = String(t.description || t.party || (isMoneyIn ? "Deposit" : "Payment"));
 
         txRows.push([
           String(formatSheetDate(t.entry_date) || ""),
