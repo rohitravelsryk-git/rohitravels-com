@@ -1,4 +1,4 @@
-import { parseSaleDetails, cleanSaleDescriptionDisplay } from "@/lib/accounts-book-sales";
+import { parseSaleDetails, cleanSaleDescriptionDisplay, formatSaleDisplaySummary } from "@/lib/accounts-book-sales";
 // Backup / disaster-recovery sync engine.
 // SERVER ONLY — never import from browser code.
 import { inCreationOrder } from "@/lib/accounts-book-order";
@@ -781,7 +781,10 @@ export async function reconcileBanksWalletsToSheets() {
         if (isMoneyIn) runningBalance += amt;
         else runningBalance -= amt;
 
-        const formattedDesc = String(t.description || t.party || (isMoneyIn ? "Deposit" : "Payment"));
+        const cleanDesc = t.entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
+          ? formatSaleDisplaySummary(t.description, t.party, t.category).title
+          : cleanSaleDescriptionDisplay(t.description || "");
+        const formattedDesc = cleanDesc || String(t.party || (isMoneyIn ? "Deposit" : "Payment"));
 
         txRows.push([
           String(formatSheetDate(t.entry_date) || ""),
@@ -1316,11 +1319,14 @@ export async function reconcileDailyCashBookToSheets() {
       if (isCashIn) runningBalance += amt;
       else runningBalance -= amt;
 
+      const cleanDesc = t.entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
+        ? formatSaleDisplaySummary(t.description, t.party, t.category).title
+        : cleanSaleDescriptionDisplay(t.description || "");
       const accName = accountMap.get(String(t.account_id)) || "Account";
       dataRows.push([
         sr++,
         String(formatSheetDate(t.entry_date) || ""),
-        String(t.description || ""),
+        cleanDesc,
         accName,
         normalizeSalesCategory(String(t.category || "General")),
         isCashIn ? amt : "",
@@ -1477,10 +1483,11 @@ export async function reconcileExpensesToSheets() {
         const amt = Number(t.amount || 0);
         runningTotal += amt;
         const accName = accountMap.get(String(t.account_id)) || "Account";
+        const cleanDesc = cleanSaleDescriptionDisplay(t.description || "Expense");
         dataRows.push([
           sr++,
           String(formatSheetDate(t.entry_date) || ""),
-          String(t.description || "Expense"),
+          cleanDesc,
           accName,
           String(t.category || part.title),
           amt,

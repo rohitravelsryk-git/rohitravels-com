@@ -1,4 +1,4 @@
-import { parseSaleDetails, formatSaleDescription, cleanSaleDescriptionDisplay } from "@/lib/accounts-book-sales";
+import { parseSaleDetails, formatSaleDescription, cleanSaleDescriptionDisplay, formatSaleDisplaySummary, normalizeSalesCategory } from "@/lib/accounts-book-sales";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -1826,7 +1826,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       <th>Date</th>
                       <th>Description</th>
                       <th>Category</th>
-                      <th>Account / Paid Via</th>
+                      <th>Received / Paid Via</th>
                       <th className="num">Amount (PKR)</th>
                       <th>Ledger Linkage</th>
                       <th className="actions-cell">Actions</th>
@@ -1839,13 +1839,18 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       const isIn = row.direction === "in";
                       const catName = row.category || (row.entry_type === "expense" ? "Office Expenses" : "General");
                       const isOfficeExp = catName.toLowerCase().includes("office");
+                      const isSale = row.entry_type === "sale" || Boolean(row.description?.includes("[[SALE_META:"));
+                      const saleSummary = isSale ? formatSaleDisplaySummary(row.description, row.party, row.category) : null;
+                      const displayDesc = isSale ? saleSummary!.title : (cleanSaleDescriptionDisplay(row.description) || "—");
+                      const tooltipDesc = isSale ? saleSummary!.tooltip : (row.description || "");
+                      const linkCat = row.entry_type === "expense" ? (isOfficeExp ? "Office Expenses" : "Home Expenses") : normalizeSalesCategory(row.category || "Sales");
 
                       return (
                         <tr key={row.id}>
                           <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{formatDateShort(row.entry_date)}</td>
-                          <td className="description-cell" title={row.description}>
-                            <div style={{ fontWeight: 600, color: "var(--foreground)" }}>{row.description || "—"}</div>
-                            {row.party && <div style={{ fontSize: "0.74rem", color: "var(--muted-foreground)" }}>Party: {row.party}</div>}
+                          <td className="description-cell" title={tooltipDesc}>
+                            <div style={{ fontWeight: 600, color: "var(--foreground)" }}>{displayDesc}</div>
+                            {!isSale && row.party && <div style={{ fontSize: "0.74rem", color: "var(--muted-foreground)" }}>Party: {row.party}</div>}
                           </td>
                           <td>
                             <span
@@ -1875,17 +1880,26 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                             {isIn ? `+ Rs ${fmt(row.amount)}` : `- Rs ${fmt(row.amount)}`}
                           </td>
                           <td>
-                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, fontSize: "0.72rem" }}>
-                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }} title="Consolidated Day Book entry">Daily Journal</span>
-                              <span>•</span>
-                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(217,119,87,0.12)", color: "#D97757", fontWeight: 600 }}>
-                                {row.entry_type === "expense" ? (isOfficeExp ? "Office Expenses" : "Home Expenses") : (row.category || "Sales")}
-                              </span>
-                              <span>•</span>
-                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }} title={`Account holding funds: ${acc}`}>
-                                Account: {acc}
-                              </span>
-                            </div>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: "0.74rem",
+                                fontWeight: 600,
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                background: "rgba(217,119,87,0.09)",
+                                border: "1px solid rgba(217,119,87,0.22)",
+                                color: "#141413",
+                                whiteSpace: "nowrap"
+                              }}
+                              title={`Entry posted to: ${linkCat} & ${acc}`}
+                            >
+                              <span style={{ color: "#D97757" }}>{linkCat}</span>
+                              <span style={{ color: "var(--muted-foreground)", fontWeight: 400 }}>•</span>
+                              <span>{acc}</span>
+                            </span>
                           </td>
                           <td className="actions-cell">
                             <div className="dashboard-actions">
@@ -2758,16 +2772,26 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
                 <td className="num">—</td>
                 <td className="num"><strong>{fmt(previousBalance)}</strong></td>
               </tr>
-              {visibleRows.map((t, i) => (
-                <tr key={t.id}>
-                  <td>{i + 1}</td>
-                  <td>{accountMap.get(t.account_id)?.name ?? "—"}</td>
-                  <td>{t.description}</td>
-                  <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
-                  <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
-                  <td className="num"><strong>{fmt(t.runningBalance)}</strong></td>
-                </tr>
-              ))}
+              {visibleRows.map((t, i) => {
+                const isSale = t.entry_type === "sale" || Boolean(t.description?.includes("[[SALE_META:"));
+                const descTitle = isSale
+                  ? formatSaleDisplaySummary(t.description, t.party, t.category).title
+                  : (cleanSaleDescriptionDisplay(t.description) || "—");
+                const descTip = isSale
+                  ? formatSaleDisplaySummary(t.description, t.party, t.category).tooltip
+                  : (t.description || "");
+
+                return (
+                  <tr key={t.id}>
+                    <td>{i + 1}</td>
+                    <td>{accountMap.get(t.account_id)?.name ?? "—"}</td>
+                    <td title={descTip}>{descTitle}</td>
+                    <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
+                    <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
+                    <td className="num"><strong>{fmt(t.runningBalance)}</strong></td>
+                  </tr>
+                );
+              })}
               {visibleRows.length === 0 && (
                 <tr className="empty-row">
                   <td colSpan={6}>{search ? "No matching entries found." : "No transactions for this day."}</td>

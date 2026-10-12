@@ -110,3 +110,57 @@ export function cleanSaleDescriptionDisplay(description?: string | null): string
   }
   return raw;
 }
+
+
+export function normalizeSalesCategory(raw?: string | null): string {
+  const trimmed = String(raw ?? "").trim();
+  if (/^insurance$/i.test(trimmed)) return "Travel Insurance";
+  if (/^protect$/i.test(trimmed)) return "Protector";
+  if (/kv\s*vi?st?\s*visit/i.test(trimmed) || /kv\s*visit\s*visa/i.test(trimmed)) {
+    return "Visit Visa";
+  }
+  return trimmed || "General";
+}
+
+/**
+ * Formats a clean, executive display for a sale transaction description.
+ * Replaces verbose raw metadata with mandatory information: "[Category] - [Pax]" (e.g. "Travel Insurance - zaki").
+ * Full metadata is provided in tooltip for hover inspection.
+ */
+export function formatSaleDisplaySummary(
+  description?: string | null,
+  party?: string | null,
+  category?: string | null
+): { title: string; tooltip: string } {
+  const parsed = parseSaleDetails(description, party);
+  const cleanCat = normalizeSalesCategory(category);
+  const pax = parsed.pax_name?.trim() || "";
+
+  let displayTitle = "";
+  if (pax) {
+    if (cleanCat && !pax.toLowerCase().startsWith(cleanCat.toLowerCase())) {
+      displayTitle = `${cleanCat} - ${pax}`;
+    } else {
+      displayTitle = pax;
+    }
+  } else {
+    const rawClean = cleanSaleDescriptionDisplay(description);
+    if (rawClean) {
+      displayTitle = rawClean;
+    } else if (cleanCat) {
+      displayTitle = cleanCat;
+    } else {
+      displayTitle = "Sale Booking";
+    }
+  }
+
+  const metaParts: string[] = [];
+  if (pax) metaParts.push(`Pax: ${pax}`);
+  if (parsed.country?.trim()) metaParts.push(`Country: ${parsed.country.trim()}`);
+  if (parsed.agent?.trim()) metaParts.push(`Agent: ${parsed.agent.trim()}`);
+  if (parsed.contact_no?.trim()) metaParts.push(`Tel: ${parsed.contact_no.trim()}`);
+  if (parsed.vendor?.trim()) metaParts.push(`Vendor: ${parsed.vendor.trim()}`);
+
+  const tooltip = metaParts.length > 0 ? metaParts.join(" • ") : displayTitle;
+  return { title: displayTitle, tooltip };
+}
