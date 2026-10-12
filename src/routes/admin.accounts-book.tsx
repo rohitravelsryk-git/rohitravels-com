@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { inCreationOrder } from "@/lib/accounts-book-order";
-import { Check, ChevronDown, Copy, Edit, ExternalLink, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Edit, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -1572,15 +1572,12 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           )}
 
           {tab === "cashbook" && (
-            <>
-            <div className="page-head"><div><h2>Cash Book</h2></div><a className="btn ghost small" href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit" target="_blank" rel="noreferrer"><ExternalLink size={13} /> Daily Cash Book Sheet</a></div>
             <CashBookReplacement
               rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
               onAdd={() => setModal("quickadd")}
             />
-            </>
           )}
 
           {tab === "cashcount" && (
@@ -2264,17 +2261,6 @@ function CashBookReplacement({ rows, opening, accounts, onAdd }: { rows: Txn[]; 
         </div>
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
-          <a
-            className="btn ghost"
-            href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            title="Open live Daily Cash Book Google Spreadsheet"
-          >
-            <ExternalLink size={14} />
-            <span>Daily Cash Book</span>
-          </a>
           <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
           <button type="button" className="btn" onClick={onAdd}>NEW TRANSACTION</button>
         </div>
