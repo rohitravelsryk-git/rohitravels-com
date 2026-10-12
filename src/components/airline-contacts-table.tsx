@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import {
   type AirlineContact,
-  DEFAULT_AIRLINE_CONTACTS,
+  
   listAirlineContacts,
   createAirlineContact,
   updateAirlineContact,
@@ -23,7 +23,7 @@ export function AirlineContactDetailsTable({
   sheetSyncStatus: parentSyncStatus,
   onTriggerSheetSync,
 }: AirlineContactsTableProps) {
-  const [contacts, setContacts] = useState<AirlineContact[]>(DEFAULT_AIRLINE_CONTACTS);
+  const [contacts, setContacts] = useState<AirlineContact[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
   const [syncing, setSyncing] = useState<boolean>(false);

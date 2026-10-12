@@ -1,5 +1,5 @@
 -- Migration: 20261012180000_create_airline_contacts_table.sql
--- Description: Creates public.airline_contacts table for airline support & contact directory with live sync.
+-- Description: Creates public.airline_contacts table for confidential airline support & contact directory with strict admin-only RLS and live sync.
 
 CREATE TABLE IF NOT EXISTS public.airline_contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -16,22 +16,35 @@ CREATE TABLE IF NOT EXISTS public.airline_contacts (
 CREATE INDEX IF NOT EXISTS idx_airline_contacts_sort ON public.airline_contacts (sort_order, airline_name);
 CREATE INDEX IF NOT EXISTS idx_airline_contacts_active ON public.airline_contacts (is_active);
 
+-- Enable strict Row Level Security
 ALTER TABLE public.airline_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.airline_contacts FORCE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE tablename = 'airline_contacts' AND policyname = 'Public read airline_contacts'
-    ) THEN
-        CREATE POLICY "Public read airline_contacts" ON public.airline_contacts FOR SELECT USING (true);
-    END IF;
+-- Revoke all permissions from public and anon
+REVOKE ALL ON public.airline_contacts FROM PUBLIC;
+REVOKE ALL ON public.airline_contacts FROM anon;
 
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies WHERE tablename = 'airline_contacts' AND policyname = 'Service role manage airline_contacts'
-    ) THEN
-        CREATE POLICY "Service role manage airline_contacts" ON public.airline_contacts FOR ALL TO service_role USING (true) WITH CHECK (true);
-    END IF;
-END $$;
+-- Grant permissions strictly to authenticated users and service_role
+GRANT ALL ON public.airline_contacts TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.airline_contacts TO authenticated;
+
+-- Drop legacy or insecure policies if they exist
+DROP POLICY IF EXISTS "Public read airline_contacts" ON public.airline_contacts;
+DROP POLICY IF EXISTS "airline_contacts_public_read" ON public.airline_contacts;
+DROP POLICY IF EXISTS "airline_contacts_admin_all" ON public.airline_contacts;
+DROP POLICY IF EXISTS "Service role manage airline_contacts" ON public.airline_contacts;
+
+-- Admin-only RLS policy: strictly only users with admin role can view/modify
+CREATE POLICY "airline_contacts_admin_all" ON public.airline_contacts
+FOR ALL TO authenticated
+USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+-- Service role bypass for backend server functions & sync
+CREATE POLICY "Service role manage airline_contacts" ON public.airline_contacts
+FOR ALL TO service_role
+USING (true)
+WITH CHECK (true);
 
 INSERT INTO public.airline_contacts (airline_name, contact_number, sales_support, address, sort_order)
 VALUES
