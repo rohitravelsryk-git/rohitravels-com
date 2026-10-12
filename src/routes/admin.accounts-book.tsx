@@ -1785,7 +1785,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               <div className="cards">
                 <Card label="Current Total Balance" value={cashBalance + bankTotal} tone="pos" foot="Cash in Hand + All Banks & Wallets" />
-                <Card label="Cash Book" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
+                <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash in hand balance" />
                 <Card label="Total in Banks & Wallets" value={bankTotal} tone="pos" foot={`${banks.length} accounts`} />
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
