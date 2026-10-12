@@ -695,6 +695,89 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
+export const salesBatchInput = z.object({
+  category: z.string().trim().min(1),
+  account_id: z.string().uuid(),
+  cost_account_id: z.string().uuid().optional().nullable(),
+  entries: z.array(
+    z.object({
+      entry_date: z.string().min(8),
+      country: z.string().optional().default(""),
+      agent: z.string().optional().default(""),
+      pax_name: z.string().optional().default(""),
+      contact_no: z.string().optional().default(""),
+      vendor: z.string().optional().default(""),
+      sale_amount: z.number().positive(),
+      purchase_amount: z.number().nonnegative().default(0),
+    })
+  ).min(1),
+});
+
+export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
+  .validator((data: unknown) => salesBatchInput.parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { formatSaleDescription } = await import("@/lib/accounts-book-sales");
+
+    const allRows: TransactionInsert[] = [];
+    for (const entry of data.entries) {
+      const source_id = crypto.randomUUID();
+      const party = (entry.agent || entry.pax_name || "").trim() || undefined;
+      const description = formatSaleDescription({
+        country: entry.country,
+        agent: entry.agent,
+        pax_name: entry.pax_name,
+        contact_no: entry.contact_no,
+        vendor: entry.vendor,
+      });
+
+      // Sale receipt leg (In to bank/cash account)
+      allRows.push({
+        account_id: data.account_id,
+        entry_date: entry.entry_date,
+        entry_type: "sale",
+        category: data.category,
+        party,
+        description,
+        amount: entry.sale_amount,
+        direct_cost: entry.purchase_amount,
+        direction: "in",
+        source_type: "sale",
+        source_id,
+        source_key: `sale:${source_id}:${data.account_id}:in`,
+      });
+
+      // Optional cost leg (Out from cost account)
+      if (data.cost_account_id && entry.purchase_amount > 0) {
+        allRows.push({
+          account_id: data.cost_account_id,
+          entry_date: entry.entry_date,
+          entry_type: "sale",
+          category: data.category,
+          party: (entry.vendor || entry.agent || "").trim() || undefined,
+          description: `${data.category} cost — ${entry.pax_name || entry.vendor || "Supplier"}`,
+          amount: entry.purchase_amount,
+          direct_cost: 0,
+          direction: "out",
+          source_type: "sale",
+          source_id,
+          source_key: `sale:${source_id}:${data.cost_account_id}:out`,
+        });
+      }
+    }
+
+    const { data: inserted, error } = await supabaseAdmin
+      .from("accounts_book_transactions")
+      .insert(allRows as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+      .select();
+
+    if (error) throw new Error(error.message);
+
+    const sheetSync = await syncLive(["banks", "cash", "sales"]);
+    return { count: data.entries.length, rows: inserted ?? [], sheetSync };
+  });
+
 export const createAccountsBookTransfer = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({
   entry_date: z.string(), category: z.string().trim().min(1), description: z.string().trim().min(1), from_account_id: z.string().uuid(), to_account_id: z.string().uuid(), amount: z.number().positive(), source_id: z.string().uuid(),
 }).parse(data)).handler(async ({ data }) => {

@@ -1,16 +1,18 @@
+import { parseSaleDetails, formatSaleDescription, cleanSaleDescriptionDisplay } from "@/lib/accounts-book-sales";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { inCreationOrder } from "@/lib/accounts-book-order";
-import { Check, ChevronDown, Copy, Edit, GripVertical, Home, LogOut, Menu, Printer, RefreshCw, RotateCcw, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, Copy, Edit, GripVertical, Home, LogOut, Menu, Plus, Printer, RefreshCw, RotateCcw, Trash2, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
   createAccountsBookGroupTransaction,
+  createAccountsBookSalesBatch,
   createAccountsBookLinkedEntry,
   createAccountsBookService,
   createAccountsBookTransaction,
@@ -841,8 +843,24 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .pill.dragging{opacity:.4;}
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.5);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
-.rohi-ab .modal{position:relative;z-index:1;background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
-.rohi-ab .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
+.rohi-ab .modal{position:relative;z-index:1;background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease-out);}
+.rohi-ab .modal.modal-wide, .modal.modal-wide{max-width:1160px;width:95vw;max-height:92vh;}
+.rohi-ab .sales-b2b-section{margin-top:12px;margin-bottom:14px;}
+.rohi-ab .sales-b2b-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.rohi-ab .sales-b2b-header h4{margin:0;font-size:14px;font-weight:700;color:var(--foreground);}
+.rohi-ab .sales-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;background:var(--card);margin-bottom:12px;}
+.rohi-ab .sales-data-table{width:100%;min-width:1000px;border-collapse:collapse;font-size:12px;}
+.rohi-ab .sales-data-table th{background:var(--muted);color:var(--muted-foreground);font-weight:700;padding:8px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:11.5px;}
+.rohi-ab .sales-data-table td{padding:6px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.rohi-ab .sales-data-table td input{width:100%;padding:6px 8px;font-size:12px;border:1px solid var(--input);border-radius:6px;background:var(--background);color:var(--foreground);box-sizing:border-box;}
+.rohi-ab .sales-data-table td input:focus{outline:none;border-color:var(--ring);}
+.rohi-ab .sales-data-table td.sr-col{font-weight:700;color:var(--muted-foreground);text-align:center;}
+.rohi-ab .sales-data-table td.profit-cell{font-weight:700;text-align:right;padding-right:10px;white-space:nowrap;}
+.rohi-ab .sales-data-table input.num{text-align:right;}
+.rohi-ab .sales-summary-bar{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;padding:12px 16px;background:var(--muted);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
+.rohi-ab .sales-summary-bar .summary-label{font-size:11.5px;color:var(--muted-foreground);display:block;margin-bottom:2px;}
+.rohi-ab .sales-summary-bar .summary-val{font-size:15px;font-weight:700;color:var(--foreground);display:block;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
 .rohi-ab .modal-head h3{margin:0;}
 .rohi-ab .modal-close{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);background:var(--card);position:relative;z-index:2;flex-shrink:0;}
 .rohi-ab .modal-close:hover{background:var(--muted);color:var(--ink);}
@@ -975,6 +993,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
   const transferFn = useServerFn(createAccountsBookTransfer);
   const groupFn = useServerFn(createAccountsBookGroupTransaction);
+  const salesBatchFn = useServerFn(createAccountsBookSalesBatch);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
   const reconcileBanksWalletsFn = useServerFn(reconcileBanksWalletsToSheets);
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
@@ -1292,6 +1311,73 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
       };
     }
   );
+  const addSalesBatch = mutate(
+    (payload: Record<string, unknown>) => salesBatchFn({ data: payload as never }),
+    "Sales entries posted to ledgers and Google Sheets",
+    (payload: any, old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      const newRows: Txn[] = [];
+      const entries = Array.isArray(payload.entries) ? payload.entries : [];
+      const category = String(payload.category || "Sales");
+      const accountId = String(payload.account_id);
+      const costAccountId = payload.cost_account_id ? String(payload.cost_account_id) : null;
+
+      for (let i = 0; i < entries.length; i++) {
+        const e = entries[i];
+        const sourceId = `opt-batch-${Date.now()}-${i}`;
+        const saleAmount = Number(e.sale_amount) || 0;
+        const directCost = Number(e.purchase_amount) || 0;
+        const party = (e.agent || e.pax_name || "").trim() || null;
+        const description = formatSaleDescription({
+          country: e.country,
+          agent: e.agent,
+          pax_name: e.pax_name,
+          contact_no: e.contact_no,
+          vendor: e.vendor,
+        });
+
+        newRows.push({
+          id: `${sourceId}-in`,
+          account_id: accountId,
+          entry_date: String(e.entry_date || todayISO()),
+          entry_type: "sale",
+          category,
+          party,
+          description,
+          amount: saleAmount,
+          direct_cost: directCost,
+          direction: "in",
+          source_type: "sale",
+          source_id: sourceId,
+          created_at: new Date().toISOString(),
+        });
+
+        if (costAccountId && directCost > 0) {
+          newRows.push({
+            id: `${sourceId}-out`,
+            account_id: costAccountId,
+            entry_date: String(e.entry_date || todayISO()),
+            entry_type: "sale",
+            category,
+            party: (e.vendor || e.agent || "").trim() || null,
+            description: `${category} cost — ${e.pax_name || e.vendor || "Supplier"}`,
+            amount: directCost,
+            direct_cost: 0,
+            direction: "out",
+            source_type: "sale",
+            source_id: sourceId,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      return {
+        ...old,
+        transactions: [...newRows, ...old.transactions],
+      };
+    }
+  );
+
   const addGroup = mutate(
     (payload: Record<string, unknown>) => groupFn({ data: payload as never }),
     "Transaction posted to every ledger",
@@ -1476,7 +1562,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
 
-  const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending || addGroup.isPending;
+  const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending || addGroup.isPending || addSalesBatch.isPending;
 
   if (isLoading) return <div className="p-10 text-center">Loading Accounts Book…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
@@ -1877,27 +1963,52 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       <Card label="Entries" value={rows.length} raw />
                     </div>
                     <Panel title={activeSalesCat ?? "Sales"}>
-                      <table>
-                        <thead><tr><th>Date</th><th>Party</th><th>Description</th><th className="num">Sale</th><th className="num">Cost</th><th className="num">Profit</th><th>Received</th><th /></tr></thead>
-                        <tbody>
-                          {rows.map((row) => {
-                            const profit = Number(row.amount) - Number(row.direct_cost);
-                            return (
-                              <tr key={row.id}>
-                                <td>{formatDateShort(row.entry_date)}</td>
-                                <td>{row.party ?? ""}</td>
-                                <td>{row.description}</td>
-                                <td className="num">{fmt(row.amount)}</td>
-                                <td className="num">{fmt(row.direct_cost)}</td>
-                                <td className="num" style={{ fontWeight: 600, color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(profit)}</td>
-                                <td>{accountName(row.account_id)}</td>
-                                <td><button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button><button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button></td>
-                              </tr>
-                            );
-                          })}
-                          {rows.length === 0 && <tr className="empty-row"><td colSpan={8}>No entries yet for {activeSalesCat ?? "this category"}.</td></tr>}
-                        </tbody>
-                      </table>
+                      <div className="table-responsive" style={{ overflowX: "auto" }}>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th style={{ width: 44, textAlign: "center" }}>SR #</th>
+                              <th>Date</th>
+                              <th>Country</th>
+                              <th>Agent</th>
+                              <th>Pax Name</th>
+                              <th>Contact No.</th>
+                              <th>Vendor</th>
+                              <th className="num">Sale</th>
+                              <th className="num">Purchase</th>
+                              <th className="num">Profit</th>
+                              <th>Received</th>
+                              <th />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row, idx) => {
+                              const parsed = parseSaleDetails(row.description, row.party);
+                              const profit = Number(row.amount) - Number(row.direct_cost);
+                              return (
+                                <tr key={row.id}>
+                                  <td style={{ textAlign: "center", fontWeight: 700, color: "var(--ink-soft)" }}>{idx + 1}</td>
+                                  <td>{formatDateShort(row.entry_date)}</td>
+                                  <td>{parsed.country || "—"}</td>
+                                  <td>{parsed.agent || row.party || "—"}</td>
+                                  <td style={{ fontWeight: 600 }}>{parsed.pax_name || cleanSaleDescriptionDisplay(row.description) || "—"}</td>
+                                  <td>{parsed.contact_no || "—"}</td>
+                                  <td>{parsed.vendor || "—"}</td>
+                                  <td className="num">{fmt(row.amount)}</td>
+                                  <td className="num">{fmt(row.direct_cost)}</td>
+                                  <td className="num" style={{ fontWeight: 600, color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(profit)}</td>
+                                  <td>{accountName(row.account_id)}</td>
+                                  <td>
+                                    <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
+                                    <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {rows.length === 0 && <tr className="empty-row"><td colSpan={12}>No entries yet for {activeSalesCat ?? "this category"}.</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
                     </Panel>
                   </>
                 );
@@ -2174,6 +2285,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           onExtra={(payload) => addTxn.mutate(payload)}
           onTransfer={(payload) => addTransfer.mutate(payload, { onSuccess: () => setModal(null) })}
           onGroup={(payload) => addGroup.mutate(payload, { onSuccess: () => setModal(null) })}
+          onSalesBatch={(payload) => addSalesBatch.mutate(payload, { onSuccess: () => setModal(null) })}
           onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => setModal(null) })}
           onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
           editTxn={editingTxn}
@@ -2901,6 +3013,7 @@ function Modals(props: {
   onCategory: (name: string) => void;
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
+  onSalesBatch?: (payload: Record<string, unknown>) => void;
 }) {
   const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
   const [date, setDate] = useState(todayISO());
@@ -2936,6 +3049,84 @@ function Modals(props: {
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
 
+  // B2B Sales entry batch rows
+  interface SaleTableRow {
+    id: string;
+    date: string;
+    country: string;
+    agent: string;
+    pax_name: string;
+    contact_no: string;
+    vendor: string;
+    sale_amount: string;
+    purchase_amount: string;
+  }
+
+  const createEmptySaleRow = (initialDate?: string): SaleTableRow => ({
+    id: Math.random().toString(36).slice(2, 9),
+    date: initialDate || todayISO(),
+    country: "",
+    agent: "",
+    pax_name: "",
+    contact_no: "",
+    vendor: "",
+    sale_amount: "",
+    purchase_amount: "",
+  });
+
+  const [salesRows, setSalesRows] = useState<SaleTableRow[]>([createEmptySaleRow(todayISO())]);
+
+  const addSaleRow = () => {
+    setSalesRows((prev) => {
+      const last = prev[prev.length - 1];
+      return [
+        ...prev,
+        {
+          id: Math.random().toString(36).slice(2, 9),
+          date: last?.date || date || todayISO(),
+          country: last?.country || "",
+          agent: last?.agent || "",
+          pax_name: "",
+          contact_no: "",
+          vendor: last?.vendor || "",
+          sale_amount: "",
+          purchase_amount: "",
+        },
+      ];
+    });
+  };
+
+  const removeSaleRow = (id: string) => {
+    setSalesRows((prev) => {
+      if (prev.length <= 1) return [createEmptySaleRow(date)];
+      return prev.filter((r) => r.id !== id);
+    });
+  };
+
+  const updateSaleRow = (id: string, field: keyof SaleTableRow, val: string) => {
+    setSalesRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: val } : r)));
+  };
+
+  // Structured sale edit fields
+  const [editSaleCountry, setEditSaleCountry] = useState("");
+  const [editSaleAgent, setEditSaleAgent] = useState("");
+  const [editSalePax, setEditSalePax] = useState("");
+  const [editSaleContact, setEditSaleContact] = useState("");
+  const [editSaleVendor, setEditSaleVendor] = useState("");
+
+  const knownCountries = useMemo(() => [
+    "Saudi Arabia", "United Arab Emirates", "Qatar", "Oman", "Kuwait", "Bahrain",
+    "Turkey", "United Kingdom", "United States", "Malaysia", "Azerbaijan", "Thailand",
+    "Iran", "Iraq", "Egypt", "Uzbekistan", "China", "Pakistan"
+  ], []);
+
+  const knownVendors = useMemo(() => [
+    "PIA (Pakistan International Airlines)", "Saudia (Saudi Arabian Airlines)",
+    "Fly Jinnah", "Airblue", "Serene Air", "AirSial", "Emirates", "Flydubai",
+    "Qatar Airways", "Gulf Air", "Oman Air", "Jazeera Airways", "Flynas", "SalamAir",
+    "Turkish Airlines", "Etihad Airways", "GDS / Sabre", "Galileo", "Direct Supplier"
+  ], []);
+
   // The modal component is reused when switching actions. Reset the add-account
   // draft on entry so a previous account/category name can never carry over.
   useEffect(() => {
@@ -2954,6 +3145,14 @@ function Modals(props: {
     if (kind === "editTransaction" && editTxn) {
       setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
       setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
+      if (editTxn.entry_type === "sale") {
+        const parsed = parseSaleDetails(editTxn.description, editTxn.party);
+        setEditSaleCountry(parsed.country || "");
+        setEditSaleAgent(parsed.agent || editTxn.party || "");
+        setEditSalePax(parsed.pax_name || cleanSaleDescriptionDisplay(editTxn.description) || "");
+        setEditSaleContact(parsed.contact_no || "");
+        setEditSaleVendor(parsed.vendor || "");
+      }
     } else if (kind === "transferEntry" || (kind === "quickadd" && txType === "transfer")) {
       if (!desc || isAutoTransferDesc(desc)) {
         const tDesc = buildTransferDescription(from, to);
@@ -2964,9 +3163,9 @@ function Modals(props: {
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
-  const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void) => (
+  const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void, wide?: boolean) => (
     <div className="overlay" onClick={(event) => event.target === event.currentTarget && close()}>
-      <div className="modal">
+      <div className={`modal${wide ? " modal-wide" : ""}`}>
         <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={(e) => { e.stopPropagation(); close(); }} aria-label="Close"><X size={18} /></button></div>
         {sub && <div className="modal-sub">{sub}</div>}
         {body}
@@ -2993,10 +3192,13 @@ function Modals(props: {
       legs.push({ where: `${isOffice ? "Office" : "Home"} Expenses › ${catValue || "category"}`, what: `${fmt(amt)} — ${desc.trim() || "description"}` });
       legs.push({ where: `${nameOf(recv)} ledger`, what: `Credit (out) ${fmt(amt)}` });
     } else if (txType === "sale") {
-      legs.push({ where: "Daily Cash Book", what: `Received ${fmt(amt)} via ${nameOf(recv)}` });
-      legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(amt)} · profit ${fmt(amt - costAmt)}` });
-      legs.push({ where: `${nameOf(recv)} ledger`, what: `Debit (in) ${fmt(amt)}` });
-      if (paid && costAmt > 0) legs.push({ where: `${nameOf(paid)} ledger + Daily Cash Book`, what: `Cost paid ${fmt(costAmt)}` });
+      const batchSaleTotal = salesRows.reduce((sum, r) => sum + (Number(r.sale_amount) || 0), 0);
+      const batchCostTotal = salesRows.reduce((sum, r) => sum + (Number(r.purchase_amount) || 0), 0);
+      const batchProfitTotal = batchSaleTotal - batchCostTotal;
+      legs.push({ where: "Daily Cash Book", what: `Received ${fmt(batchSaleTotal)} via ${nameOf(recv)}` });
+      legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(batchSaleTotal)} · profit ${fmt(batchProfitTotal)}` });
+      legs.push({ where: `${nameOf(recv)} ledger`, what: `Debit (in) ${fmt(batchSaleTotal)}` });
+      if (paid && batchCostTotal > 0) legs.push({ where: `${nameOf(paid)} ledger + Daily Cash Book`, what: `Cost paid ${fmt(batchCostTotal)}` });
     } else if (txType === "transfer") {
       legs.push({ where: "Daily Cash Book", what: `${fmt(amt)} ${nameOf(from)} → ${nameOf(to)}` });
       legs.push({ where: `${nameOf(from)} ledger`, what: `Credit (out) ${fmt(amt)}` });
@@ -3011,153 +3213,381 @@ function Modals(props: {
       ["transfer", "Self Transfer"],
       ["entry", "Cash Receipts & Payments"],
     ];
-    return shell("New Transaction", "One entry — it posts to the Cash Book, the category ledger and the account ledger together, then syncs to Google Sheets.", (
-      <>
-        <div className="txseg" role="radiogroup" aria-label="Transaction type">
-          {types.map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={txType === id}
-              className={txType === id ? "on" : ""}
-              onClick={() => {
-                setTxType(id);
-                if (id === "transfer") {
-                  const tDesc = buildTransferDescription(from, to);
-                  if (tDesc) setDesc(tDesc);
-                } else if (isAutoTransferDesc(desc)) {
-                  setDesc("");
-                }
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
-        {/* 1. Date & 2. Amount */}
-        <div className="field-row">
-          <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-          <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
-        </div>
+    const totalBatchSale = salesRows.reduce((sum, r) => sum + (Number(r.sale_amount) || 0), 0);
+    const totalBatchCost = salesRows.reduce((sum, r) => sum + (Number(r.purchase_amount) || 0), 0);
+    const totalBatchProfit = totalBatchSale - totalBatchCost;
 
-        {/* 3. Type & 4. Account (Ordered: Date, Amount, Type, Account, Description) */}
-        {txType === "entry" && (
-          <div className="field-row">
-            <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received (In)</option><option value="out">Payment (Out)</option></select></div>
-            <div className="field"><label>Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
-          </div>
-        )}
-
-        {txType === "transfer" && (
-          <div className="field-row">
-            <div className="field">
-              <label>From</label>
-              <select
-                value={from}
-                onChange={(e) => {
-                  const nextFrom = e.target.value;
-                  setFrom(nextFrom);
-                  if (isAutoTransferDesc(desc) || !desc.trim()) {
-                    const tDesc = buildTransferDescription(nextFrom, to);
+    return shell(
+      "New Transaction",
+      txType === "sale"
+        ? "B2B Book Fare entry — saves to Supabase and Google Sheets in master and category tabs."
+        : "One entry — it posts to the Cash Book, the category ledger and the account ledger together, then syncs to Google Sheets.",
+      (
+        <>
+          <div className="txseg" role="radiogroup" aria-label="Transaction type">
+            {types.map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={txType === id}
+                className={txType === id ? "on" : ""}
+                onClick={() => {
+                  setTxType(id);
+                  if (id === "transfer") {
+                    const tDesc = buildTransferDescription(from, to);
                     if (tDesc) setDesc(tDesc);
+                  } else if (isAutoTransferDesc(desc)) {
+                    setDesc("");
                   }
                 }}
               >
-                {accountOptions(accounts)}
-              </select>
-            </div>
-            <div className="field">
-              <label>To</label>
-              <select
-                value={to}
-                onChange={(e) => {
-                  const nextTo = e.target.value;
-                  setTo(nextTo);
-                  if (isAutoTransferDesc(desc) || !desc.trim()) {
-                    const tDesc = buildTransferDescription(from, nextTo);
-                    if (tDesc) setDesc(tDesc);
-                  }
-                }}
-              >
-                {accountOptions(accounts)}
-              </select>
-            </div>
+                {label}
+              </button>
+            ))}
           </div>
-        )}
 
-        {txType === "expense" && (
-          <div className="field-row">
-            <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div className="field"><label>Paid via</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
-          </div>
-        )}
+          {/* For non-sale types, show standard top fields */}
+          {txType !== "sale" && (
+            <div className="field-row">
+              <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+              <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
+            </div>
+          )}
 
-        {txType === "sale" && (
-          <>
+          {txType === "entry" && (
+            <div className="field-row">
+              <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received (In)</option><option value="out">Payment (Out)</option></select></div>
+              <div className="field"><label>Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+            </div>
+          )}
+
+          {txType === "transfer" && (
+            <div className="field-row">
+              <div className="field">
+                <label>From</label>
+                <select
+                  value={from}
+                  onChange={(e) => {
+                    const nextFrom = e.target.value;
+                    setFrom(nextFrom);
+                    if (isAutoTransferDesc(desc) || !desc.trim()) {
+                      const tDesc = buildTransferDescription(nextFrom, to);
+                      if (tDesc) setDesc(tDesc);
+                    }
+                  }}
+                >
+                  {accountOptions(accounts)}
+                </select>
+              </div>
+              <div className="field">
+                <label>To</label>
+                <select
+                  value={to}
+                  onChange={(e) => {
+                    const nextTo = e.target.value;
+                    setTo(nextTo);
+                    if (isAutoTransferDesc(desc) || !desc.trim()) {
+                      const tDesc = buildTransferDescription(from, nextTo);
+                      if (tDesc) setDesc(tDesc);
+                    }
+                  }}
+                >
+                  {accountOptions(accounts)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {txType === "expense" && (
             <div className="field-row">
               <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-              <div className="field"><label>Received via</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+              <div className="field"><label>Paid via</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
             </div>
-            <div className="field"><label>Customer / Agent</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Bin Qasim Travels" /></div>
-          </>
-        )}
+          )}
 
-        {/* 5. Description (Auto-Populated for Self Transfer) */}
-        <div className="field">
-          <label>Description</label>
-          <input
-            type="text"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder={
-              txType === "expense"
-                ? "e.g. Tea Bill - Jam"
-                : txType === "sale"
-                ? "e.g. Ticket booking ref XY123"
-                : txType === "transfer"
-                ? buildTransferDescription(from, to) || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"
-                : "e.g. Online Received Danial Iqbal Travels"
-            }
-          />
-        </div>
+          {/* SALE TAB: CATEGORY RIGHT AFTER DATE */}
+          {txType === "sale" && (
+            <>
+              <div className="field-row">
+                <div className="field">
+                  <label>Date</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => {
+                      const newD = e.target.value;
+                      setDate(newD);
+                      setSalesRows((prev) => prev.map((r) => ({ ...r, date: r.date === date ? newD : r.date })));
+                    }}
+                  />
+                </div>
+                <div className="field">
+                  <label>Category</label>
+                  <select value={catValue} onChange={(e) => setCat(e.target.value)}>
+                    {catList.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-        {txType === "sale" && (
-          <div className="field-row">
-            <div className="field"><label>Cost / Purchase</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="0" /></div>
-            <div className="field"><label>Cost paid via</label><select value={paid} onChange={(e) => setPaid(e.target.value)}><option value="">Not paid yet</option>{accountOptions(accounts)}</select></div>
+              <div className="field-row">
+                <div className="field">
+                  <label>Received via (Account)</label>
+                  <select value={recv} onChange={(e) => setRecv(e.target.value)}>
+                    {accountOptions(accounts)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Cost paid via (Optional)</label>
+                  <select value={paid} onChange={(e) => setPaid(e.target.value)}>
+                    <option value="">Not paid yet / Pay later</option>
+                    {accountOptions(accounts)}
+                  </select>
+                </div>
+              </div>
+
+              {/* B2B Agent Portal Book Fare Style Data Table */}
+              <div className="sales-b2b-section">
+                <div className="sales-b2b-header">
+                  <h4>{catValue} — Booking Entries</h4>
+                  <span className="hint">B2B Agent Portal Book Fare Form Columns</span>
+                </div>
+
+                <div className="sales-table-wrap">
+                  <table className="sales-data-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 44, textAlign: "center" }}>Sr No. (Auto)</th>
+                        <th style={{ width: 125 }}>Date</th>
+                        <th style={{ minWidth: 120 }}>Country</th>
+                        <th style={{ minWidth: 140 }}>Agent</th>
+                        <th style={{ minWidth: 150 }}>Pax Name</th>
+                        <th style={{ minWidth: 110 }}>Contact No.</th>
+                        <th style={{ minWidth: 140 }}>Vendor</th>
+                        <th style={{ width: 110 }} className="num">Sale Amount</th>
+                        <th style={{ width: 110 }} className="num">Purchase Amount</th>
+                        <th style={{ width: 100 }} className="num">Profit</th>
+                        <th style={{ width: 40 }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salesRows.map((row, idx) => {
+                        const sAmt = Number(row.sale_amount) || 0;
+                        const pAmt = Number(row.purchase_amount) || 0;
+                        const pft = sAmt - pAmt;
+                        return (
+                          <tr key={row.id}>
+                            <td className="sr-col">{idx + 1}</td>
+                            <td>
+                              <input
+                                type="date"
+                                value={row.date || date}
+                                onChange={(e) => updateSaleRow(row.id, "date", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                list="country-datalist"
+                                placeholder="e.g. Saudi Arabia"
+                                value={row.country}
+                                onChange={(e) => updateSaleRow(row.id, "country", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                placeholder="B2B Agent"
+                                value={row.agent}
+                                onChange={(e) => updateSaleRow(row.id, "agent", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                placeholder="Pax name"
+                                value={row.pax_name}
+                                onChange={(e) => updateSaleRow(row.id, "pax_name", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                placeholder="03xx-xxxxxxx"
+                                value={row.contact_no}
+                                onChange={(e) => updateSaleRow(row.id, "contact_no", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                list="vendor-datalist"
+                                placeholder="Airline / Vendor"
+                                value={row.vendor}
+                                onChange={(e) => updateSaleRow(row.id, "vendor", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                className="num"
+                                value={row.sale_amount}
+                                onChange={(e) => updateSaleRow(row.id, "sale_amount", e.target.value)}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                className="num"
+                                value={row.purchase_amount}
+                                onChange={(e) => updateSaleRow(row.id, "purchase_amount", e.target.value)}
+                              />
+                            </td>
+                            <td className="profit-cell" style={{ color: pft >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>
+                              {sAmt > 0 || pAmt > 0 ? fmt(pft) : "—"}
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              <button
+                                type="button"
+                                className="icon-btn danger"
+                                onClick={() => removeSaleRow(row.id)}
+                                title="Remove row"
+                                disabled={salesRows.length === 1 && !row.sale_amount && !row.pax_name}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <button type="button" className="btn small ghost" onClick={addSaleRow}>
+                    + Add Pax / Booking Row
+                  </button>
+                  <div className="hint">
+                    {salesRows.length} {salesRows.length === 1 ? "entry" : "entries"} in batch
+                  </div>
+                </div>
+
+                {/* Summary Bar */}
+                <div className="sales-summary-bar">
+                  <div>
+                    <span className="summary-label">Total Sale Amount</span>
+                    <span className="summary-val">{fmt(totalBatchSale)} PKR</span>
+                  </div>
+                  <div>
+                    <span className="summary-label">Total Purchase Amount</span>
+                    <span className="summary-val">{fmt(totalBatchCost)} PKR</span>
+                  </div>
+                  <div>
+                    <span className="summary-label">Total Net Profit</span>
+                    <span className="summary-val" style={{ color: totalBatchProfit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>
+                      {fmt(totalBatchProfit)} PKR
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <datalist id="country-datalist">
+                {knownCountries.map((c) => <option key={c} value={c} />)}
+              </datalist>
+              <datalist id="vendor-datalist">
+                {knownVendors.map((v) => <option key={v} value={v} />)}
+              </datalist>
+            </>
+          )}
+
+          {/* Description for non-sale types */}
+          {txType !== "sale" && (
+            <div className="field">
+              <label>Description</label>
+              <input
+                type="text"
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                placeholder={
+                  txType === "expense"
+                    ? "e.g. Tea Bill - Jam"
+                    : txType === "transfer"
+                    ? buildTransferDescription(from, to) || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"
+                    : "e.g. Online Received Danial Iqbal Travels"
+                }
+              />
+            </div>
+          )}
+
+          <div className="posting" aria-live="polite">
+            <h4>This one entry will post to</h4>
+            {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
+            <div className="hint">Edit or delete it later and every one of these updates together.</div>
           </div>
-        )}
-        <div className="posting" aria-live="polite">
-          <h4>This one entry will post to</h4>
-          {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
-          <div className="hint">Edit or delete it later and every one of these updates together.</div>
-        </div>
-      </>
-    ), "Post Transaction", () => {
-      const transferAutoDesc = txType === "transfer" ? buildTransferDescription(from, to) : "";
-      const finalDesc = (desc.trim() || transferAutoDesc).trim();
-      if (!finalDesc || amt <= 0) { toast.error("Enter a description and an amount above zero"); return; }
-      const base = { entry_date: date, description: finalDesc, amount: amt, source_id: crypto.randomUUID() };
-      if (txType === "expense") {
-        if (!recv || !catValue) { toast.error("Choose a category and the account it was paid from"); return; }
-        close();
-        props.onGroup({ ...base, kind: "expense", account_id: recv, category: catValue });
-      } else if (txType === "sale") {
-        if (!recv || !catValue) { toast.error("Choose a category and the account that received the money"); return; }
-        close();
-        props.onGroup({ ...base, kind: "sale", account_id: recv, category: catValue, party: party.trim() || undefined, direct_cost: costAmt, cost_account_id: paid || undefined });
-      } else if (txType === "transfer") {
-        if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
-        close();
-        props.onGroup({ ...base, kind: "transfer", account_id: from, to_account_id: to });
-      } else {
-        if (!recv) { toast.error("Choose an account"); return; }
-        close();
-        props.onGroup({ ...base, kind: "entry", account_id: recv, direction: dir });
-      }
-    });
+        </>
+      ),
+      txType === "sale" ? "Save Sales Entries" : "Post Transaction",
+      () => {
+        if (txType === "sale") {
+          const validRows = salesRows.filter((r) => {
+            const s = Number(r.sale_amount) || 0;
+            return s > 0 || r.pax_name.trim() || r.agent.trim();
+          });
+          if (validRows.length === 0) {
+            toast.error("Please enter at least one sale entry with a sale amount");
+            return;
+          }
+          if (!recv || !catValue) {
+            toast.error("Choose a category and the account that received the money");
+            return;
+          }
+
+          const entries = validRows.map((r) => ({
+            entry_date: (r.date || date || todayISO()).trim(),
+            country: r.country.trim(),
+            agent: r.agent.trim(),
+            pax_name: r.pax_name.trim(),
+            contact_no: r.contact_no.trim(),
+            vendor: r.vendor.trim(),
+            sale_amount: Number(r.sale_amount) || 0,
+            purchase_amount: Number(r.purchase_amount) || 0,
+          }));
+
+          close();
+          if (props.onSalesBatch) {
+            props.onSalesBatch({
+              category: catValue,
+              account_id: recv,
+              cost_account_id: paid || undefined,
+              entries,
+            });
+          }
+          return;
+        }
+
+        const transferAutoDesc = txType === "transfer" ? buildTransferDescription(from, to) : "";
+        const finalDesc = (desc.trim() || transferAutoDesc).trim();
+        if (!finalDesc || amt <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+        const base = { entry_date: date, description: finalDesc, amount: amt, source_id: crypto.randomUUID() };
+        if (txType === "expense") {
+          if (!recv || !catValue) { toast.error("Choose a category and the account it was paid from"); return; }
+          close();
+          props.onGroup({ ...base, kind: "expense", account_id: recv, category: catValue });
+        } else if (txType === "transfer") {
+          if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
+          close();
+          props.onGroup({ ...base, kind: "transfer", account_id: from, to_account_id: to });
+        } else {
+          if (!recv) { toast.error("Choose an account"); return; }
+          close();
+          props.onGroup({ ...base, kind: "entry", account_id: recv, direction: dir });
+        }
+      },
+      txType === "sale"
+    );
   }
 
   if (kind === "cashEntry" || kind === "bankEntry") {
@@ -3235,30 +3665,107 @@ function Modals(props: {
       props.onLinked({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, source_id: crypto.randomUUID(), source_type: "expense" });
     });
 
-  if (kind === "editTransaction")
-    return shell("Edit Transaction", "Master transaction " + (editTxn?.id ?? "") + " · " + (editTxn?.source_type ?? "manual") + " · projections will be reconciled automatically",
+  if (kind === "editTransaction") {
+    const isSale = editTxn?.entry_type === "sale";
+    const editProfit = (Number(amount) || 0) - (Number(cost) || 0);
+
+    return shell(
+      "Edit Transaction",
+      "Master transaction " + (editTxn?.id ?? "") + " · " + (editTxn?.source_type ?? "manual") + " · projections will be reconciled automatically",
       (
         <>
-          <div className="field-row">
-            <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div className="field"><label>Type</label><select value={dir} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received / In</option><option value="out">Payment / Out</option></select></div>
-          </div>
-          <div className="field"><label>Category</label><input type="text" value={cat} onChange={(e) => setCat(e.target.value)} /></div>
-          <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
-          <div className="field-row">
-            <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-            <div className="field"><label>Account</label><select value={recv} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
-          </div>
-          <div className="field-row">
-            <div className="field"><label>Party</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} /></div>
-            <div className="field"><label>Direct Cost</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
-          </div>
+          {isSale ? (
+            <>
+              <div className="field-row">
+                <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+                <div className="field"><label>Category</label><input type="text" value={cat} onChange={(e) => setCat(e.target.value)} /></div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>Country</label><input type="text" list="country-datalist" value={editSaleCountry} onChange={(e) => setEditSaleCountry(e.target.value)} placeholder="e.g. Saudi Arabia" /></div>
+                <div className="field"><label>Agent</label><input type="text" value={editSaleAgent} onChange={(e) => setEditSaleAgent(e.target.value)} placeholder="B2B Agent" /></div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>Pax Name</label><input type="text" value={editSalePax} onChange={(e) => setEditSalePax(e.target.value)} placeholder="Passenger name" /></div>
+                <div className="field"><label>Contact No.</label><input type="text" value={editSaleContact} onChange={(e) => setEditSaleContact(e.target.value)} placeholder="03xx-xxxxxxx" /></div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>Vendor</label><input type="text" list="vendor-datalist" value={editSaleVendor} onChange={(e) => setEditSaleVendor(e.target.value)} placeholder="Airline / Vendor" /></div>
+                <div className="field"><label>Received via Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>Sale Amount (PKR)</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                <div className="field"><label>Purchase Amount (PKR)</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
+              </div>
+              <div className="posting">
+                <div className="leg"><b>Calculated Net Profit:</b><span style={{ fontWeight: 700, color: editProfit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(editProfit)} PKR</span></div>
+              </div>
+              <datalist id="country-datalist">{knownCountries.map((c) => <option key={c} value={c} />)}</datalist>
+              <datalist id="vendor-datalist">{knownVendors.map((v) => <option key={v} value={v} />)}</datalist>
+            </>
+          ) : (
+            <>
+              <div className="field-row">
+                <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+                <div className="field"><label>Type</label><select value={dir} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received / In</option><option value="out">Payment / Out</option></select></div>
+              </div>
+              <div className="field"><label>Category</label><input type="text" value={cat} onChange={(e) => setCat(e.target.value)} /></div>
+              <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+              <div className="field-row">
+                <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+                <div className="field"><label>Account</label><select value={recv} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>Party</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} /></div>
+                <div className="field"><label>Direct Cost</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
+              </div>
+            </>
+          )}
           <div className="hint">This edits the master Supabase transaction. Every linked ledger projection is reconciled from that one record. Transfer account/direction are kept paired to prevent an unbalanced transfer.</div>
         </>
-      ), "Save Changes", () => {
-        if (!editTxn || !desc.trim() || numeric(amount) <= 0 || !recv || !cat.trim()) { toast.error("Enter a category, account, description and amount above zero"); return; }
-        props.onUpdate({ id: editTxn.id, entry_date: date, entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual", category: cat.trim(), party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), direction: dir, source_type: editTxn.source_type || undefined, source_id: editTxn.source_id || undefined });
-      });
+      ),
+      "Save Changes",
+      () => {
+        if (!editTxn || numeric(amount) <= 0 || !recv || !cat.trim()) {
+          toast.error("Enter a category, account and amount above zero");
+          return;
+        }
+
+        let finalDesc = desc.trim();
+        let finalParty = party.trim() || undefined;
+
+        if (isSale) {
+          finalDesc = formatSaleDescription({
+            country: editSaleCountry,
+            agent: editSaleAgent,
+            pax_name: editSalePax,
+            contact_no: editSaleContact,
+            vendor: editSaleVendor,
+          });
+          finalParty = editSaleAgent.trim() || editSalePax.trim() || undefined;
+        }
+
+        if (!finalDesc) {
+          toast.error("Please enter booking details / description");
+          return;
+        }
+
+        props.onUpdate({
+          id: editTxn.id,
+          entry_date: date,
+          entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual",
+          category: cat.trim(),
+          party: finalParty,
+          description: finalDesc,
+          account_id: recv,
+          amount: numeric(amount),
+          direct_cost: numeric(cost),
+          direction: dir,
+          source_type: editTxn.source_type || undefined,
+          source_id: editTxn.source_id || undefined,
+        });
+      }
+    );
+  }
 
   if (kind === "transferEntry") {
     const defaultTransferDesc = buildTransferDescription(from, to);

@@ -1,3 +1,4 @@
+import { parseSaleDetails, cleanSaleDescriptionDisplay } from "@/lib/accounts-book-sales";
 // Backup / disaster-recovery sync engine.
 // SERVER ONLY — never import from browser code.
 import { inCreationOrder } from "@/lib/accounts-book-order";
@@ -1014,7 +1015,7 @@ export async function reconcileSalesAccountsToSheets() {
       if (cat) salesCategories.add(cat);
     }
 
-    // Build Master Sales Accounts sheet
+    // Build Master Sales Accounts sheet (12 columns)
     let totalSalesAmt = 0;
     let totalProfitAmt = 0;
     const masterDataRows: (string | number)[][] = [];
@@ -1028,13 +1029,17 @@ export async function reconcileSalesAccountsToSheets() {
       totalSalesAmt += saleAmt;
       totalProfitAmt += profit;
       const accName = accountMap.get(String(t.account_id)) || "Account";
+      const parsed = parseSaleDetails(t.description, t.party);
 
       masterDataRows.push([
         sr++,
         String(formatSheetDate(t.entry_date) || ""),
-        String(t.description || "Sale"),
-        String(t.party || "—"),
         normalizeSalesCategory(String(t.category || "General")),
+        parsed.country || "—",
+        parsed.agent || t.party || "—",
+        parsed.pax_name || cleanSaleDescriptionDisplay(t.description) || "—",
+        parsed.contact_no || "—",
+        parsed.vendor || "—",
         accName,
         saleAmt,
         costAmt,
@@ -1043,15 +1048,15 @@ export async function reconcileSalesAccountsToSheets() {
     }
 
     const masterRows: (string | number)[][] = [
-      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", ""],
-      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", ""],
-      ["Sales Accounts", "", "", "", "", "", "", "", ""],
-      [`Master Sales Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Total Sales: Rs ${totalSalesAmt.toLocaleString()} • Total Profit: Rs ${totalProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", ""],
-      ["SR #", "Date", "Description / Particulars", "Customer / Party", "Category", "Payment Method", "Sale Amount (PKR)", "Direct Cost (PKR)", "Net Profit (PKR)"],
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", "", "", "", ""],
+      ["Sales Accounts", "", "", "", "", "", "", "", "", "", "", ""],
+      [`Master Sales Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Total Sales: Rs ${totalSalesAmt.toLocaleString()} • Total Profit: Rs ${totalProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", "", "", "", ""],
+      ["SR #", "Date", "Category", "Country", "Agent", "Pax Name", "Contact No.", "Vendor", "Payment Method", "Sale Amount (PKR)", "Purchase Amount (PKR)", "Profit (PKR)"],
       ...masterDataRows
     ];
 
-    // Build Category Tabs
+    // Build Category Tabs (10 columns: Sr No., Date, Country, Agent, Pax Name, Contact No., Vendor, Sale Amount, Purchase Amount, Profit)
     const categorySheetData: Array<{ sheet: string; rows: (string | number)[][]; count: number }> = [];
     for (const category of salesCategories) {
       const sheet = safeSheetPart(category);
@@ -1068,15 +1073,16 @@ export async function reconcileSalesAccountsToSheets() {
         const profit = saleAmt - costAmt;
         catSalesAmt += saleAmt;
         catProfitAmt += profit;
-        const accName = accountMap.get(String(t.account_id)) || "Account";
+        const parsed = parseSaleDetails(t.description, t.party);
 
         catDataRows.push([
           catSr++,
           String(formatSheetDate(t.entry_date) || ""),
-          String(t.description || "Sale"),
-          String(t.party || "—"),
-          String(t.category || category),
-          accName,
+          parsed.country || "—",
+          parsed.agent || t.party || "—",
+          parsed.pax_name || cleanSaleDescriptionDisplay(t.description) || "—",
+          parsed.contact_no || "—",
+          parsed.vendor || "—",
           saleAmt,
           costAmt,
           profit
@@ -1084,11 +1090,11 @@ export async function reconcileSalesAccountsToSheets() {
       }
 
       const rows: (string | number)[][] = [
-        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", ""],
-        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", ""],
-        [category, "", "", "", "", "", "", "", ""],
-        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${catSales.length} sales • Total: Rs ${catSalesAmt.toLocaleString()} • Profit: Rs ${catProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", ""],
-        ["SR #", "Date", "Description / Particulars", "Customer / Party", "Category", "Payment Method", "Sale Amount (PKR)", "Direct Cost (PKR)", "Net Profit (PKR)"],
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", ""],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", "", ""],
+        [category, "", "", "", "", "", "", "", "", ""],
+        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${catSales.length} sales • Total: Rs ${catSalesAmt.toLocaleString()} • Profit: Rs ${catProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", "", ""],
+        ["SR #", "Date", "Country", "Agent", "Pax Name", "Contact No.", "Vendor", "Sale Amount (PKR)", "Purchase Amount (PKR)", "Profit (PKR)"],
         ...catDataRows
       ];
 
@@ -1110,9 +1116,9 @@ export async function reconcileSalesAccountsToSheets() {
 
     // Batch write
     const writeData = [
-      { range: `'Sales Accounts'!A1:I${masterRows.length}`, values: masterRows },
+      { range: `'Sales Accounts'!A1:L${masterRows.length}`, values: masterRows },
       ...categorySheetData.map((item) => ({
-        range: `'${item.sheet}'!A1:I${item.rows.length}`,
+        range: `'${item.sheet}'!A1:J${item.rows.length}`,
         values: item.rows,
       }))
     ];
@@ -1123,9 +1129,9 @@ export async function reconcileSalesAccountsToSheets() {
     const masterSheetId = existingSheets.get("Sales Accounts");
     if (masterSheetId !== undefined) {
       allFormattingRequests.push(...buildRohiExportFormattingRequests(masterSheetId, {
-        columnCount: 9,
+        columnCount: 12,
         dataEndRow: masterRows.length,
-        numericColumnIndexes: [6, 7, 8],
+        numericColumnIndexes: [9, 10, 11],
         dateColumnIndexes: [1],
         hasOpeningRow: false,
       }));
@@ -1135,9 +1141,9 @@ export async function reconcileSalesAccountsToSheets() {
       const sheetId = existingSheets.get(item.sheet);
       if (sheetId !== undefined) {
         allFormattingRequests.push(...buildRohiExportFormattingRequests(sheetId, {
-          columnCount: 9,
+          columnCount: 10,
           dataEndRow: item.rows.length,
-          numericColumnIndexes: [6, 7, 8],
+          numericColumnIndexes: [7, 8, 9],
           dateColumnIndexes: [1],
           hasOpeningRow: false,
         }));
