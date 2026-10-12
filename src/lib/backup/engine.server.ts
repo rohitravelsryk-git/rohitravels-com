@@ -604,19 +604,6 @@ export async function reconcileBanksWalletsToSheets() {
         })
         .eq("id", existingRun.id)
         .eq("status", "running");
-    } else {
-      const target = await ensureSpreadsheet("banksWallets");
-      return {
-        runId: existingRun.id,
-        status: "running" as const,
-        spreadsheetId: target.id,
-        spreadsheetUrl: target.url,
-        accounts: [],
-        outcomes: [] as TableSyncOutcome[],
-        failures: [] as { table: string; message: string }[],
-        warningCount: 0,
-        alreadyRunning: true,
-      };
     }
   }
 
@@ -626,38 +613,17 @@ export async function reconcileBanksWalletsToSheets() {
     .select("id")
     .single();
 
-  let runId: string;
-  if (runInsertError) {
+  let runId = (runRow as { id?: string })?.id;
+  if (!runId) {
     const { data: winner } = await db
       .from("backup_runs")
-      .select("id,started_at")
+      .select("id")
       .eq("kind", "banks-wallets-reconciliation")
       .eq("status", "running")
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (winner?.id) {
-      const winnerMs = Date.parse(String(winner.started_at ?? ""));
-      if (Number.isFinite(winnerMs) && Date.now() - winnerMs <= STALE_MS) {
-        const target = await ensureSpreadsheet("banksWallets");
-        return {
-          runId: winner.id,
-          status: "running" as const,
-          spreadsheetId: target.id,
-          spreadsheetUrl: target.url,
-          accounts: [],
-          outcomes: [] as TableSyncOutcome[],
-          failures: [] as { table: string; message: string }[],
-          warningCount: 0,
-          alreadyRunning: true,
-        };
-      }
-      runId = winner.id;
-    } else {
-      throw new Error(runInsertError.message);
-    }
-  } else {
-    runId = (runRow as { id: string }).id;
+    runId = winner?.id ?? crypto.randomUUID();
   }
 
   const outcomes: TableSyncOutcome[] = [];
@@ -810,9 +776,9 @@ export async function reconcileBanksWalletsToSheets() {
 
       for (const t of txns) {
         const amt = Number(t.amount || 0);
-        const isDebit = t.direction === "out";
-        if (isDebit) runningBalance -= amt;
-        else runningBalance += amt;
+        const isMoneyIn = t.direction === "in";
+        if (isMoneyIn) runningBalance += amt;
+        else runningBalance -= amt;
 
         const descParts: string[] = [];
         if (t.category) descParts.push("[" + t.category + "]");
@@ -823,8 +789,8 @@ export async function reconcileBanksWalletsToSheets() {
         txRows.push([
           String(formatSheetDate(t.entry_date) || ""),
           formattedDesc,
-          isDebit ? amt : "",
-          !isDebit ? amt : "",
+          isMoneyIn ? amt : "",
+          !isMoneyIn ? amt : "",
           runningBalance
         ]);
       }

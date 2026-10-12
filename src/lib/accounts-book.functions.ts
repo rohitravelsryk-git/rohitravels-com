@@ -246,12 +246,83 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   return { accounts: accounts ?? [], transactions: inCreationOrder(transactions ?? []), services: services ?? [] };
 });
 
+export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses";
+
+let liveAccountsSyncTail: Promise<void> = Promise.resolve();
+
+export async function triggerLiveAccountsSync(waitForCompletion: boolean = true, scopes?: LiveSyncScope[]): Promise<{ status: "success" | "failed" | "pending"; sheets: string; failures: string[]; syncPending?: boolean }> {
+  const failures: string[] = [];
+  const completed: string[] = [];
+
+  const runSyncAction = async () => {
+    const mod = await import("@/lib/backup/engine.server");
+
+    const allSyncs: Array<[LiveSyncScope, string, () => Promise<any>]> = [
+      ["banks", "Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
+      ["cash", "Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
+      ["sales", "Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
+      ["expenses", "Expenses", () => mod.reconcileExpensesToSheets()],
+    ];
+    const syncs: Array<[string, () => Promise<any>]> = allSyncs
+      .filter(([scope]) => !scopes || scopes.includes(scope))
+      .map(([, name, run]) => [name, run]);
+
+    for (const [name, sync] of syncs) {
+      try {
+        const result = await sync();
+        if (result && result.status !== "success") {
+          const detail = Array.isArray(result.failures) && result.failures.length
+            ? result.failures.map((item: any) => item.message || String(item)).join("; ")
+            : String(result.status || "unknown status");
+          failures.push(name + ": " + detail);
+          console.warn("[backup] Live accounts sync completed with status:", name, result.status, detail);
+        } else {
+          completed.push(name);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failures.push(name + ": " + message);
+        console.error("[backup] Live accounts sync failed:", name, error);
+      }
+    }
+  };
+
+  const currentTask = liveAccountsSyncTail.then(() => runSyncAction());
+  liveAccountsSyncTail = currentTask.catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push("Live sync queue: " + message);
+    console.error("[backup] Live accounts sync queue failed:", error);
+  });
+
+  if (!waitForCompletion) {
+    return { status: "pending", sheets: "Background sync queued", failures: [], syncPending: true };
+  }
+
+  await currentTask;
+  return { status: failures.length === 0 ? "success" : "failed", sheets: completed.join(", "), failures };
+}
+
+async function syncLive(scopes?: LiveSyncScope[]) {
+  try {
+    return await triggerLiveAccountsSync(true, scopes);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[accounts-book] Live sync after mutation failed:", error);
+    return { status: "failed" as const, sheets: "", failures: [message] };
+  }
+}
+
+function queuedSync(scopes?: LiveSyncScope[]) {
+  return { status: "pending" as const, sheets: "", failures: [] as string[], syncPending: true, scopes };
+}
+const SHEET_SYNC_QUEUED = queuedSync();
+
 export const createAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row, error } = await supabaseAdmin.from("accounts_book_services").insert(data).select().single();
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync(["sales", "expenses"]);
+  const sheetSync = await syncLive(["sales", "expenses"]);
   return { ...row, sheetSync };
 });
 
@@ -260,7 +331,7 @@ export const updateAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ name: data.name }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync(["sales", "expenses"]);
+  const sheetSync = await syncLive(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -270,7 +341,7 @@ export const deleteAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync(["sales", "expenses"]);
+  const sheetSync = await syncLive(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -282,7 +353,7 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  const sheetSync = queuedSync(["sales", "expenses"]);
+  const sheetSync = await syncLive(["sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -292,15 +363,7 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
  * right away, so the Save button never waits on Sheets API quotas/retries, yet the sheets
  * still update within seconds.
  */
-/**
- * Saves are instant: the database commit is authoritative, so the server answers right away and
- * tells the browser WHICH Google Sheets to refresh. The browser then runs syncAccountsBookSheets
- * (one coalesced request, below) so the Save / Edit / Delete buttons never wait on the Sheets API.
- */
-function queuedSync(scopes?: LiveSyncScope[]) {
-  return { status: "pending" as const, sheets: "", failures: [] as string[], syncPending: true, scopes };
-}
-const SHEET_SYNC_QUEUED = queuedSync();
+
 
 export const syncAccountsBookSheets = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ scopes: z.array(z.enum(["banks", "cash", "sales", "expenses"])).max(4).optional() }).parse(data ?? {}))
@@ -328,7 +391,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   let sheetSync: Awaited<ReturnType<typeof triggerLiveAccountsSync>> | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
-    sheetSync = queuedSync(["banks", "cash"]);
+    sheetSync = await syncLive(["banks", "cash"]);
   }
 
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
@@ -339,7 +402,7 @@ export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
   if (error) throw new Error(mentionsLogoColumn(error.message) ? LOGO_COLUMN_HELP : error.message);
-  const sheetSync = queuedSync(["banks", "cash"]);
+  const sheetSync = await syncLive(["banks", "cash"]);
   return { success: true, sheetSync };
 });
 
@@ -382,7 +445,7 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
     }
     if (error) throw new Error(error.message);
     if (!updated) throw new Error("Bank / wallet account was not found or is no longer editable. Refresh and try again.");
-    const sheetSync = queuedSync(["banks", "cash"]);
+    const sheetSync = await syncLive(["banks", "cash"]);
     return { success: true, sheetSync };
   });
 
@@ -391,7 +454,7 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync(["banks", "cash"]);
+  const sheetSync = await syncLive(["banks", "cash"]);
   return { success: true, sheetSync };
 });
 
@@ -403,7 +466,7 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  const sheetSync = queuedSync();
+  const sheetSync = await syncLive(["banks", "cash"]);
   return { success: true, sheetSync };
 });
 
@@ -437,82 +500,14 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   const sheetSync = account && (account.kind === "bank" || account.kind === "wallet")
-    ? queuedSync()
+    ? await syncLive(["banks", "cash"])
     : undefined;
 
   return { success: true, ...(sheetSync ? { sheetSync } : {}) };
 });
 
 
-let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 
-export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses";
-
-export async function triggerLiveAccountsSync(waitForCompletion: boolean = true, scopes?: LiveSyncScope[]): Promise<{ status: "success" | "failed" | "pending"; sheets: string; failures: string[]; syncPending?: boolean }> {
-  const failures: string[] = [];
-  const completed: string[] = [];
-
-  const runSyncAction = async () => {
-    const mod = await import("@/lib/backup/engine.server");
-
-    // IMPORTANT: Google Sheets has per-user/per-project write quotas. These
-    // projections must run sequentially. Running four reconciliations with
-    // Promise.allSettled() caused concurrent clear/write requests and 429
-    // rate-limit failures, leaving Banks & Wallets stale even though Supabase
-    // was correct.
-    const allSyncs: Array<[LiveSyncScope, string, () => Promise<any>]> = [
-      ["banks", "Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
-      ["cash", "Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
-      ["sales", "Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
-      ["expenses", "Expenses", () => mod.reconcileExpensesToSheets()],
-    ];
-    // Account-settings edits (logo / opening balance / name) only change the account tabs and
-    // the cash journal, so they skip the Sales and Expense workbooks entirely.
-    const syncs: Array<[string, () => Promise<any>]> = allSyncs
-      .filter(([scope]) => !scopes || scopes.includes(scope))
-      .map(([, name, run]) => [name, run]);
-
-    for (const [name, sync] of syncs) {
-      try {
-        const result = await sync();
-        if (result && result.status !== "success") {
-          const detail = Array.isArray(result.failures) && result.failures.length
-            ? result.failures.map((item: any) => item.message || String(item)).join("; ")
-            : String(result.status || "unknown status");
-          failures.push(name + ": " + detail);
-          console.warn("[backup] Live accounts sync completed with status:", name, result.status, detail);
-        } else {
-          completed.push(name);
-        }
-      } catch (error) {
-        // Continue the remaining projections so one transient Sheets failure
-        // cannot prevent the other ledgers from being refreshed.
-        const message = error instanceof Error ? error.message : String(error);
-        failures.push(name + ": " + message);
-        console.error("[backup] Live accounts sync failed:", name, error);
-      }
-    }
-  };
-
-  // Chain onto the tail so multiple rapid calls execute sequentially without concurrent quota collisions
-  const currentTask = liveAccountsSyncTail.then(() => runSyncAction());
-  liveAccountsSyncTail = currentTask.catch((error) => {
-    const message = error instanceof Error ? error.message : String(error);
-    failures.push("Live sync queue: " + message);
-    console.error("[backup] Live accounts sync queue failed:", error);
-  });
-
-  if (!waitForCompletion) {
-    // Database commit is authoritative and durable (matching Airline Accounts save opening balance).
-    // Return immediately (<100ms) while sequential Google Sheets synchronization proceeds in the background.
-    return { status: "pending", sheets: "Background sync queued", failures: [], syncPending: true };
-  }
-
-  // Do not fire-and-forget: keep the server request alive until the queued
-  // sequential reconciliations have completed or recorded their failures.
-  await currentTask;
-  return { status: failures.length === 0 ? "success" : "failed", sheets: completed.join(", "), failures };
-}
 
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
@@ -544,7 +539,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     : data.source_type === "transfer"
     ? ["banks", "cash"]
     : ["banks", "cash", "sales", "expenses"];
-  const sheetSync = queuedSync(scopes);
+  const sheetSync = await syncLive(scopes);
   return { ...row, sheetSync };
 });
 
@@ -571,7 +566,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   // Ensure the target row itself is definitely deleted if it wasn't caught by group query
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync();
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
   return { success: true, sheetSync };
 });
 
@@ -591,7 +586,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync();
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -604,7 +599,7 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
     : data.source_type === "sale"
     ? ["banks", "cash", "sales"]
     : ["banks", "cash"];
-  const sheetSync = queuedSync(scopes);
+  const sheetSync = await syncLive(scopes);
   return { ...result, sheetSync };
 });
 
@@ -693,7 +688,7 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       : data.kind === "transfer"
       ? ["banks", "cash"]
       : ["banks", "cash", "sales", "expenses"];
-    const sheetSync = queuedSync(scopes);
+    const sheetSync = await syncLive(scopes);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
@@ -705,7 +700,7 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  const sheetSync = queuedSync(["banks", "cash"]);
+  const sheetSync = await syncLive(["banks", "cash"]);
   return { ...result, sheetSync };
 });
 
@@ -714,7 +709,7 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  const sheetSync = queuedSync();
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
   return { success: true, sheetSync };
 });
 

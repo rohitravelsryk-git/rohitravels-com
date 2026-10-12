@@ -1022,12 +1022,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   }
   const [draggedAccountId, setDraggedAccountId] = useState<string | null>(null);
 
-  // Auto-sync Google Sheets on page load, matching Airline Accounts
-  useEffect(() => {
-    void reconcileAllFn({ data: {} }).catch((error) => {
-      console.warn("Accounts Book Google Sheets background auto-sync:", error);
-    });
-  }, []);
+  // Live mutations (insert, update, delete) sync to Google Sheets instantly on the server.
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
@@ -1988,6 +1983,7 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
       }
       if (sync.status === "success" && sync.sheets) {
         toast.success(`${message}: saved to Supabase → synchronized to Google Sheets: ${sync.sheets}`);
+        afterSuccess?.();
         return;
       }
       if (sync.status === "pending") {
