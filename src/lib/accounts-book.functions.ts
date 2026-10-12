@@ -267,32 +267,35 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
       .filter(([scope]) => !scopes || scopes.includes(scope))
       .map(([, name, run]) => [name, run]);
 
-    for (const [name, sync] of syncs) {
-      try {
-        const result = await sync();
-        if (result && result.status !== "success") {
-          const detail = Array.isArray(result.failures) && result.failures.length
-            ? result.failures.map((item: any) => item.message || String(item)).join("; ")
-            : String(result.status || "unknown status");
+    const results = await Promise.allSettled(
+      syncs.map(async ([name, run]) => {
+        const res = await run();
+        return { name, res };
+      })
+    );
+
+    for (const r of results) {
+      if (r.status === "rejected") {
+        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        failures.push(msg);
+        console.error("[backup] Live accounts sync failed:", msg);
+      } else {
+        const { name, res } = r.value;
+        if (res && res.status !== "success") {
+          const detail = Array.isArray(res.failures) && res.failures.length
+            ? res.failures.map((item: any) => item.message || String(item)).join("; ")
+            : String(res.status || "unknown status");
           failures.push(name + ": " + detail);
-          console.warn("[backup] Live accounts sync completed with status:", name, result.status, detail);
+          console.warn("[backup] Live accounts sync completed with status:", name, res.status, detail);
         } else {
           completed.push(name);
         }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        failures.push(name + ": " + message);
-        console.error("[backup] Live accounts sync failed:", name, error);
       }
     }
   };
 
-  const currentTask = liveAccountsSyncTail.then(() => runSyncAction());
-  liveAccountsSyncTail = currentTask.catch((error) => {
-    const message = error instanceof Error ? error.message : String(error);
-    failures.push("Live sync queue: " + message);
-    console.error("[backup] Live accounts sync queue failed:", error);
-  });
+  const currentTask = liveAccountsSyncTail.then(() => runSyncAction(), () => runSyncAction());
+  liveAccountsSyncTail = currentTask.then(() => {}, () => {});
 
   if (!waitForCompletion) {
     return { status: "pending", sheets: "Background sync queued", failures: [], syncPending: true, scopes };
@@ -304,11 +307,11 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
 
 async function syncLive(scopes?: LiveSyncScope[]) {
   try {
-    return await triggerLiveAccountsSync(false, scopes);
+    return await triggerLiveAccountsSync(true, scopes);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[accounts-book] Live sync after mutation failed:", error);
-    return { status: "pending" as const, sheets: "Sync queued", failures: [], syncPending: true, scopes };
+    return { status: "failed" as const, sheets: "", failures: [message] };
   }
 }
 

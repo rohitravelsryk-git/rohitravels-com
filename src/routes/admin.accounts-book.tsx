@@ -1974,29 +1974,47 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void, afterSuccess?: () => void, scheduleSync?: (scopes?: string[]) => void) {
   return useMutation({
     mutationFn: fn,
-    onSuccess: (result) => {
+    onMutate: () => {
+      const toastId = toast.loading("Saving to Supabase & syncing Google Sheets…");
+      return { toastId };
+    },
+    onSuccess: (result, _variables, context) => {
       refresh();
+      const toastId = (context as { toastId?: string | number } | undefined)?.toastId;
       const sync = (result as { sheetSync?: { status?: string; sheets?: string; failures?: string[]; scopes?: string[] } } | undefined)?.sheetSync;
       if (!sync) {
-        toast.success(message);
+        if (toastId) toast.success(message, { id: toastId });
+        else toast.success(message);
         return;
       }
       if (sync.status === "success" && sync.sheets) {
-        toast.success(`${message}: saved to Supabase → synchronized to Google Sheets: ${sync.sheets}`);
+        const fullMsg = `${message}: saved to Supabase → synchronized to Google Sheets: ${sync.sheets}`;
+        if (toastId) toast.success(fullMsg, { id: toastId });
+        else toast.success(fullMsg);
         afterSuccess?.();
         return;
       }
       if (sync.status === "pending") {
-        toast.success(message);
+        if (toastId) toast.success(message, { id: toastId });
+        else toast.success(message);
         scheduleSync?.(sync.scopes);
         afterSuccess?.();
         return;
       }
       const detail = sync.failures?.filter(Boolean).join(" | ") || "Google Sheets sync did not complete";
-      toast.warning(`${message}: saved to Supabase, but Google Sheets sync needs attention — ${detail}`);
+      const warnMsg = `${message}: saved to Supabase, but Google Sheets sync needs attention — ${detail}`;
+      if (toastId) toast.warning(warnMsg, { id: toastId });
+      else toast.warning(warnMsg);
       afterSuccess?.();
     },
-    onError: fail,
+    onError: (e, _variables, context) => {
+      const toastId = (context as { toastId?: string | number } | undefined)?.toastId;
+      if (toastId) {
+        toast.error(e instanceof Error ? e.message : "Something went wrong", { id: toastId });
+      } else {
+        fail(e);
+      }
+    },
   });
 }
 
@@ -2765,15 +2783,19 @@ function Modals(props: {
       const base = { entry_date: date, description: finalDesc, amount: amt, source_id: crypto.randomUUID() };
       if (txType === "expense") {
         if (!recv || !catValue) { toast.error("Choose a category and the account it was paid from"); return; }
+        close();
         props.onGroup({ ...base, kind: "expense", account_id: recv, category: catValue });
       } else if (txType === "sale") {
         if (!recv || !catValue) { toast.error("Choose a category and the account that received the money"); return; }
+        close();
         props.onGroup({ ...base, kind: "sale", account_id: recv, category: catValue, party: party.trim() || undefined, direct_cost: costAmt, cost_account_id: paid || undefined });
       } else if (txType === "transfer") {
         if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
+        close();
         props.onGroup({ ...base, kind: "transfer", account_id: from, to_account_id: to });
       } else {
         if (!recv) { toast.error("Choose an account"); return; }
+        close();
         props.onGroup({ ...base, kind: "entry", account_id: recv, direction: dir });
       }
     });
@@ -2803,6 +2825,7 @@ function Modals(props: {
       () => {
         if (!account) { toast.error("No account available for this entry"); return; }
         if (!desc.trim() || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+        close();
         props.onCash({ account_id: account.id, entry_date: date, entry_type: "manual", category: kind === "cashEntry" ? "Cash Book" : "Bank Ledger", description: desc.trim(), amount: numeric(amount), direct_cost: 0, direction: dir });
       },
     );
@@ -2829,6 +2852,7 @@ function Modals(props: {
       </>
     ), "Save Sale", () => {
       if (!desc.trim() || numeric(amount) <= 0 || !recv || !cat) { toast.error("Choose a category, received account, description and amount"); return; }
+      close();
       const sourceId = crypto.randomUUID();
       props.onLinked({ entry_date: date, category: cat, party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), source_id: sourceId, source_type: "sale" });
       if (paid && numeric(cost) > 0)
@@ -2848,6 +2872,7 @@ function Modals(props: {
       </>
     ), "Save Expense", () => {
       if (!desc.trim() || numeric(amount) <= 0 || !recv || !cat) { toast.error("Choose a category, payment account, description and amount"); return; }
+      close();
       props.onLinked({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, source_id: crypto.randomUUID(), source_type: "expense" });
     });
 
@@ -2941,6 +2966,7 @@ function Modals(props: {
       const finalDesc = desc.trim() || defaultTransferDesc;
       if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
+      close();
       props.onTransfer({ entry_date: date, category: "Transfer", description: finalDesc, from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
     });
   }
