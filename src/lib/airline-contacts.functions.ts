@@ -28,8 +28,14 @@ async function requireUnlocked() {
 export type AirlineContact = {
   id: string;
   airline_name: string;
+  contact_person: string;
   contact_number: string;
   sales_support: string;
+  topup_email: string;
+  otb_email: string;
+  bank_name: string;
+  account_title: string;
+  iban: string;
   address: string;
   sort_order: number;
   is_active: boolean;
@@ -354,8 +360,14 @@ export const createAirlineContact = createServerFn({ method: "POST" })
     z
       .object({
         airline_name: z.string().trim().min(1, "Airline name is required"),
+        contact_person: z.string().default(""),
         contact_number: z.string().default(""),
         sales_support: z.string().default(""),
+        topup_email: z.string().default(""),
+        otb_email: z.string().default(""),
+        bank_name: z.string().default(""),
+        account_title: z.string().default(""),
+        iban: z.string().default(""),
         address: z.string().default(""),
         sort_order: z.number().default(100),
       })
@@ -368,8 +380,14 @@ export const createAirlineContact = createServerFn({ method: "POST" })
       .from("airline_contacts")
       .insert({
         airline_name: data.airline_name,
+        contact_person: data.contact_person,
         contact_number: data.contact_number,
         sales_support: data.sales_support,
+        topup_email: data.topup_email,
+        otb_email: data.otb_email,
+        bank_name: data.bank_name,
+        account_title: data.account_title,
+        iban: data.iban,
         address: data.address,
         sort_order: data.sort_order,
         is_active: true,
@@ -397,8 +415,14 @@ export const updateAirlineContact = createServerFn({ method: "POST" })
       .object({
         id: z.string(),
         airline_name: z.string().trim().min(1, "Airline name is required"),
+        contact_person: z.string().default(""),
         contact_number: z.string().default(""),
         sales_support: z.string().default(""),
+        topup_email: z.string().default(""),
+        otb_email: z.string().default(""),
+        bank_name: z.string().default(""),
+        account_title: z.string().default(""),
+        iban: z.string().default(""),
         address: z.string().default(""),
         sort_order: z.number().optional(),
       })
@@ -409,8 +433,14 @@ export const updateAirlineContact = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const updatePayload: Record<string, unknown> = {
       airline_name: data.airline_name,
+      contact_person: data.contact_person,
       contact_number: data.contact_number,
       sales_support: data.sales_support,
+      topup_email: data.topup_email,
+      otb_email: data.otb_email,
+      bank_name: data.bank_name,
+      account_title: data.account_title,
+      iban: data.iban,
       address: data.address,
       updated_at: new Date().toISOString(),
     };

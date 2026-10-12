@@ -768,7 +768,7 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
                   title: tabName,
                   index: 1,
                   tabColorStyle: { rgbColor: { red: 217 / 255, green: 119 / 255, blue: 87 / 255 } },
-                  gridProperties: { rowCount: Math.max(100, contacts.length + 10), columnCount: 4, frozenRowCount: 2 },
+                  gridProperties: { rowCount: Math.max(100, contacts.length + 10), columnCount: 10, frozenRowCount: 2 },
                 },
               },
             },
@@ -776,26 +776,62 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
         }),
       });
       sheetId = addRes.replies[0].addSheet.properties.sheetId;
+    } else {
+      // Ensure grid has at least 10 columns
+      await gw(`/spreadsheets/${id}:batchUpdate`, {
+        method: "POST",
+        body: JSON.stringify({
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId,
+                  gridProperties: { columnCount: 10, frozenRowCount: 2 },
+                },
+                fields: "gridProperties(columnCount,frozenRowCount)",
+              },
+            },
+          ],
+        }),
+      });
     }
 
-    // Build values
+    // Build values across 10 columns:
+    // Airline Name, Contact Person, Contact Number, Sales Support, Top UP Email, OTB Email, Bank Name, Account Title, IBAN, Address
     const values: unknown[][] = [
-      ["✈  ROHI INTERNATIONAL TRAVELS  |  AIRLINE CONTACT DETAILS", "", "", ""],
-      ["AIRLINE NAME", "AIRLINE CONTACT NUMBER", "SALES SUPPORT", "ADDRESS"],
+      ["✈  ROHI INTERNATIONAL TRAVELS  |  AIRLINE CONTACT DETAILS", "", "", "", "", "", "", "", "", ""],
+      [
+        "AIRLINE NAME",
+        "CONTACT PERSON",
+        "AIRLINE CONTACT NUMBER",
+        "SALES SUPPORT",
+        "TOP UP EMAIL",
+        "OTB EMAIL",
+        "BANK NAME",
+        "ACCOUNT TITLE",
+        "IBAN",
+        "ADDRESS",
+      ],
     ];
 
     for (const c of contacts) {
       values.push([
         String(c.airline_name || "").trim(),
+        String(c.contact_person || "").trim(),
         String(c.contact_number || "").trim(),
         String(c.sales_support || "").trim(),
+        String(c.topup_email || "").trim(),
+        String(c.otb_email || "").trim(),
+        String(c.bank_name || "").trim(),
+        String(c.account_title || "").trim(),
+        String(c.iban || "").trim(),
         String(c.address || "").trim(),
       ]);
     }
 
-    // Clear and write
+    // Clear and write across A:J
     await clearSheet(id, quoteSheet(tabName));
-    await writeRange(id, `${quoteSheet(tabName)}!A1:D${values.length}`, values);
+    await writeRange(id, `${quoteSheet(tabName)}!A1:J${values.length}`, values);
 
     // Apply Rohi Warm Clay formatting
     const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 };
@@ -808,13 +844,13 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
     const formatRequests: any[] = [
       {
         mergeCells: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 10 },
           mergeType: "MERGE_ALL",
         },
       },
       {
         repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 10 },
           cell: {
             userEnteredFormat: {
               backgroundColor: BRAND_ACCENT,
@@ -828,7 +864,7 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
       },
       {
         repeatCell: {
-          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 },
+          range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 10 },
           cell: {
             userEnteredFormat: {
               backgroundColor: BRAND_DARK,
@@ -842,7 +878,7 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
       },
       {
         repeatCell: {
-          range: { sheetId, startRowIndex: 2, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 4 },
+          range: { sheetId, startRowIndex: 2, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 10 },
           cell: {
             userEnteredFormat: {
               backgroundColor: BRAND_CREAM,
@@ -866,15 +902,22 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
           fields: "userEnteredFormat(horizontalAlignment,textFormat)",
         },
       },
-      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 160 }, fields: "pixelSize" } },
-      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 260 }, fields: "pixelSize" } },
-      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 }, properties: { pixelSize: 280 }, fields: "pixelSize" } },
-      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 }, properties: { pixelSize: 380 }, fields: "pixelSize" } },
+      // Column widths: Airline Name, Contact Person, Number, Sales Support, Top UP, OTB, Bank, Title, IBAN, Address
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 140 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 160 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 }, properties: { pixelSize: 190 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: 4 }, properties: { pixelSize: 220 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 4, endIndex: 5 }, properties: { pixelSize: 200 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 5, endIndex: 6 }, properties: { pixelSize: 200 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 6, endIndex: 7 }, properties: { pixelSize: 140 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 7, endIndex: 8 }, properties: { pixelSize: 170 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 8, endIndex: 9 }, properties: { pixelSize: 220 }, fields: "pixelSize" } },
+      { updateDimensionProperties: { range: { sheetId, dimension: "COLUMNS", startIndex: 9, endIndex: 10 }, properties: { pixelSize: 280 }, fields: "pixelSize" } },
       { updateDimensionProperties: { range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 40 }, fields: "pixelSize" } },
       { updateDimensionProperties: { range: { sheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 }, properties: { pixelSize: 34 }, fields: "pixelSize" } },
       {
         updateBorders: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 4 },
+          range: { sheetId, startRowIndex: 0, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 10 },
           top: { style: "SOLID", color: BRAND_BORDER },
           bottom: { style: "SOLID", color: BRAND_BORDER },
           left: { style: "SOLID", color: BRAND_BORDER },

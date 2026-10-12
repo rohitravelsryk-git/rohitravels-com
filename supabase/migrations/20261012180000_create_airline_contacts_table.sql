@@ -1,17 +1,31 @@
 -- Migration: 20261012180000_create_airline_contacts_table.sql
--- Description: Creates public.airline_contacts table for confidential airline support & contact directory with strict admin-only RLS and live sync.
+-- Description: Creates public.airline_contacts table for confidential airline support & contact directory with all operational details, strict admin-only RLS, and live sync.
 
 CREATE TABLE IF NOT EXISTS public.airline_contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     airline_name TEXT NOT NULL,
+    contact_person TEXT NOT NULL DEFAULT '',
     contact_number TEXT NOT NULL DEFAULT '',
     sales_support TEXT NOT NULL DEFAULT '',
+    topup_email TEXT NOT NULL DEFAULT '',
+    otb_email TEXT NOT NULL DEFAULT '',
+    bank_name TEXT NOT NULL DEFAULT '',
+    account_title TEXT NOT NULL DEFAULT '',
+    iban TEXT NOT NULL DEFAULT '',
     address TEXT NOT NULL DEFAULT '',
     sort_order INTEGER NOT NULL DEFAULT 100,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- In case table already existed, ensure new columns are present
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS contact_person TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS topup_email TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS otb_email TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS bank_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS account_title TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.airline_contacts ADD COLUMN IF NOT EXISTS iban TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS idx_airline_contacts_sort ON public.airline_contacts (sort_order, airline_name);
 CREATE INDEX IF NOT EXISTS idx_airline_contacts_active ON public.airline_contacts (is_active);

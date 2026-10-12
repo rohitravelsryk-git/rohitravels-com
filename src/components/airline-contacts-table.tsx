@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from "react";
 import {
   Search, Plus, Pencil, Trash2, Phone, Mail, MapPin,
-  RefreshCw, Download, Check, Copy, X, Loader2, FileSpreadsheet
+  RefreshCw, Download, Check, Copy, X, Loader2, Building, CreditCard, User
 } from "lucide-react";
 import {
   type AirlineContact,
-  
   listAirlineContacts,
   createAirlineContact,
   updateAirlineContact,
@@ -36,11 +35,30 @@ export function AirlineContactDetailsTable({
   const [deleteItem, setDeleteItem] = useState<AirlineContact | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
 
-  // Form state
+  // Form state (all columns)
   const [formName, setFormName] = useState("");
+  const [formPerson, setFormPerson] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formSupport, setFormSupport] = useState("");
+  const [formTopupEmail, setFormTopupEmail] = useState("");
+  const [formOtbEmail, setFormOtbEmail] = useState("");
+  const [formBankName, setFormBankName] = useState("");
+  const [formAccountTitle, setFormAccountTitle] = useState("");
+  const [formIban, setFormIban] = useState("");
   const [formAddress, setFormAddress] = useState("");
+
+  const resetForm = () => {
+    setFormName("");
+    setFormPerson("");
+    setFormPhone("");
+    setFormSupport("");
+    setFormTopupEmail("");
+    setFormOtbEmail("");
+    setFormBankName("");
+    setFormAccountTitle("");
+    setFormIban("");
+    setFormAddress("");
+  };
 
   // Load contacts on mount
   React.useEffect(() => {
@@ -48,11 +66,11 @@ export function AirlineContactDetailsTable({
     async function load() {
       try {
         const res = await listAirlineContacts();
-        if (mounted && res && res.length > 0) {
+        if (mounted && res && Array.isArray(res)) {
           setContacts(res);
         }
       } catch (err) {
-        console.warn("[airline-contacts] Falling back to default list:", err);
+        console.warn("[airline-contacts] Failed to load contacts (admin access required):", err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -69,10 +87,16 @@ export function AirlineContactDetailsTable({
     if (!q) return contacts;
     return contacts.filter(
       (c) =>
-        c.airline_name.toLowerCase().includes(q) ||
-        c.contact_number.toLowerCase().includes(q) ||
-        c.sales_support.toLowerCase().includes(q) ||
-        c.address.toLowerCase().includes(q)
+        (c.airline_name || "").toLowerCase().includes(q) ||
+        (c.contact_person || "").toLowerCase().includes(q) ||
+        (c.contact_number || "").toLowerCase().includes(q) ||
+        (c.sales_support || "").toLowerCase().includes(q) ||
+        (c.topup_email || "").toLowerCase().includes(q) ||
+        (c.otb_email || "").toLowerCase().includes(q) ||
+        (c.bank_name || "").toLowerCase().includes(q) ||
+        (c.account_title || "").toLowerCase().includes(q) ||
+        (c.iban || "").toLowerCase().includes(q) ||
+        (c.address || "").toLowerCase().includes(q)
     );
   }, [contacts, search]);
 
@@ -94,7 +118,7 @@ export function AirlineContactDetailsTable({
       } else {
         const res = await syncAirlineContactsLive();
         if (res.status === "success") {
-          setSyncMessage("Live Synced with Google Sheet!");
+          setSyncMessage("Live Synced with Google Sheet tab 'Airline Contact Details'!");
         } else {
           setSyncMessage(res.error || "Sync completed with warnings");
         }
@@ -116,34 +140,44 @@ export function AirlineContactDetailsTable({
       const res = await createAirlineContact({
         data: {
           airline_name: formName.trim(),
+          contact_person: formPerson.trim(),
           contact_number: formPhone.trim(),
           sales_support: formSupport.trim(),
+          topup_email: formTopupEmail.trim(),
+          otb_email: formOtbEmail.trim(),
+          bank_name: formBankName.trim(),
+          account_title: formAccountTitle.trim(),
+          iban: formIban.trim(),
           address: formAddress.trim(),
           sort_order: (contacts.length + 1) * 10,
         },
       });
-      if (res?.contact) {
+      if (res && res.contact) {
         setContacts((prev) => [...prev, res.contact]);
       } else {
-        // Optimistic fallback
-        const newContact: AirlineContact = {
-          id: `contact-temp-${Date.now()}`,
-          airline_name: formName.trim(),
-          contact_number: formPhone.trim(),
-          sales_support: formSupport.trim(),
-          address: formAddress.trim(),
-          sort_order: (contacts.length + 1) * 10,
-          is_active: true,
-        };
-        setContacts((prev) => [...prev, newContact]);
+        setContacts((prev) => [
+          ...prev,
+          {
+            id: `temp-${Date.now()}`,
+            airline_name: formName.trim(),
+            contact_person: formPerson.trim(),
+            contact_number: formPhone.trim(),
+            sales_support: formSupport.trim(),
+            topup_email: formTopupEmail.trim(),
+            otb_email: formOtbEmail.trim(),
+            bank_name: formBankName.trim(),
+            account_title: formAccountTitle.trim(),
+            iban: formIban.trim(),
+            address: formAddress.trim(),
+            sort_order: (contacts.length + 1) * 10,
+            is_active: true,
+          },
+        ]);
       }
+      resetForm();
       setAddModalOpen(false);
-      setFormName("");
-      setFormPhone("");
-      setFormSupport("");
-      setFormAddress("");
     } catch (err: any) {
-      alert("Failed to add contact: " + (err?.message || String(err)));
+      alert("Failed to save contact: " + (err?.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
@@ -155,61 +189,96 @@ export function AirlineContactDetailsTable({
     if (!editItem || !formName.trim()) return;
     setSaving(true);
     try {
-      await updateAirlineContact({
+      const res = await updateAirlineContact({
         data: {
           id: editItem.id,
           airline_name: formName.trim(),
+          contact_person: formPerson.trim(),
           contact_number: formPhone.trim(),
           sales_support: formSupport.trim(),
+          topup_email: formTopupEmail.trim(),
+          otb_email: formOtbEmail.trim(),
+          bank_name: formBankName.trim(),
+          account_title: formAccountTitle.trim(),
+          iban: formIban.trim(),
           address: formAddress.trim(),
         },
       });
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === editItem.id
-            ? {
-                ...c,
-                airline_name: formName.trim(),
-                contact_number: formPhone.trim(),
-                sales_support: formSupport.trim(),
-                address: formAddress.trim(),
-              }
-            : c
-        )
-      );
+      if (res && res.contact) {
+        setContacts((prev) =>
+          prev.map((c) => (c.id === editItem.id ? res.contact : c))
+        );
+      } else {
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.id === editItem.id
+              ? {
+                  ...c,
+                  airline_name: formName.trim(),
+                  contact_person: formPerson.trim(),
+                  contact_number: formPhone.trim(),
+                  sales_support: formSupport.trim(),
+                  topup_email: formTopupEmail.trim(),
+                  otb_email: formOtbEmail.trim(),
+                  bank_name: formBankName.trim(),
+                  account_title: formAccountTitle.trim(),
+                  iban: formIban.trim(),
+                  address: formAddress.trim(),
+                }
+              : c
+          )
+        );
+      }
       setEditItem(null);
+      resetForm();
     } catch (err: any) {
-      alert("Failed to update contact: " + (err?.message || String(err)));
+      alert("Failed to update contact: " + (err?.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
   };
 
   // Delete contact handler
-  const handleDeleteSubmit = async () => {
+  const handleDeleteConfirm = async () => {
     if (!deleteItem) return;
     setSaving(true);
     try {
-      await deleteAirlineContact({
-        data: { id: deleteItem.id },
-      });
+      await deleteAirlineContact({ data: { id: deleteItem.id } });
       setContacts((prev) => prev.filter((c) => c.id !== deleteItem.id));
       setDeleteItem(null);
     } catch (err: any) {
-      alert("Failed to delete contact: " + (err?.message || String(err)));
+      alert("Failed to delete contact: " + (err?.message || "Unknown error"));
     } finally {
       setSaving(false);
     }
   };
 
-  // CSV export handler
+  // Export to CSV including all 10 columns
   const handleExportCSV = () => {
-    const headers = ["#", "Airline Name", "Contact Number", "Sales Support", "Address"];
+    const headers = [
+      "#",
+      "Airline Name",
+      "Contact Person",
+      "Contact Number",
+      "Sales Support",
+      "Top UP Email",
+      "OTB Email",
+      "Bank Name",
+      "Account Title",
+      "IBAN",
+      "Address",
+    ];
     const rows = filtered.map((c, i) => [
       i + 1,
       `"${(c.airline_name || "").replace(/"/g, '""')}"`,
+      `"${(c.contact_person || "").replace(/"/g, '""')}"`,
       `"${(c.contact_number || "").replace(/"/g, '""')}"`,
       `"${(c.sales_support || "").replace(/"/g, '""')}"`,
+      `"${(c.topup_email || "").replace(/"/g, '""')}"`,
+      `"${(c.otb_email || "").replace(/"/g, '""')}"`,
+      `"${(c.bank_name || "").replace(/"/g, '""')}"`,
+      `"${(c.account_title || "").replace(/"/g, '""')}"`,
+      `"${(c.iban || "").replace(/"/g, '""')}"`,
       `"${(c.address || "").replace(/"/g, '""')}"`,
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
@@ -224,27 +293,43 @@ export function AirlineContactDetailsTable({
 
   return (
     <div style={containerStyle}>
-      {/* Top Banner (Rohi Terracotta) */}
-      <div style={bannerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 24 }}>✈</span>
-          <div>
-            <h2 style={bannerTitleStyle}>ROHI INTERNATIONAL TRAVELS | AIRLINE CONTACT DETAILS</h2>
-            <p style={bannerSubtitleStyle}>
-              Official sales support numbers, reservation hotlines & branch directory • Live Google Sheets Sync
-            </p>
+      {/* Header bar */}
+      <div style={topBarStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={searchContainerStyle}>
+            <Search size={15} style={{ color: "#78716C" }} />
+            <input
+              type="text"
+              placeholder="Search airline, person, phone, email, bank, IBAN, address..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={searchInputStyle}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#78716C", padding: 2 }}
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
+          <span style={countBadgeStyle}>
+            {filtered.length} {filtered.length === 1 ? "Airline" : "Airlines"}
+          </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button
             type="button"
             onClick={handleLiveSync}
-            disabled={syncing}
+            disabled={syncing || parentSyncStatus === "syncing"}
             style={syncBtnStyle}
             title="Sync with Google Sheet 'Airline Contact Details'"
           >
-            {syncing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-            <span>{syncing ? "Syncing..." : "Sync Sheet"}</span>
+            <RefreshCw size={14} className={syncing || parentSyncStatus === "syncing" ? "animate-spin" : ""} />
+            <span>{syncing || parentSyncStatus === "syncing" ? "Syncing..." : "Sync Sheet"}</span>
           </button>
           <button
             type="button"
@@ -252,90 +337,59 @@ export function AirlineContactDetailsTable({
             style={ghostBtnStyle}
             title="Export contact directory to CSV"
           >
-            <Download size={15} />
+            <Download size={14} />
             <span>Export CSV</span>
           </button>
           <button
             type="button"
             onClick={() => {
-              setFormName("");
-              setFormPhone("");
-              setFormSupport("");
-              setFormAddress("");
+              resetForm();
               setAddModalOpen(true);
             }}
             style={primaryBtnStyle}
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Add Contact</span>
           </button>
         </div>
       </div>
 
-      {/* Sync alert banner if present */}
+      {/* Sync alert banner */}
       {syncMessage && (
         <div style={syncAlertStyle}>
-          <Check size={16} />
           <span>{syncMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSyncMessage(null)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#141413", marginLeft: "auto" }}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
-
-      {/* Stats and Search Bar */}
-      <div style={statsBarStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <div style={statChipStyle}>
-            <span style={statNumStyle}>{filtered.length}</span>
-            <span style={statLabelStyle}>Airlines Listed</span>
-          </div>
-          <div style={statChipStyle}>
-            <span style={statNumStyle}>{contacts.filter((c) => !!c.contact_number).length}</span>
-            <span style={statLabelStyle}>Direct Phone Lines</span>
-          </div>
-          <div style={statChipStyle}>
-            <span style={statNumStyle}>{contacts.filter((c) => !!c.sales_support).length}</span>
-            <span style={statLabelStyle}>Sales Emails</span>
-          </div>
-        </div>
-
-        {/* Search input */}
-        <div style={searchWrapStyle}>
-          <Search size={16} style={{ color: "#78716C" }} />
-          <input
-            type="text"
-            placeholder="Search airline, phone, email, or city..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={searchInputStyle}
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#78716C" }}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Pure Table Without Scrollbar */}
       <div style={tableContainerStyle}>
         <table style={tableStyle}>
           <thead>
             <tr style={theadRowStyle}>
-              <th style={{ ...thStyle, width: 50, textAlign: "center" }}>#</th>
-              <th style={{ ...thStyle, minWidth: 200 }}>AIRLINE NAME</th>
-              <th style={{ ...thStyle, minWidth: 220 }}>AIRLINE CONTACT NUMBER</th>
-              <th style={{ ...thStyle, minWidth: 260 }}>SALES SUPPORT</th>
-              <th style={{ ...thStyle, minWidth: 260 }}>ADDRESS</th>
-              <th style={{ ...thStyle, width: 100, textAlign: "center" }}>ACTIONS</th>
+              <th style={{ ...thStyle, width: 32, textAlign: "center" }}>#</th>
+              <th style={{ ...thStyle, minWidth: 150 }}>AIRLINE</th>
+              <th style={{ ...thStyle, minWidth: 130 }}>CONTACT PERSON</th>
+              <th style={{ ...thStyle, minWidth: 140 }}>CONTACT NUMBER</th>
+              <th style={{ ...thStyle, minWidth: 160 }}>SALES SUPPORT</th>
+              <th style={{ ...thStyle, minWidth: 140 }}>TOP UP EMAIL</th>
+              <th style={{ ...thStyle, minWidth: 140 }}>OTB EMAIL</th>
+              <th style={{ ...thStyle, minWidth: 170 }}>BANK & ACCOUNT</th>
+              <th style={{ ...thStyle, minWidth: 160 }}>IBAN</th>
+              <th style={{ ...thStyle, minWidth: 160 }}>ADDRESS</th>
+              <th style={{ ...thStyle, width: 70, textAlign: "center" }}>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} style={emptyTdStyle}>
+                <td colSpan={11} style={emptyTdStyle}>
                   {loading ? "Loading airline contacts..." : "No matching airline contacts found."}
                 </td>
               </tr>
@@ -352,13 +406,13 @@ export function AirlineContactDetailsTable({
                     }}
                   >
                     {/* Index */}
-                    <td style={{ ...tdStyle, textAlign: "center", color: "#78716C", fontSize: 12 }}>
+                    <td style={{ ...tdStyle, textAlign: "center", color: "#78716C", fontSize: 11 }}>
                       {idx + 1}
                     </td>
 
                     {/* Airline Name + Logo */}
                     <td style={tdStyle}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         {logo ? (
                           <div style={logoBadgeStyle}>
                             <img
@@ -372,7 +426,7 @@ export function AirlineContactDetailsTable({
                           </div>
                         ) : null}
                         <div>
-                          <div style={{ fontWeight: 700, color: "#1C1917", fontSize: 13.5 }}>
+                          <div style={{ fontWeight: 700, color: "#1C1917", fontSize: 12.5 }}>
                             {item.airline_name}
                           </div>
                           {iata ? (
@@ -382,19 +436,31 @@ export function AirlineContactDetailsTable({
                       </div>
                     </td>
 
+                    {/* Contact Person */}
+                    <td style={tdStyle}>
+                      {item.contact_person ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <User size={13} style={{ color: "#D97757", flexShrink: 0 }} />
+                          <span style={{ fontWeight: 600, color: "#1C1917", fontSize: 12 }}>{item.contact_person}</span>
+                        </div>
+                      ) : (
+                        <span style={emptyFieldStyle}>—</span>
+                      )}
+                    </td>
+
                     {/* Contact Number */}
                     <td style={tdStyle}>
                       {item.contact_number ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Phone size={14} style={{ color: "#D97757", flexShrink: 0 }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <Phone size={13} style={{ color: "#D97757", flexShrink: 0 }} />
                           <span style={phoneTextStyle}>{item.contact_number}</span>
                           <button
                             type="button"
                             onClick={() => handleCopy(item.contact_number, `p-${item.id}`)}
                             style={copyBtnStyle}
-                            title="Copy phone number"
+                            title="Copy phone"
                           >
-                            {copiedId === `p-${item.id}` ? <Check size={13} color="#16a34a" /> : <Copy size={13} />}
+                            {copiedId === `p-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
                           </button>
                         </div>
                       ) : (
@@ -405,16 +471,95 @@ export function AirlineContactDetailsTable({
                     {/* Sales Support */}
                     <td style={tdStyle}>
                       {item.sales_support ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Mail size={14} style={{ color: "#D97757", flexShrink: 0 }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <Mail size={13} style={{ color: "#D97757", flexShrink: 0 }} />
                           <span style={supportTextStyle}>{item.sales_support}</span>
                           <button
                             type="button"
                             onClick={() => handleCopy(item.sales_support, `s-${item.id}`)}
                             style={copyBtnStyle}
-                            title="Copy email / sales support"
+                            title="Copy sales support email"
                           >
-                            {copiedId === `s-${item.id}` ? <Check size={13} color="#16a34a" /> : <Copy size={13} />}
+                            {copiedId === `s-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={emptyFieldStyle}>—</span>
+                      )}
+                    </td>
+
+                    {/* Top UP Email */}
+                    <td style={tdStyle}>
+                      {item.topup_email ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <Mail size={13} style={{ color: "#D97757", flexShrink: 0 }} />
+                          <span style={supportTextStyle}>{item.topup_email}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.topup_email, `t-${item.id}`)}
+                            style={copyBtnStyle}
+                            title="Copy top up email"
+                          >
+                            {copiedId === `t-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={emptyFieldStyle}>—</span>
+                      )}
+                    </td>
+
+                    {/* OTB Email */}
+                    <td style={tdStyle}>
+                      {item.otb_email ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <Mail size={13} style={{ color: "#D97757", flexShrink: 0 }} />
+                          <span style={supportTextStyle}>{item.otb_email}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.otb_email, `o-${item.id}`)}
+                            style={copyBtnStyle}
+                            title="Copy OTB email"
+                          >
+                            {copiedId === `o-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={emptyFieldStyle}>—</span>
+                      )}
+                    </td>
+
+                    {/* Bank Name & Account Title */}
+                    <td style={tdStyle}>
+                      {item.bank_name || item.account_title ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {item.bank_name ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <Building size={12} style={{ color: "#D97757", flexShrink: 0 }} />
+                              <span style={{ fontWeight: 600, color: "#1C1917", fontSize: 11.5 }}>{item.bank_name}</span>
+                            </div>
+                          ) : null}
+                          {item.account_title ? (
+                            <span style={{ color: "#78716C", fontSize: 11 }}>Title: {item.account_title}</span>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span style={emptyFieldStyle}>—</span>
+                      )}
+                    </td>
+
+                    {/* IBAN */}
+                    <td style={tdStyle}>
+                      {item.iban ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <CreditCard size={12} style={{ color: "#78716C", flexShrink: 0 }} />
+                          <span style={ibanTextStyle}>{item.iban}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.iban, `ib-${item.id}`)}
+                            style={copyBtnStyle}
+                            title="Copy IBAN"
+                          >
+                            {copiedId === `ib-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
                           </button>
                         </div>
                       ) : (
@@ -425,8 +570,8 @@ export function AirlineContactDetailsTable({
                     {/* Address */}
                     <td style={tdStyle}>
                       {item.address ? (
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                          <MapPin size={14} style={{ color: "#78716C", marginTop: 2, flexShrink: 0 }} />
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                          <MapPin size={13} style={{ color: "#78716C", marginTop: 2, flexShrink: 0 }} />
                           <span style={addressTextStyle}>{item.address}</span>
                         </div>
                       ) : (
@@ -436,28 +581,34 @@ export function AirlineContactDetailsTable({
 
                     {/* Actions */}
                     <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                         <button
                           type="button"
                           onClick={() => {
                             setEditItem(item);
                             setFormName(item.airline_name);
+                            setFormPerson(item.contact_person || "");
                             setFormPhone(item.contact_number || "");
                             setFormSupport(item.sales_support || "");
+                            setFormTopupEmail(item.topup_email || "");
+                            setFormOtbEmail(item.otb_email || "");
+                            setFormBankName(item.bank_name || "");
+                            setFormAccountTitle(item.account_title || "");
+                            setFormIban(item.iban || "");
                             setFormAddress(item.address || "");
                           }}
-                          style={actionIconBtnStyle}
+                          style={actionBtnStyle}
                           title="Edit airline contact"
                         >
-                          <Pencil size={14} />
+                          <Pencil size={13} />
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteItem(item)}
-                          style={{ ...actionIconBtnStyle, color: "#dc2626" }}
-                          title="Delete airline contact"
+                          style={{ ...actionBtnStyle, color: "#dc2626" }}
+                          title="Delete contact"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </td>
@@ -474,7 +625,7 @@ export function AirlineContactDetailsTable({
         <div style={overlayStyle} onClick={() => setAddModalOpen(false)}>
           <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
             <div style={modalHeaderStyle}>
-              <h3 style={modalTitleStyle}>Add Airline Contact</h3>
+              <h3 style={modalTitleStyle}>Add Airline Contact Details</h3>
               <button
                 type="button"
                 onClick={() => setAddModalOpen(false)}
@@ -485,50 +636,124 @@ export function AirlineContactDetailsTable({
             </div>
 
             <form onSubmit={handleAddSubmit} style={formStyle}>
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Airline Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Flydubai"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  style={inputStyle}
-                  autoFocus
-                />
-              </div>
+              <div style={formGridStyle}>
+                {/* Column 1 */}
+                <div style={formColStyle}>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Airline Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Flydubai"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      style={inputStyle}
+                      autoFocus
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Contact Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 021-111-786-786"
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Contact Person</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mr. Mansoor Ali (Account Mgr)"
+                      value={formPerson}
+                      onChange={(e) => setFormPerson(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Sales Support (Email / Helpdesk)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. sales@airline.com"
-                  value={formSupport}
-                  onChange={(e) => setFormSupport(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Airline Contact Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 021-111-786-786"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Branch Address / Location</label>
-                <textarea
-                  placeholder="e.g. Office # 12, Ground Floor, Trade Center, Karachi"
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  rows={3}
-                  style={textareaStyle}
-                />
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Sales Support (Email / Helpdesk)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. salessupport@airline.com"
+                      value={formSupport}
+                      onChange={(e) => setFormSupport(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Top UP Email</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. topup.khi@airline.com"
+                      value={formTopupEmail}
+                      onChange={(e) => setFormTopupEmail(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div style={formColStyle}>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>OTB (Ok To Board) Email</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. otb.desk@airline.com"
+                      value={formOtbEmail}
+                      onChange={(e) => setFormOtbEmail(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Bank Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Meezan Bank / HBL"
+                      value={formBankName}
+                      onChange={(e) => setFormBankName(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Account Title</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Airline Pakistan Ltd"
+                      value={formAccountTitle}
+                      onChange={(e) => setFormAccountTitle(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>IBAN</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. PK00MEZN0000000000000000"
+                      value={formIban}
+                      onChange={(e) => setFormIban(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Branch Address / Location</label>
+                    <textarea
+                      placeholder="e.g. Office # 12, Ground Floor, Karachi"
+                      value={formAddress}
+                      onChange={(e) => setFormAddress(e.target.value)}
+                      rows={2}
+                      style={textareaStyle}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style={modalFooterStyle}>
@@ -559,7 +784,7 @@ export function AirlineContactDetailsTable({
         <div style={overlayStyle} onClick={() => setEditItem(null)}>
           <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
             <div style={modalHeaderStyle}>
-              <h3 style={modalTitleStyle}>Edit Airline Contact</h3>
+              <h3 style={modalTitleStyle}>Edit Airline Contact Details</h3>
               <button
                 type="button"
                 onClick={() => setEditItem(null)}
@@ -570,46 +795,115 @@ export function AirlineContactDetailsTable({
             </div>
 
             <form onSubmit={handleEditSubmit} style={formStyle}>
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Airline Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  style={inputStyle}
-                  autoFocus
-                />
-              </div>
+              <div style={formGridStyle}>
+                {/* Column 1 */}
+                <div style={formColStyle}>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Airline Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      style={inputStyle}
+                      autoFocus
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Contact Number</label>
-                <input
-                  type="text"
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Contact Person</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mr. Mansoor Ali"
+                      value={formPerson}
+                      onChange={(e) => setFormPerson(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Sales Support (Email / Helpdesk)</label>
-                <input
-                  type="text"
-                  value={formSupport}
-                  onChange={(e) => setFormSupport(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Airline Contact Number</label>
+                    <input
+                      type="text"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
 
-              <div style={formGroupStyle}>
-                <label style={labelStyle}>Branch Address / Location</label>
-                <textarea
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  rows={3}
-                  style={textareaStyle}
-                />
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Sales Support (Email / Helpdesk)</label>
+                    <input
+                      type="text"
+                      value={formSupport}
+                      onChange={(e) => setFormSupport(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Top UP Email</label>
+                    <input
+                      type="text"
+                      value={formTopupEmail}
+                      onChange={(e) => setFormTopupEmail(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                {/* Column 2 */}
+                <div style={formColStyle}>
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>OTB (Ok To Board) Email</label>
+                    <input
+                      type="text"
+                      value={formOtbEmail}
+                      onChange={(e) => setFormOtbEmail(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Bank Name</label>
+                    <input
+                      type="text"
+                      value={formBankName}
+                      onChange={(e) => setFormBankName(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Account Title</label>
+                    <input
+                      type="text"
+                      value={formAccountTitle}
+                      onChange={(e) => setFormAccountTitle(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>IBAN</label>
+                    <input
+                      type="text"
+                      value={formIban}
+                      onChange={(e) => setFormIban(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div style={formGroupStyle}>
+                    <label style={labelStyle}>Branch Address / Location</label>
+                    <textarea
+                      value={formAddress}
+                      onChange={(e) => setFormAddress(e.target.value)}
+                      rows={2}
+                      style={textareaStyle}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style={modalFooterStyle}>
@@ -638,7 +932,7 @@ export function AirlineContactDetailsTable({
       {/* Delete Confirmation Modal */}
       {deleteItem && (
         <div style={overlayStyle} onClick={() => setDeleteItem(null)}>
-          <div style={{ ...modalBoxStyle, maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ ...modalBoxStyle, maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
             <div style={modalHeaderStyle}>
               <h3 style={modalTitleStyle}>Delete Contact</h3>
               <button
@@ -649,14 +943,11 @@ export function AirlineContactDetailsTable({
                 <X size={18} />
               </button>
             </div>
-            <div style={{ padding: "16px 20px" }}>
-              <p style={{ margin: "0 0 16px 0", fontSize: 14, color: "#1C1917" }}>
-                Are you sure you want to remove the contact details for{" "}
-                <strong>{deleteItem.airline_name}</strong>?
-              </p>
-              <p style={{ margin: 0, fontSize: 12, color: "#78716C" }}>
+            <div style={{ padding: "16px 20px", color: "#1C1917", fontSize: 13, lineHeight: 1.6 }}>
+              Are you sure you want to remove <strong>{deleteItem.airline_name}</strong> from the airline directory?
+              <div style={{ marginTop: 8, fontSize: 12, color: "#78716C" }}>
                 This record will be removed from the database and the Google Sheets tab 'Airline Contact Details' will be immediately updated.
-              </p>
+              </div>
             </div>
             <div style={modalFooterStyle}>
               <button
@@ -669,12 +960,12 @@ export function AirlineContactDetailsTable({
               </button>
               <button
                 type="button"
-                onClick={handleDeleteSubmit}
-                style={{ ...primaryBtnStyle, backgroundColor: "#dc2626", borderColor: "#dc2626" }}
+                onClick={handleDeleteConfirm}
+                style={{ ...primaryBtnStyle, backgroundColor: "#dc2626" }}
                 disabled={saving}
               >
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                <span>{saving ? "Deleting..." : "Confirm Delete"}</span>
+                <span>{saving ? "Deleting..." : "Delete Permanently"}</span>
               </button>
             </div>
           </div>
@@ -684,133 +975,139 @@ export function AirlineContactDetailsTable({
   );
 }
 
-// Inline Styles following Rohi Warm Clay Design System
+/* ---------- Styles in Rohi Warm Clay ---------- */
+
 const containerStyle: React.CSSProperties = {
-  width: "100%",
   display: "flex",
   flexDirection: "column",
   gap: 16,
+  width: "100%",
 };
 
-const bannerStyle: React.CSSProperties = {
-  backgroundColor: "#D97757",
-  color: "#FFFFFF",
-  borderRadius: 10,
-  padding: "16px 22px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: 14,
-  boxShadow: "0 2px 8px rgba(217, 119, 87, 0.2)",
-};
-
-const bannerTitleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: 18,
-  fontWeight: 800,
-  letterSpacing: "0.02em",
-};
-
-const bannerSubtitleStyle: React.CSSProperties = {
-  margin: "4px 0 0 0",
-  fontSize: 12.5,
-  opacity: 0.92,
-};
-
-const syncAlertStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  backgroundColor: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  color: "#166534",
-  padding: "10px 16px",
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 600,
-};
-
-const statsBarStyle: React.CSSProperties = {
+const topBarStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   flexWrap: "wrap",
   gap: 12,
-  padding: "4px 0",
+  padding: "10px 16px",
+  backgroundColor: "#FAF9F5",
+  borderRadius: 8,
+  border: "1px solid #E7E5E4",
 };
 
-const statChipStyle: React.CSSProperties = {
+const searchContainerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 8,
-  backgroundColor: "#FAF9F5",
+  backgroundColor: "#FFFFFF",
   border: "1px solid #E7E5E4",
-  padding: "6px 14px",
-  borderRadius: 8,
-};
-
-const statNumStyle: React.CSSProperties = {
-  fontSize: 15,
-  fontWeight: 800,
-  color: "#D97757",
-  fontVariantNumeric: "tabular-nums",
-};
-
-const statLabelStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: "#78716C",
-  fontWeight: 600,
-};
-
-const searchWrapStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  backgroundColor: "#FAF9F5",
-  border: "1px solid #E7E5E4",
-  borderRadius: 8,
-  padding: "8px 12px",
-  minWidth: 280,
+  borderRadius: 6,
+  padding: "6px 10px",
+  minWidth: 260,
+  maxWidth: 380,
 };
 
 const searchInputStyle: React.CSSProperties = {
   border: "none",
   outline: "none",
-  backgroundColor: "transparent",
-  fontSize: 13,
+  fontSize: 12,
   color: "#1C1917",
   width: "100%",
+  backgroundColor: "transparent",
 };
 
-// Pure Table Container without Scrollbars!
-const tableContainerStyle: React.CSSProperties = {
-  width: "100%",
+const countBadgeStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#78716C",
+  backgroundColor: "#F4EFEA",
+  padding: "4px 8px",
+  borderRadius: 4,
+};
+
+const syncBtnStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
+  backgroundColor: "#FAF9F5",
+  border: "1px solid #D97757",
+  color: "#D97757",
+  fontSize: 12,
+  fontWeight: 600,
+  borderRadius: 6,
+  cursor: "pointer",
+  transition: "all 0.15s ease",
+};
+
+const primaryBtnStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 14px",
+  backgroundColor: "#141413",
+  border: "none",
+  color: "#FAF9F5",
+  fontSize: 12,
+  fontWeight: 600,
+  borderRadius: 6,
+  cursor: "pointer",
+  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+};
+
+const ghostBtnStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
   backgroundColor: "#FFFFFF",
   border: "1px solid #E7E5E4",
-  borderRadius: 10,
-  overflow: "visible", // NO inner scrollbar!
+  color: "#1C1917",
+  fontSize: 12,
+  fontWeight: 500,
+  borderRadius: 6,
+  cursor: "pointer",
+};
+
+const syncAlertStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  padding: "8px 12px",
+  backgroundColor: "#F4EFEA",
+  border: "1px solid #D97757",
+  borderRadius: 6,
+  fontSize: 12,
+  color: "#141413",
+  fontWeight: 500,
+};
+
+const tableContainerStyle: React.CSSProperties = {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 8,
+  border: "1px solid #E7E5E4",
+  overflow: "visible",
   boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+  width: "100%",
 };
 
 const tableStyle: React.CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
-  fontSize: 13,
-  tableLayout: "auto",
+  fontSize: 12,
 };
 
 const theadRowStyle: React.CSSProperties = {
-  backgroundColor: "#141413", // Matte Black header
+  backgroundColor: "#141413",
 };
 
 const thStyle: React.CSSProperties = {
-  padding: "12px 14px",
-  textAlign: "left",
-  fontSize: 11,
+  padding: "10px 8px",
+  color: "#FAF9F5",
+  fontSize: 10.5,
   fontWeight: 700,
-  color: "#FAF9F5", // Cream text
-  letterSpacing: "0.05em",
+  letterSpacing: "0.04em",
+  textAlign: "left",
   borderBottom: "1px solid #141413",
   whiteSpace: "nowrap",
 };
@@ -821,16 +1118,26 @@ const trStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "11px 14px",
+  padding: "9px 8px",
   verticalAlign: "middle",
   color: "#1C1917",
+  lineHeight: 1.4,
+  wordBreak: "break-word",
+};
+
+const emptyTdStyle: React.CSSProperties = {
+  padding: "40px 16px",
+  textAlign: "center",
+  color: "#78716C",
+  fontStyle: "italic",
+  fontSize: 13,
 };
 
 const logoBadgeStyle: React.CSSProperties = {
   width: 28,
-  height: 22,
+  height: 28,
   borderRadius: 4,
-  backgroundColor: "#FFFFFF",
+  backgroundColor: "#FAF9F5",
   border: "1px solid #E7E5E4",
   display: "flex",
   alignItems: "center",
@@ -840,159 +1147,118 @@ const logoBadgeStyle: React.CSSProperties = {
 };
 
 const iataBadgeStyle: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 9.5,
   fontWeight: 700,
+  color: "#D97757",
   backgroundColor: "#F4EFEA",
-  color: "#78716C",
-  padding: "1px 6px",
-  borderRadius: 4,
+  padding: "1px 5px",
+  borderRadius: 3,
   display: "inline-block",
   marginTop: 2,
 };
 
 const phoneTextStyle: React.CSSProperties = {
-  fontFamily: "monospace",
-  fontSize: 12.5,
+  fontSize: 11.5,
   fontWeight: 600,
   color: "#1C1917",
-  letterSpacing: "0.02em",
 };
 
 const supportTextStyle: React.CSSProperties = {
-  fontSize: 12.5,
+  fontSize: 11.5,
   color: "#1C1917",
-  wordBreak: "break-word",
+  whiteSpace: "pre-wrap",
+};
+
+const ibanTextStyle: React.CSSProperties = {
+  fontSize: 11,
+  fontFamily: "monospace",
+  color: "#1C1917",
+  fontWeight: 600,
 };
 
 const addressTextStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 11,
   color: "#44403C",
-  lineHeight: 1.4,
-  wordBreak: "break-word",
+  whiteSpace: "pre-wrap",
 };
 
 const emptyFieldStyle: React.CSSProperties = {
   color: "#A8A29E",
-  fontSize: 13,
-};
-
-const emptyTdStyle: React.CSSProperties = {
-  padding: "36px 16px",
-  textAlign: "center",
-  color: "#78716C",
-  fontSize: 13,
+  fontSize: 12,
 };
 
 const copyBtnStyle: React.CSSProperties = {
-  background: "transparent",
+  background: "none",
   border: "none",
   cursor: "pointer",
-  color: "#A8A29E",
+  color: "#78716C",
+  padding: 2,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 3,
-  borderRadius: 4,
+  borderRadius: 3,
   flexShrink: 0,
 };
 
-const actionIconBtnStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #E7E5E4",
-  borderRadius: 6,
-  padding: "5px 7px",
+const actionBtnStyle: React.CSSProperties = {
+  background: "none",
+  border: "none",
   cursor: "pointer",
   color: "#78716C",
+  padding: 4,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
+  borderRadius: 4,
+  transition: "all 0.15s ease",
 };
 
-const primaryBtnStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  backgroundColor: "#141413",
-  color: "#FAF9F5",
-  border: "1px solid #141413",
-  padding: "8px 14px",
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-};
+/* ---------- Modals ---------- */
 
-const syncBtnStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  backgroundColor: "#FFFFFF",
-  color: "#D97757",
-  border: "1px solid #FFFFFF",
-  padding: "8px 14px",
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const ghostBtnStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  backgroundColor: "#FAF9F5",
-  color: "#1C1917",
-  border: "1px solid #E7E5E4",
-  padding: "8px 14px",
-  borderRadius: 8,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-// Modal Styles
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   top: 0,
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: "rgba(20, 20, 19, 0.55)",
+  backgroundColor: "rgba(20, 20, 19, 0.5)",
   backdropFilter: "blur(2px)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  zIndex: 1000,
+  zIndex: 9999,
   padding: 16,
 };
 
 const modalBoxStyle: React.CSSProperties = {
-  backgroundColor: "#FFFFFF",
-  borderRadius: 12,
+  backgroundColor: "#FAF9F5",
+  borderRadius: 10,
   width: "100%",
-  maxWidth: 480,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-  overflow: "hidden",
+  maxWidth: 680,
+  maxHeight: "90vh",
+  overflowY: "auto",
+  boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+  border: "1px solid #E7E5E4",
 };
 
 const modalHeaderStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "16px 20px",
+  padding: "14px 20px",
   borderBottom: "1px solid #E7E5E4",
-  backgroundColor: "#FAF9F5",
+  backgroundColor: "#F4EFEA",
 };
 
 const modalTitleStyle: React.CSSProperties = {
   margin: 0,
-  fontSize: 16,
+  fontSize: 14,
   fontWeight: 700,
-  color: "#1C1917",
+  color: "#141413",
 };
 
 const closeBtnStyle: React.CSSProperties = {
-  background: "transparent",
+  background: "none",
   border: "none",
   cursor: "pointer",
   color: "#78716C",
@@ -1000,41 +1266,53 @@ const closeBtnStyle: React.CSSProperties = {
 };
 
 const formStyle: React.CSSProperties = {
-  padding: "20px",
+  padding: "16px 20px",
   display: "flex",
   flexDirection: "column",
   gap: 14,
 };
 
+const formGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 16,
+};
+
+const formColStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 12,
+};
+
 const formGroupStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 5,
+  gap: 4,
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
-  color: "#44403C",
+  fontSize: 11.5,
+  fontWeight: 600,
+  color: "#1C1917",
 };
 
 const inputStyle: React.CSSProperties = {
-  padding: "9px 12px",
-  borderRadius: 8,
+  padding: "8px 10px",
+  borderRadius: 6,
   border: "1px solid #E7E5E4",
-  backgroundColor: "#FAF9F5",
-  fontSize: 13,
+  fontSize: 12,
   color: "#1C1917",
+  backgroundColor: "#FFFFFF",
   outline: "none",
 };
 
 const textareaStyle: React.CSSProperties = {
-  padding: "9px 12px",
-  borderRadius: 8,
+  padding: "8px 10px",
+  borderRadius: 6,
   border: "1px solid #E7E5E4",
-  backgroundColor: "#FAF9F5",
-  fontSize: 13,
+  fontSize: 12,
   color: "#1C1917",
+  backgroundColor: "#FFFFFF",
   outline: "none",
   resize: "vertical",
 };
@@ -1043,8 +1321,8 @@ const modalFooterStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
-  gap: 10,
-  marginTop: 6,
-  paddingTop: 14,
+  gap: 8,
+  paddingTop: 12,
   borderTop: "1px solid #E7E5E4",
+  marginTop: 6,
 };
