@@ -1175,8 +1175,13 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
     syncTimer.current = setTimeout(runSheetSync, 500);
   };
 
-  const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
-    useMutationFactory(fn, message, refresh, fail, afterSuccess, scheduleSheetSync);
+  const mutate = <T,>(
+    fn: (payload: T) => Promise<unknown>,
+    message: string,
+    optimisticUpdater?: (payload: T, oldData: any) => any,
+    afterSuccess?: () => void
+  ) =>
+    useMutationFactory(fn, message, refresh, fail, afterSuccess, scheduleSheetSync, optimisticUpdater, queryClient);
 
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const reconcileBanksWallets = () => {
@@ -1251,11 +1256,220 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added");
 
-  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
-  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
-  const addGroup = mutate((payload: Record<string, unknown>) => groupFn({ data: payload as never }), "Transaction posted to every ledger");
+  const addTxn = mutate(
+    (payload: Record<string, unknown>) => txnFn({ data: payload as never }),
+    "Entry posted",
+    (payload: any, old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      const now = new Date().toISOString();
+      const newRow: Txn = {
+        id: `opt-${crypto.randomUUID()}`,
+        account_id: String(payload.account_id),
+        entry_date: String(payload.entry_date || todayISO()),
+        entry_type: String(payload.entry_type || "manual"),
+        category: String(payload.category || "General"),
+        party: payload.party ? String(payload.party) : null,
+        description: String(payload.description || "").trim(),
+        amount: Number(payload.amount) || 0,
+        direct_cost: Number(payload.direct_cost) || 0,
+        direction: (payload.direction as "in" | "out") || "in",
+        source_type: payload.source_type ? String(payload.source_type) : "manual",
+        source_id: payload.source_id ? String(payload.source_id) : null,
+        created_at: now,
+      };
+      return { ...old, transactions: [...old.transactions, newRow] };
+    }
+  );
+  const updateTxn = mutate(
+    (payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }),
+    "Entry updated",
+    (payload: any, old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      const targetId = String(payload.id);
+      return {
+        ...old,
+        transactions: old.transactions.map((t: Txn) => (t.id === targetId ? { ...t, ...payload, amount: Number(payload.amount ?? t.amount) } : t)),
+      };
+    }
+  );
+  const addGroup = mutate(
+    (payload: Record<string, unknown>) => groupFn({ data: payload as never }),
+    "Transaction posted to every ledger",
+    (payload: any, old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      const base = {
+        entry_date: String(payload.entry_date || todayISO()),
+        description: String(payload.description || "").trim(),
+        amount: Number(payload.amount) || 0,
+        direct_cost: 0,
+        source_id: String(payload.source_id || crypto.randomUUID()),
+        created_at: new Date().toISOString(),
+      };
+
+      let newRows: Txn[] = [];
+      if (payload.kind === "expense") {
+        newRows = [
+          {
+            id: `opt-${base.source_id}-0`,
+            account_id: String(payload.account_id),
+            entry_date: base.entry_date,
+            entry_type: "expense",
+            category: String(payload.category || "Expense"),
+            party: null,
+            description: base.description,
+            amount: base.amount,
+            direct_cost: 0,
+            direction: "out",
+            source_type: "expense",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          },
+        ];
+      } else if (payload.kind === "sale") {
+        const directCost = Number(payload.direct_cost) || 0;
+        newRows = [
+          {
+            id: `opt-${base.source_id}-0`,
+            account_id: String(payload.account_id),
+            entry_date: base.entry_date,
+            entry_type: "sale",
+            category: String(payload.category || "Sales"),
+            party: payload.party ? String(payload.party).trim() : null,
+            description: base.description,
+            amount: base.amount,
+            direct_cost: directCost,
+            direction: "in",
+            source_type: "sale",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          },
+        ];
+        if (payload.cost_account_id && directCost > 0) {
+          newRows.push({
+            id: `opt-${base.source_id}-1`,
+            account_id: String(payload.cost_account_id),
+            entry_date: base.entry_date,
+            entry_type: "sale",
+            category: String(payload.category || "Sales"),
+            party: payload.party ? String(payload.party).trim() : null,
+            description: `${payload.category} cost — ${payload.party || base.description}`,
+            amount: directCost,
+            direct_cost: 0,
+            direction: "out",
+            source_type: "sale",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          });
+        }
+      } else if (payload.kind === "transfer") {
+        newRows = [
+          {
+            id: `opt-${base.source_id}-out`,
+            account_id: String(payload.account_id),
+            entry_date: base.entry_date,
+            entry_type: "transfer",
+            category: "Transfer",
+            party: null,
+            description: base.description,
+            amount: base.amount,
+            direct_cost: 0,
+            direction: "out",
+            source_type: "transfer",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          },
+          {
+            id: `opt-${base.source_id}-in`,
+            account_id: String(payload.to_account_id),
+            entry_date: base.entry_date,
+            entry_type: "transfer",
+            category: "Transfer",
+            party: null,
+            description: base.description,
+            amount: base.amount,
+            direct_cost: 0,
+            direction: "in",
+            source_type: "transfer",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          },
+        ];
+      } else {
+        const acct = (old?.accounts as Account[] | undefined)?.find((a) => a.id === payload.account_id);
+        const isCash = acct?.kind === "cash";
+        newRows = [
+          {
+            id: `opt-${base.source_id}-0`,
+            account_id: String(payload.account_id),
+            entry_date: base.entry_date,
+            entry_type: "manual",
+            category: String(payload.category || (isCash ? "Cash Book" : "Bank Ledger")),
+            party: null,
+            description: base.description,
+            amount: base.amount,
+            direct_cost: 0,
+            direction: (payload.direction as "in" | "out") || "in",
+            source_type: "manual",
+            source_id: base.source_id,
+            created_at: base.created_at,
+          },
+        ];
+      }
+      return {
+        ...old,
+        transactions: [...old.transactions, ...newRows],
+      };
+    }
+  );
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
-  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
+  const addTransfer = mutate(
+    (payload: Record<string, unknown>) => transferFn({ data: payload as never }),
+    "Transfer posted to both ledgers",
+    (payload: any, old: any) => {
+      if (!old || !Array.isArray(old.transactions)) return old;
+      const sourceId = String(payload.source_id || crypto.randomUUID());
+      const now = new Date().toISOString();
+      const entryDate = String(payload.entry_date || todayISO());
+      const desc = String(payload.description || "Transfer").trim();
+      const amt = Number(payload.amount) || 0;
+      const newRows: Txn[] = [
+        {
+          id: `opt-${sourceId}-out`,
+          account_id: String(payload.from_account_id),
+          entry_date: entryDate,
+          entry_type: "transfer",
+          category: String(payload.category || "Transfer"),
+          party: null,
+          description: desc,
+          amount: amt,
+          direct_cost: 0,
+          direction: "out",
+          source_type: "transfer",
+          source_id: sourceId,
+          created_at: now,
+        },
+        {
+          id: `opt-${sourceId}-in`,
+          account_id: String(payload.to_account_id),
+          entry_date: entryDate,
+          entry_type: "transfer",
+          category: String(payload.category || "Transfer"),
+          party: null,
+          description: desc,
+          amount: amt,
+          direct_cost: 0,
+          direction: "in",
+          source_type: "transfer",
+          source_id: sourceId,
+          created_at: now,
+        },
+      ];
+      return {
+        ...old,
+        transactions: [...old.transactions, ...newRows],
+      };
+    }
+  );
 
   const _removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted");
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
@@ -1970,15 +2184,55 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   );
 }
 
-/* small factory so every mutation shares toast + refresh behaviour */
-function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void, afterSuccess?: () => void, scheduleSync?: (scopes?: string[]) => void) {
+/* small factory so every mutation shares toast + refresh behaviour with instant optimistic UI */
+function useMutationFactory<T>(
+  fn: (payload: T) => Promise<unknown>,
+  message: string,
+  refresh: () => void,
+  fail: (e: unknown) => void,
+  afterSuccess?: () => void,
+  scheduleSync?: (scopes?: string[]) => void,
+  optimisticUpdater?: (payload: T, oldData: any) => any,
+  queryClient?: ReturnType<typeof useQueryClient>
+) {
   return useMutation({
     mutationFn: fn,
-    onMutate: () => {
+    onMutate: async (payload: T) => {
       const toastId = toast.loading("Saving to Supabase & syncing Google Sheets…");
-      return { toastId };
+      let previousData: any = undefined;
+
+      if (optimisticUpdater && queryClient) {
+        await queryClient.cancelQueries({ queryKey: ["accounts-book"] });
+        previousData = queryClient.getQueryData(["accounts-book"]);
+        try {
+          queryClient.setQueryData(["accounts-book"], (old: any) => optimisticUpdater(payload, old));
+        } catch (e) {
+          console.warn("[accounts-book] Optimistic update failed:", e);
+        }
+      }
+
+      return { toastId, previousData };
     },
     onSuccess: (result, _variables, context) => {
+      // When the server returns saved rows, seamlessly merge them to replace temporary optimistic items
+      const savedRows = (result as { rows?: Txn[] } | undefined)?.rows;
+      const sourceId = (result as { source_id?: string } | undefined)?.source_id;
+      if (queryClient && savedRows && Array.isArray(savedRows) && savedRows.length > 0) {
+        queryClient.setQueryData(["accounts-book"], (old: any) => {
+          if (!old || !Array.isArray(old.transactions)) return old;
+          const filtered = old.transactions.filter((t: any) => {
+            if (sourceId && t.source_id === sourceId && String(t.id).startsWith("opt-")) return false;
+            return true;
+          });
+          const existingIds = new Set(filtered.map((t: any) => t.id));
+          const newItems = savedRows.filter((r) => !existingIds.has(r.id));
+          return {
+            ...old,
+            transactions: [...filtered, ...newItems],
+          };
+        });
+      }
+
       refresh();
       const toastId = (context as { toastId?: string | number } | undefined)?.toastId;
       const sync = (result as { sheetSync?: { status?: string; sheets?: string; failures?: string[]; scopes?: string[] } } | undefined)?.sheetSync;
@@ -2008,9 +2262,13 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
       afterSuccess?.();
     },
     onError: (e, _variables, context) => {
-      const toastId = (context as { toastId?: string | number } | undefined)?.toastId;
-      if (toastId) {
-        toast.error(e instanceof Error ? e.message : "Something went wrong", { id: toastId });
+      const ctx = context as { toastId?: string | number; previousData?: any } | undefined;
+      if (queryClient && ctx?.previousData) {
+        queryClient.setQueryData(["accounts-book"], ctx.previousData);
+      }
+      refresh();
+      if (ctx?.toastId) {
+        toast.error(e instanceof Error ? e.message : "Something went wrong", { id: ctx.toastId });
       } else {
         fail(e);
       }
@@ -2654,9 +2912,24 @@ function Modals(props: {
   const [cost, setCost] = useState("");
   const [recv, setRecv] = useState(cash?.id ?? accounts[0]?.id ?? "");
   const [paid, setPaid] = useState("");
-  const [from, setFrom] = useState(cash?.id ?? accounts[0]?.id ?? "");
-  const [to, setTo] = useState(banks[0]?.id ?? accounts[0]?.id ?? "");
+  const initialFrom = cash?.id ?? accounts[0]?.id ?? "";
+  const initialTo = banks.find((b) => b.id !== initialFrom)?.id ?? accounts.find((a) => a.id !== initialFrom)?.id ?? accounts[0]?.id ?? "";
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
   const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("expense");
+
+  const buildTransferDescription = (fromId: string, toId: string) => {
+    const fromName = accounts.find((a) => a.id === fromId)?.name;
+    const toName = accounts.find((a) => a.id === toId)?.name;
+    if (!fromName || !toName) return "";
+    return `Online Transfer from ${fromName} to ${toName} - (Self)`;
+  };
+
+  const isAutoTransferDesc = (text: string) => {
+    const t = text.trim();
+    if (!t) return true;
+    return t.startsWith("Online Transfer ") || t.startsWith("Online Transfer from ") || t === "Cash Deposited";
+  };
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [accountLogoUrl, setAccountLogoUrl] = useState("");
@@ -2682,10 +2955,9 @@ function Modals(props: {
       setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
       setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
     } else if (kind === "transferEntry") {
-      const fromName = accounts.find((a) => a.id === from)?.name;
-      const toName = accounts.find((a) => a.id === to)?.name;
-      if (fromName && toName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
-        setDesc(`Online Transfer ${fromName} to ${toName}`);
+      if (!desc || isAutoTransferDesc(desc)) {
+        const tDesc = buildTransferDescription(from, to);
+        if (tDesc) setDesc(tDesc);
       }
     }
   }, [kind, editTxn, from, to, accounts]);
@@ -2738,7 +3010,24 @@ function Modals(props: {
       <>
         <div className="txseg" role="radiogroup" aria-label="Transaction type">
           {types.map(([id, label]) => (
-            <button key={id} type="button" role="radio" aria-checked={txType === id} className={txType === id ? "on" : ""} onClick={() => setTxType(id)}>{label}</button>
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={txType === id}
+              className={txType === id ? "on" : ""}
+              onClick={() => {
+                setTxType(id);
+                if (id === "transfer") {
+                  const tDesc = buildTransferDescription(from, to);
+                  if (tDesc) setDesc(tDesc);
+                } else if (isAutoTransferDesc(desc)) {
+                  setDesc("");
+                }
+              }}
+            >
+              {label}
+            </button>
           ))}
         </div>
         <div className="field-row">
@@ -2751,11 +3040,57 @@ function Modals(props: {
         {txType === "sale" && (
           <div className="field"><label>Customer / Agent</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Bin Qasim Travels" /></div>
         )}
-        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={txType === "expense" ? "e.g. Tea Bill - Jam" : txType === "sale" ? "e.g. Ticket booking ref XY123" : txType === "transfer" ? "e.g. Cash Deposited" : "e.g. Online Received Danial Iqbal Travels"} /></div>
+        <div className="field">
+          <label>Description</label>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder={
+              txType === "expense"
+                ? "e.g. Tea Bill - Jam"
+                : txType === "sale"
+                ? "e.g. Ticket booking ref XY123"
+                : txType === "transfer"
+                ? buildTransferDescription(from, to) || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"
+                : "e.g. Online Received Danial Iqbal Travels"
+            }
+          />
+        </div>
         {txType === "transfer" ? (
           <div className="field-row">
-            <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
-            <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
+            <div className="field">
+              <label>From</label>
+              <select
+                value={from}
+                onChange={(e) => {
+                  const nextFrom = e.target.value;
+                  setFrom(nextFrom);
+                  if (isAutoTransferDesc(desc) || !desc.trim()) {
+                    const tDesc = buildTransferDescription(nextFrom, to);
+                    if (tDesc) setDesc(tDesc);
+                  }
+                }}
+              >
+                {accountOptions(accounts)}
+              </select>
+            </div>
+            <div className="field">
+              <label>To</label>
+              <select
+                value={to}
+                onChange={(e) => {
+                  const nextTo = e.target.value;
+                  setTo(nextTo);
+                  if (isAutoTransferDesc(desc) || !desc.trim()) {
+                    const tDesc = buildTransferDescription(from, nextTo);
+                    if (tDesc) setDesc(tDesc);
+                  }
+                }}
+              >
+                {accountOptions(accounts)}
+              </select>
+            </div>
           </div>
         ) : (
           <div className="field-row">
@@ -2778,7 +3113,8 @@ function Modals(props: {
         </div>
       </>
     ), "Post Transaction", () => {
-      const finalDesc = desc.trim();
+      const transferAutoDesc = txType === "transfer" ? buildTransferDescription(from, to) : "";
+      const finalDesc = (desc.trim() || transferAutoDesc).trim();
       if (!finalDesc || amt <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       const base = { entry_date: date, description: finalDesc, amount: amt, source_id: crypto.randomUUID() };
       if (txType === "expense") {
@@ -2902,15 +3238,7 @@ function Modals(props: {
       });
 
   if (kind === "transferEntry") {
-    const fromAcc = accounts.find((a) => a.id === from);
-    const toAcc = accounts.find((a) => a.id === to);
-    // Only suggest the "( Self )" wording for a transfer directly between
-    // two of our own banks/wallets (neither side Cash) -- a Cash deposit or
-    // withdrawal isn't "self" money movement between accounts the same way.
-    const defaultTransferDesc =
-      fromAcc && toAcc && fromAcc.kind !== "cash" && toAcc.kind !== "cash" && fromAcc.id !== toAcc.id
-        ? `Online Transfer ${fromAcc.name} to ${toAcc.name} ( Self )`
-        : "";
+    const defaultTransferDesc = buildTransferDescription(from, to);
 
     return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
       <>
@@ -2923,10 +3251,9 @@ function Modals(props: {
               onChange={(e) => {
                 const nextFrom = e.target.value;
                 setFrom(nextFrom);
-                const nextFromName = accounts.find((a) => a.id === nextFrom)?.name;
-                const currentToName = accounts.find((a) => a.id === to)?.name;
-                if (nextFromName && currentToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
-                  setDesc(`Online Transfer ${nextFromName} to ${currentToName}`);
+                if (!desc || isAutoTransferDesc(desc)) {
+                  const tDesc = buildTransferDescription(nextFrom, to);
+                  if (tDesc) setDesc(tDesc);
                 }
               }}
             >
@@ -2940,10 +3267,9 @@ function Modals(props: {
               onChange={(e) => {
                 const nextTo = e.target.value;
                 setTo(nextTo);
-                const currentFromName = accounts.find((a) => a.id === from)?.name;
-                const nextToName = accounts.find((a) => a.id === nextTo)?.name;
-                if (currentFromName && nextToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
-                  setDesc(`Online Transfer ${currentFromName} to ${nextToName}`);
+                if (!desc || isAutoTransferDesc(desc)) {
+                  const tDesc = buildTransferDescription(from, nextTo);
+                  if (tDesc) setDesc(tDesc);
                 }
               }}
             >
@@ -2957,13 +3283,13 @@ function Modals(props: {
             type="text"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            placeholder={defaultTransferDesc || "e.g. Online Transfer Account A to Account B"}
+            placeholder={defaultTransferDesc || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"}
           />
         </div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
     ), "Save Transfer", () => {
-      const finalDesc = desc.trim() || defaultTransferDesc;
+      const finalDesc = (desc.trim() || defaultTransferDesc).trim();
       if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
       close();
