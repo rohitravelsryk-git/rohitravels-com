@@ -873,7 +873,21 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.5);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
 .rohi-ab .modal{position:relative;z-index:1;background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease-out);}
-.rohi-ab .modal.modal-wide, .modal.modal-wide{max-width:1160px;width:95vw;max-height:92vh;}
+.rohi-ab .modal.modal-wide, .modal.modal-wide{max-width:1420px;width:97vw;max-height:95vh;padding:16px 22px 14px;}
+.rohi-ab .modal.modal-wide .modal-head{margin-bottom:6px;}
+.rohi-ab .modal.modal-wide .field-row{margin-bottom:6px;gap:10px;}
+.rohi-ab .modal.modal-wide .field{margin-bottom:6px;}
+.rohi-ab .modal.modal-wide .field label{font-size:11.5px;margin-bottom:3px;font-weight:700;}
+.rohi-ab .modal.modal-wide .field input, .rohi-ab .modal.modal-wide .field select{padding:6px 10px;font-size:12.5px;height:34px;}
+.rohi-ab .modal.modal-wide .sales-b2b-section{margin-top:6px;margin-bottom:6px;}
+.rohi-ab .modal.modal-wide .sales-table-wrap{margin-bottom:8px;max-height:48vh;overflow-y:auto;}
+.rohi-ab .modal.modal-wide .sales-data-table th{padding:6px 6px;font-size:11px;}
+.rohi-ab .modal.modal-wide .sales-data-table td{padding:4px 4px;}
+.rohi-ab .modal.modal-wide .sales-data-table td input{padding:4px 6px;font-size:11.5px;height:30px;}
+.rohi-ab .modal.modal-wide .sales-summary-bar{padding:6px 14px;gap:8px;margin-bottom:6px;}
+.rohi-ab .modal.modal-wide .sales-summary-bar .summary-label{font-size:10.5px;margin-bottom:1px;}
+.rohi-ab .modal.modal-wide .sales-summary-bar .summary-val{font-size:14px;}
+.rohi-ab .modal.modal-wide .modal-actions{margin-top:8px;}
 .rohi-ab .sales-b2b-section{margin-top:12px;margin-bottom:14px;}
 .rohi-ab .sales-b2b-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .rohi-ab .sales-b2b-header h4{margin:0;font-size:14px;font-weight:700;color:var(--foreground);}
@@ -1032,6 +1046,11 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const reorderServicesFn = useServerFn(reorderAccountsBookServices);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
+  const { data: addonsLocations = [] } = useQuery({ queryKey: ["addons-locations"], queryFn: () => listLocations(), staleTime: 5 * 60 * 1000 });
+  const { data: addonsCountries = [] } = useQuery({ queryKey: ["addons-countries"], queryFn: () => listCountries(), staleTime: 5 * 60 * 1000 });
+  const { data: registeredAgents = [] } = useQuery({ queryKey: ["registered-agents-admin"], queryFn: () => listAgentsAdmin(), staleTime: 5 * 60 * 1000 });
+  const { data: registeredVendors = [] } = useQuery({ queryKey: ["registered-vendors-admin"], queryFn: () => listVendors(), staleTime: 5 * 60 * 1000 });
+
   const [tab, setTab] = useState<TabId>(initialTab ?? "dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -2316,7 +2335,11 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           onGroup={(payload) => addGroup.mutate(payload, { onSuccess: () => setModal(null) })}
           onSalesBatch={(payload) => addSalesBatch.mutate(payload, { onSuccess: () => setModal(null) })}
           onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => setModal(null) })}
-          onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
+          onCategory={(name) => addService.mutate({ name: name.trim().toLowerCase() === "insurance" ? "Travel Insurance" : name }, { onSuccess: () => setModal(null) })}
+          addonsLocations={addonsLocations}
+          addonsCountries={addonsCountries}
+          registeredAgents={registeredAgents}
+          registeredVendors={registeredVendors}
           editTxn={editingTxn}
           onUpdate={(payload) => updateTxn.mutate(payload, { onSuccess: () => { setModal(null); setEditingTxn(null); } })}
         />
@@ -3043,6 +3066,10 @@ function Modals(props: {
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
   onSalesBatch?: (payload: Record<string, unknown>) => void;
+  addonsLocations?: any[];
+  addonsCountries?: any[];
+  registeredAgents?: any[];
+  registeredVendors?: any[];
 }) {
   const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
   const [date, setDate] = useState(todayISO());
@@ -3155,6 +3182,51 @@ function Modals(props: {
     "Qatar Airways", "Gulf Air", "Oman Air", "Jazeera Airways", "Flynas", "SalamAir",
     "Turkish Airlines", "Etihad Airways", "GDS / Sabre", "Galileo", "Direct Supplier"
   ], []);
+
+  const countryLocationOptions = useMemo(() => {
+    const values = new Set<string>();
+    (props.addonsCountries ?? []).forEach((country: any) => {
+      if (country?.name?.trim()) values.add(country.name.trim());
+    });
+    knownCountries.forEach((country) => values.add(country));
+    (props.addonsLocations ?? []).forEach((location: any) => {
+      if (location?.city?.trim()) values.add(location.code ? `${location.city.trim()} (${location.code.trim()})` : location.city.trim());
+    });
+    return Array.from(values);
+  }, [props.addonsCountries, props.addonsLocations, knownCountries]);
+
+  const agentOptions = useMemo(() => {
+    const values = new Map<string, { name: string; contact: string }>();
+    values.set("abdul razzaq", { name: "Abdul Razzaq", contact: "" });
+    (props.registeredAgents ?? []).forEach((agent: any) => {
+      const agency = String(agent.agency_name ?? "").trim();
+      const person = String(agent.contact_person ?? "").trim();
+      const contact = String(agent.cell_number ?? agent.phone ?? "").trim();
+      const name = agency || person;
+      if (name) values.set(name.toLowerCase(), { name, contact });
+    });
+    return Array.from(values.values());
+  }, [props.registeredAgents]);
+
+  const vendorOptions = useMemo(() => {
+    const values = new Set<string>();
+    (props.registeredVendors ?? []).forEach((vendor: any) => {
+      if (vendor?.name?.trim()) values.add(vendor.name.trim());
+    });
+    knownVendors.forEach((vendor) => values.add(vendor));
+    return Array.from(values);
+  }, [props.registeredVendors, knownVendors]);
+
+  const onAgentSelected = (rowId: string, value: string) => {
+    updateSaleRow(rowId, "agent", value);
+    const norm = value.trim().toLowerCase();
+    const agent = agentOptions.find((option) => option.name.toLowerCase() === norm);
+    if (norm.includes("abdul razzaq")) {
+      updateSaleRow(rowId, "contact_no", "");
+      return;
+    }
+    if (agent?.contact) updateSaleRow(rowId, "contact_no", agent.contact);
+  };
 
   // The modal component is reused when switching actions. Reset the add-account
   // draft on entry so a previous account/category name can never carry over.
@@ -3336,199 +3408,68 @@ function Modals(props: {
             </div>
           )}
 
-          {/* SALE TAB: CATEGORY RIGHT AFTER DATE */}
+          {/* SALE TAB: CATEGORY AFTER THE SINGLE ROW DATE */}
           {txType === "sale" && (
             <>
-              <div className="field-row">
-                <div className="field">
-                  <label>Date</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => {
-                      const newD = e.target.value;
-                      setDate(newD);
-                      setSalesRows((prev) => prev.map((r) => ({ ...r, date: r.date === date ? newD : r.date })));
-                    }}
-                  />
-                </div>
+              <div className="field-row" style={{ marginBottom: 6 }}>
                 <div className="field">
                   <label>Category</label>
                   <select value={catValue} onChange={(e) => setCat(e.target.value)}>
-                    {catList.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                    {catList.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
                 </div>
-              </div>
-
-              <div className="field-row">
                 <div className="field">
                   <label>Received via (Account)</label>
-                  <select value={recv} onChange={(e) => setRecv(e.target.value)}>
-                    {accountOptions(accounts)}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Cost paid via (Optional)</label>
-                  <select value={paid} onChange={(e) => setPaid(e.target.value)}>
-                    <option value="">Not paid yet / Pay later</option>
-                    {accountOptions(accounts)}
-                  </select>
+                  <select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select>
                 </div>
               </div>
-
-              {/* B2B Agent Portal Book Fare Style Data Table */}
               <div className="sales-b2b-section">
-                <div className="sales-b2b-header">
-                  <h4>{catValue} — Booking Entries</h4>
-                  <span className="hint">B2B Agent Portal Book Fare Form Columns</span>
+                <div className="sales-b2b-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 700 }}>{catValue} — Booking Entries</h4>
+                  <button type="button" className="btn small" onClick={addSaleRow} style={{ padding: "4px 14px", fontWeight: 700, fontSize: 12 }}><Plus size={14} /> Add</button>
                 </div>
-
                 <div className="sales-table-wrap">
                   <table className="sales-data-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: 44, textAlign: "center" }}>Sr No. (Auto)</th>
-                        <th style={{ width: 125 }}>Date</th>
-                        <th style={{ minWidth: 120 }}>Country</th>
-                        <th style={{ minWidth: 140 }}>Agent</th>
-                        <th style={{ minWidth: 150 }}>Pax Name</th>
-                        <th style={{ minWidth: 110 }}>Contact No.</th>
-                        <th style={{ minWidth: 140 }}>Vendor</th>
-                        <th style={{ width: 110 }} className="num">Sale Amount</th>
-                        <th style={{ width: 110 }} className="num">Purchase Amount</th>
-                        <th style={{ width: 100 }} className="num">Profit</th>
-                        <th style={{ width: 40 }} />
-                      </tr>
-                    </thead>
+                    <thead><tr>
+                      <th style={{ width: 44, textAlign: "center" }}>Sr No. (Auto)</th>
+                      <th style={{ width: 125 }}>Date</th><th style={{ minWidth: 150 }}>Agent Name</th>
+                      <th style={{ minWidth: 130 }}>Country</th><th style={{ minWidth: 140 }}>Pax Name</th>
+                      <th style={{ minWidth: 125 }}>Contact No.</th><th style={{ minWidth: 140 }}>Vendor</th>
+                      <th style={{ width: 105 }} className="num">Sale Amount</th>
+                      <th style={{ width: 105 }} className="num">Purchase Amount</th><th style={{ width: 95 }} className="num">Profit</th><th style={{ width: 36 }} />
+                    </tr></thead>
                     <tbody>
                       {salesRows.map((row, idx) => {
-                        const sAmt = Number(row.sale_amount) || 0;
-                        const pAmt = Number(row.purchase_amount) || 0;
-                        const pft = sAmt - pAmt;
-                        return (
-                          <tr key={row.id}>
-                            <td className="sr-col">{idx + 1}</td>
-                            <td>
-                              <input
-                                type="date"
-                                value={row.date || date}
-                                onChange={(e) => updateSaleRow(row.id, "date", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                list="country-datalist"
-                                placeholder="e.g. Saudi Arabia"
-                                value={row.country}
-                                onChange={(e) => updateSaleRow(row.id, "country", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                placeholder="B2B Agent"
-                                value={row.agent}
-                                onChange={(e) => updateSaleRow(row.id, "agent", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                placeholder="Pax name"
-                                value={row.pax_name}
-                                onChange={(e) => updateSaleRow(row.id, "pax_name", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                placeholder="03xx-xxxxxxx"
-                                value={row.contact_no}
-                                onChange={(e) => updateSaleRow(row.id, "contact_no", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                list="vendor-datalist"
-                                placeholder="Airline / Vendor"
-                                value={row.vendor}
-                                onChange={(e) => updateSaleRow(row.id, "vendor", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                className="num"
-                                value={row.sale_amount}
-                                onChange={(e) => updateSaleRow(row.id, "sale_amount", e.target.value)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                className="num"
-                                value={row.purchase_amount}
-                                onChange={(e) => updateSaleRow(row.id, "purchase_amount", e.target.value)}
-                              />
-                            </td>
-                            <td className="profit-cell" style={{ color: pft >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>
-                              {sAmt > 0 || pAmt > 0 ? fmt(pft) : "—"}
-                            </td>
-                            <td style={{ textAlign: "center" }}>
-                              <button
-                                type="button"
-                                className="icon-btn danger"
-                                onClick={() => removeSaleRow(row.id)}
-                                title="Remove row"
-                                disabled={salesRows.length === 1 && !row.sale_amount && !row.pax_name}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        );
+                        const saleAmount = Number(row.sale_amount) || 0;
+                        const purchaseAmount = Number(row.purchase_amount) || 0;
+                        const profit = saleAmount - purchaseAmount;
+                        const passengerContact = row.agent.toLowerCase().includes("abdul razzaq");
+                        return <tr key={row.id}>
+                          <td className="sr-col">{idx + 1}</td>
+                          <td><input type="date" value={row.date || todayISO()} onChange={(e) => updateSaleRow(row.id, "date", e.target.value)} /></td>
+                          <td><input list="agent-datalist" placeholder="Type / Pick Agent" value={row.agent} onChange={(e) => onAgentSelected(row.id, e.target.value)} /></td>
+                          <td><input list="country-datalist" placeholder="Country / Location" value={row.country} onChange={(e) => updateSaleRow(row.id, "country", e.target.value)} /></td>
+                          <td><input placeholder="Pax name" value={row.pax_name} onChange={(e) => updateSaleRow(row.id, "pax_name", e.target.value)} /></td>
+                          <td><input placeholder={passengerContact ? "Passenger Contact No" : "Agent Contact No"} value={row.contact_no} onChange={(e) => updateSaleRow(row.id, "contact_no", e.target.value)} /></td>
+                          <td><input list="vendor-datalist" placeholder="Type / Pick Vendor" value={row.vendor} onChange={(e) => updateSaleRow(row.id, "vendor", e.target.value)} /></td>
+                          <td><input type="number" min="0" placeholder="0" className="num" value={row.sale_amount} onChange={(e) => updateSaleRow(row.id, "sale_amount", e.target.value)} /></td>
+                          <td><input type="number" min="0" placeholder="0" className="num" value={row.purchase_amount} onChange={(e) => updateSaleRow(row.id, "purchase_amount", e.target.value)} /></td>
+                          <td className="profit-cell" style={{ color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{saleAmount > 0 || purchaseAmount > 0 ? fmt(profit) : "—"}</td>
+                          <td style={{ textAlign: "center" }}><button type="button" className="icon-btn danger" onClick={() => removeSaleRow(row.id)} title="Remove row" disabled={salesRows.length === 1 && !row.sale_amount && !row.pax_name}><Trash2 size={14} /></button></td>
+                        </tr>;
                       })}
                     </tbody>
                   </table>
                 </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <button type="button" className="btn small ghost" onClick={addSaleRow}>
-                    + Add Pax / Booking Row
-                  </button>
-                  <div className="hint">
-                    {salesRows.length} {salesRows.length === 1 ? "entry" : "entries"} in batch
-                  </div>
-                </div>
-
-                {/* Summary Bar */}
                 <div className="sales-summary-bar">
-                  <div>
-                    <span className="summary-label">Total Sale Amount</span>
-                    <span className="summary-val">{fmt(totalBatchSale)} PKR</span>
-                  </div>
-                  <div>
-                    <span className="summary-label">Total Purchase Amount</span>
-                    <span className="summary-val">{fmt(totalBatchCost)} PKR</span>
-                  </div>
-                  <div>
-                    <span className="summary-label">Total Net Profit</span>
-                    <span className="summary-val" style={{ color: totalBatchProfit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>
-                      {fmt(totalBatchProfit)} PKR
-                    </span>
-                  </div>
+                  <div><span className="summary-label">Total Sale Amount</span><span className="summary-val">{fmt(totalBatchSale)} PKR</span></div>
+                  <div><span className="summary-label">Total Purchase Amount</span><span className="summary-val">{fmt(totalBatchCost)} PKR</span></div>
+                  <div><span className="summary-label">Total Net Profit</span><span className="summary-val" style={{ color: totalBatchProfit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(totalBatchProfit)} PKR</span></div>
                 </div>
               </div>
-
-              <datalist id="country-datalist">
-                {knownCountries.map((c) => <option key={c} value={c} />)}
-              </datalist>
-              <datalist id="vendor-datalist">
-                {knownVendors.map((v) => <option key={v} value={v} />)}
-              </datalist>
+              <datalist id="agent-datalist">{agentOptions.map((agent) => <option key={agent.name} value={agent.name}>{agent.contact ? `${agent.name} — ${agent.contact}` : agent.name}</option>)}</datalist>
+              <datalist id="country-datalist">{countryLocationOptions.map((value) => <option key={value} value={value} />)}</datalist>
+              <datalist id="vendor-datalist">{vendorOptions.map((value) => <option key={value} value={value} />)}</datalist>
             </>
           )}
 

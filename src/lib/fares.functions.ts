@@ -889,6 +889,14 @@ export const DEFAULT_SERVICES_CATALOGUE: Record<string, { photo_url: string; des
     photo_url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
     description: "Special travel vouchers, agency perks, and seasonal promotional discounts for corporate and retail clients.",
   },
+  "travel insurance": {
+    photo_url: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80",
+    description: "Comprehensive medical and trip cancellation travel insurance coverage for domestic and international journeys.",
+  },
+  "insurance": {
+    photo_url: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80",
+    description: "Comprehensive medical and trip cancellation travel insurance coverage for domestic and international journeys.",
+  },
   "other": {
     photo_url: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=80",
     description: "Customized travel solutions, travel insurance, urgent inquiries, and bespoke itineraries.",
@@ -942,11 +950,15 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
     }
 
     const enriched: InquiryService[] = (list ?? []).map((item) => {
-      const norm = String(item.label || "").toLowerCase().trim();
-      const fallback = DEFAULT_SERVICES_CATALOGUE[norm];
+      let label = item.label;
+      if (label && label.trim().toLowerCase() === "insurance") {
+        label = "Travel Insurance";
+      }
+      const norm = String(label || "").toLowerCase().trim();
+      const fallback = DEFAULT_SERVICES_CATALOGUE[norm] || DEFAULT_SERVICES_CATALOGUE["travel insurance"];
       return {
         id: item.id,
-        label: item.label,
+        label,
         sort_order: Number(item.sort_order ?? 100),
         photo_url: item.photo_url || fallback?.photo_url || null,
         description: item.description || fallback?.description || null,
@@ -976,8 +988,9 @@ export const createService = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const finalLabel = data.label.trim().toLowerCase() === "insurance" ? "Travel Insurance" : data.label;
     const payload: any = {
-      label: data.label,
+      label: finalLabel,
       photo_url: data.photo_url || null,
       description: data.description || null,
       sort_order: data.sort_order,
@@ -1086,7 +1099,8 @@ export const updateService = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const updatePayload: any = { label: data.label };
+    const finalLabel = data.label.trim().toLowerCase() === "insurance" ? "Travel Insurance" : data.label;
+    const updatePayload: any = { label: finalLabel };
     if (data.photo_url !== undefined) updatePayload.photo_url = data.photo_url || null;
     if (data.description !== undefined) updatePayload.description = data.description || null;
     if (data.sort_order !== undefined) updatePayload.sort_order = data.sort_order;

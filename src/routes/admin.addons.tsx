@@ -757,7 +757,8 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
   }
 
   async function del(item: InquiryService) {
-    if (!confirm(`Delete service "${item.label}"? Customer inquiry forms and packages may reference this service.`)) return;
+    const sName = item.label?.trim().toLowerCase() === "insurance" ? "Travel Insurance" : item.label;
+    if (!confirm(`Delete service "${sName}"? Customer inquiry forms and packages may reference this service.`)) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -943,7 +944,8 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
           )}
           {items.map((item) => {
             const isEditing = editId === item.id;
-            const imgSrc = item.photo_url || serviceImageFor(item.label);
+            const displayLabel = item.label?.trim().toLowerCase() === "insurance" ? "Travel Insurance" : item.label;
+            const imgSrc = item.photo_url || serviceImageFor(displayLabel);
 
             return (
               <li
@@ -1017,7 +1019,7 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
                       <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
                         <img
                           src={imgSrc}
-                          alt={item.label}
+                          alt={displayLabel}
                           className="h-full w-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = "none";
@@ -1026,7 +1028,7 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-sans text-sm font-bold text-foreground">{item.label}</h4>
+                          <h4 className="font-sans text-sm font-bold text-foreground">{displayLabel}</h4>
                           <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                             Order: {item.sort_order ?? 100}
                           </span>
@@ -1053,8 +1055,8 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
                           setError(null);
                         }}
                         className={actionBtn}
-                        title={`Edit ${item.label}`}
-                        aria-label={`Edit ${item.label}`}
+                        title={`Edit ${displayLabel}`}
+                        aria-label={`Edit ${displayLabel}`}
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -1062,8 +1064,8 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
                         type="button"
                         onClick={() => void del(item)}
                         className="rounded-lg border border-destructive/25 bg-destructive/5 p-2 text-destructive transition hover:bg-destructive/10"
-                        title={`Delete ${item.label}`}
-                        aria-label={`Delete ${item.label}`}
+                        title={`Delete ${displayLabel}`}
+                        aria-label={`Delete ${displayLabel}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
