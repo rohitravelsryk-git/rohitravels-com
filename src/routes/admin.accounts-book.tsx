@@ -283,17 +283,26 @@ function BankWalletAccountCards({
 }) {
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<string[]>([]);
+
   useEffect(() => {
     setLocalOrder(accounts.map((account) => account.id));
   }, [accounts.map((account) => account.id).join("|")]);
+
+  const byId = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
+
   const orderedAccounts = useMemo(() => {
-    const byId = new Map(accounts.map((account) => [account.id, account]));
     const ordered = localOrder.map((id) => byId.get(id)).filter((account): account is Account => Boolean(account));
     for (const account of accounts) if (!ordered.some((item) => item.id === account.id)) ordered.push(account);
     return ordered;
-  }, [accounts, localOrder]);
+  }, [accounts, byId, localOrder]);
+
   const dropAccount = (targetId: string) => {
     if (!draggedId || draggedId === targetId) { setDropTargetId(null); return; }
+    const target = byId.get(targetId);
+    if (target?.kind === "cash") { setDropTargetId(null); return; }
+    const dragged = byId.get(draggedId);
+    if (dragged?.kind === "cash") { setDropTargetId(null); return; }
+
     const ids = orderedAccounts.map((account) => account.id);
     const from = ids.indexOf(draggedId);
     const to = ids.indexOf(targetId);
@@ -303,36 +312,56 @@ function BankWalletAccountCards({
     setLocalOrder(ids);
     setDropTargetId(null);
     onDragChange(null);
-    onReorder(ids);
+    const bankIds = ids.filter((id) => byId.get(id)?.kind !== "cash");
+    onReorder(bankIds);
   };
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12, margin: "6px 0 18px" }}>
       {orderedAccounts.map((account) => {
         const rows = transactions.filter((t) => t.account_id === account.id);
         const balance = finalBalance(rows, account.opening_balance);
         const active = account.id === activeId;
+        const isCash = account.kind === "cash";
         return (
           <button
             key={account.id}
             type="button"
-            draggable
+            draggable={!isCash}
             className={`bank-account-card ${draggedId === account.id ? "is-dragging" : ""} ${dropTargetId === account.id ? "drop-target" : ""}`}
             onClick={() => { if (!draggedId) onSelect(account.id); }}
             onDragStart={(event) => {
+              if (isCash) return;
               event.dataTransfer.effectAllowed = "move";
               event.dataTransfer.setData("text/plain", account.id);
               onDragChange(account.id);
             }}
             onDragOver={(event) => {
+              if (isCash) return;
               event.preventDefault();
               event.dataTransfer.dropEffect = "move";
               if (draggedId && draggedId !== account.id) setDropTargetId(account.id);
             }}
             onDragLeave={() => setDropTargetId((current) => current === account.id ? null : current)}
-            onDrop={(event) => { event.preventDefault(); dropAccount(account.id); }}
+            onDrop={(event) => {
+              if (isCash) return;
+              event.preventDefault();
+              dropAccount(account.id);
+            }}
             onDragEnd={() => { onDragChange(null); setDropTargetId(null); }}
-            title={`Drag to reorder • Open ${account.name} ledger`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: draggedId === account.id ? "grabbing" : "grab", color: "var(--foreground)" }}
+            title={isCash ? `Open ${account.name} ledger` : `Drag to reorder • Open ${account.name} ledger`}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              minWidth: 0,
+              textAlign: "center",
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              cursor: isCash ? "pointer" : draggedId === account.id ? "grabbing" : "grab",
+              color: "var(--foreground)",
+            }}
           >
             <div style={{
               width: "100%", background: "var(--card)", boxSizing: "border-box",
@@ -355,7 +384,7 @@ function BankWalletAccountCards({
             </div>
             <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, maxWidth: "100%", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted-foreground)" }}>
-              {account.kind === "wallet" ? "Wallet" : "Bank"} · Drag to move
+              {isCash ? "Cash in Hand" : account.kind === "wallet" ? "Wallet · Drag to move" : "Bank · Drag to move"}
             </div>
           </button>
         );
@@ -1087,7 +1116,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
       : DEFAULT_EXPENSE_CATS.map((name) => ({ id: null as string | null, name }));
   }, [services]);
 
-  const activeBank = banks.find((b) => b.id === bankSel) ?? banks[0] ?? null;
+  const activeBank = liquidAccounts.find((b) => b.id === bankSel) ?? banks[0] ?? cash ?? null;
   const exportBankStatementCSV = () => {
     if (!activeBank) return;
     const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
@@ -1900,7 +1929,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                 </div>
               )}
               <BankWalletAccountCards
-                accounts={banks}
+                accounts={liquidAccounts}
                 transactions={txns}
                 activeId={activeBank?.id}
                 onSelect={setBankSel}
