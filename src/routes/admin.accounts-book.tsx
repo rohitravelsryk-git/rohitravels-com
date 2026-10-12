@@ -858,7 +858,7 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
 .rohi-ab .hint{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
 .rohi-ab .txseg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:4px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:var(--muted);}
-.rohi-ab .txseg button{padding:9px 6px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.rohi-ab .txseg button{padding:8px 4px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink-soft);font-size:11.5px;font-weight:600;cursor:pointer;text-align:center;line-height:1.25;display:flex;align-items:center;justify-content:center;}
 .rohi-ab .txseg button.on{background:var(--foreground);color:var(--background);box-shadow:0 1px 3px rgba(0,0,0,.18);}
 .rohi-ab .posting{margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:10px 12px;background:var(--muted);}
 .rohi-ab .posting h4{margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);}
@@ -2928,7 +2928,7 @@ function Modals(props: {
   const isAutoTransferDesc = (text: string) => {
     const t = text.trim();
     if (!t) return true;
-    return t.startsWith("Online Transfer ") || t.startsWith("Online Transfer from ") || t === "Cash Deposited";
+    return t.startsWith("Online Transfer ") || t.startsWith("Online Transfer from ") || t === "Cash Deposited" || t.includes(" - (Self)");
   };
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
@@ -2954,13 +2954,13 @@ function Modals(props: {
     if (kind === "editTransaction" && editTxn) {
       setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
       setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
-    } else if (kind === "transferEntry") {
+    } else if (kind === "transferEntry" || (kind === "quickadd" && txType === "transfer")) {
       if (!desc || isAutoTransferDesc(desc)) {
         const tDesc = buildTransferDescription(from, to);
         if (tDesc) setDesc(tDesc);
       }
     }
-  }, [kind, editTxn, from, to, accounts]);
+  }, [kind, txType, editTxn, from, to, accounts]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -3005,7 +3005,12 @@ function Modals(props: {
       legs.push({ where: "Daily Cash Book", what: `${dir === "in" ? "Received" : "Payment"} ${fmt(amt)}` });
       legs.push({ where: `${nameOf(recv)} ledger`, what: `${dir === "in" ? "Debit (in)" : "Credit (out)"} ${fmt(amt)}` });
     }
-    const types: [typeof txType, string][] = [["expense", "Expense"], ["sale", "Sale"], ["transfer", "Transfer"], ["entry", "Cash / Bank Entry"]];
+    const types: [typeof txType, string][] = [
+      ["expense", "Expense"],
+      ["sale", "Sale"],
+      ["transfer", "Self Transfer"],
+      ["entry", "Cash Receipts & Payments"],
+    ];
     return shell("New Transaction", "One entry — it posts to the Cash Book, the category ledger and the account ledger together, then syncs to Google Sheets.", (
       <>
         <div className="txseg" role="radiogroup" aria-label="Transaction type">
@@ -3030,34 +3035,22 @@ function Modals(props: {
             </button>
           ))}
         </div>
+
+        {/* 1. Date & 2. Amount */}
         <div className="field-row">
           <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
           <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
         </div>
-        {(txType === "expense" || txType === "sale") && (
-          <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+
+        {/* 3. Type & 4. Account (Ordered: Date, Amount, Type, Account, Description) */}
+        {txType === "entry" && (
+          <div className="field-row">
+            <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received (In)</option><option value="out">Payment (Out)</option></select></div>
+            <div className="field"><label>Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+          </div>
         )}
-        {txType === "sale" && (
-          <div className="field"><label>Customer / Agent</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Bin Qasim Travels" /></div>
-        )}
-        <div className="field">
-          <label>Description</label>
-          <input
-            type="text"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-            placeholder={
-              txType === "expense"
-                ? "e.g. Tea Bill - Jam"
-                : txType === "sale"
-                ? "e.g. Ticket booking ref XY123"
-                : txType === "transfer"
-                ? buildTransferDescription(from, to) || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"
-                : "e.g. Online Received Danial Iqbal Travels"
-            }
-          />
-        </div>
-        {txType === "transfer" ? (
+
+        {txType === "transfer" && (
           <div className="field-row">
             <div className="field">
               <label>From</label>
@@ -3092,14 +3085,44 @@ function Modals(props: {
               </select>
             </div>
           </div>
-        ) : (
+        )}
+
+        {txType === "expense" && (
           <div className="field-row">
-            <div className="field"><label>{txType === "expense" ? "Paid via" : txType === "sale" ? "Received via" : "Account"}</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
-            {txType === "entry" && (
-              <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received (In)</option><option value="out">Payment (Out)</option></select></div>
-            )}
+            <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div className="field"><label>Paid via</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
           </div>
         )}
+
+        {txType === "sale" && (
+          <>
+            <div className="field-row">
+              <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+              <div className="field"><label>Received via</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+            </div>
+            <div className="field"><label>Customer / Agent</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Bin Qasim Travels" /></div>
+          </>
+        )}
+
+        {/* 5. Description (Auto-Populated for Self Transfer) */}
+        <div className="field">
+          <label>Description</label>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder={
+              txType === "expense"
+                ? "e.g. Tea Bill - Jam"
+                : txType === "sale"
+                ? "e.g. Ticket booking ref XY123"
+                : txType === "transfer"
+                ? buildTransferDescription(from, to) || "e.g. Online Transfer from UBL Company to UBL Personal - (Self)"
+                : "e.g. Online Received Danial Iqbal Travels"
+            }
+          />
+        </div>
+
         {txType === "sale" && (
           <div className="field-row">
             <div className="field"><label>Cost / Purchase</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="0" /></div>
@@ -3240,7 +3263,7 @@ function Modals(props: {
   if (kind === "transferEntry") {
     const defaultTransferDesc = buildTransferDescription(from, to);
 
-    return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
+    return shell("Self Transfer", "Move money between Cash and any bank or wallet account.", (
       <>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="field-row">
@@ -3288,7 +3311,7 @@ function Modals(props: {
         </div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
-    ), "Save Transfer", () => {
+    ), "Save Self Transfer", () => {
       const finalDesc = (desc.trim() || defaultTransferDesc).trim();
       if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
