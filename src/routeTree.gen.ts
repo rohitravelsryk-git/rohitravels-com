@@ -55,6 +55,7 @@ import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminStickyNotesRouteImport } from './routes/admin.sticky-notes'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
+import { Route as AdminVendorsRouteImport } from './routes/admin.vendors'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
@@ -327,6 +328,12 @@ const AdminVisaLinksRoute = AdminVisaLinksRouteImport.update({
   path: '/visa-links',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVendorsRoute = AdminVendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => AdminRoute,
+} as any)
+
 const AdminVouchersRoute = AdminVouchersRouteImport.update({
   id: '/vouchers',
   path: '/vouchers',
@@ -584,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
@@ -670,6 +678,7 @@ export interface FileRoutesByTo {
   '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
@@ -759,6 +768,7 @@ export interface FileRoutesById {
   '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vendors': typeof AdminVendorsRoute
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
@@ -848,6 +858,7 @@ export interface FileRouteTypes {
     | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
+    | '/admin/vendors'
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
@@ -934,6 +945,7 @@ export interface FileRouteTypes {
     | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
+    | '/admin/vendors'
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
@@ -1022,6 +1034,7 @@ export interface FileRouteTypes {
     | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
+    | '/admin/vendors'
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
@@ -1439,6 +1452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVisaLinksRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/vendors': {
+      id: '/admin/vendors'
+      path: '/vendors'
+      fullPath: '/admin/vendors'
+      preLoaderRoute: typeof AdminVendorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/vouchers': {
       id: '/admin/vouchers'
       path: '/vouchers'
@@ -1793,6 +1813,7 @@ interface AdminRouteChildren {
   AdminStickyNotesRoute: typeof AdminStickyNotesRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminVisaLinksRoute: typeof AdminVisaLinksRoute
+  AdminVendorsRoute: typeof AdminVendorsRoute
   AdminVouchersRoute: typeof AdminVouchersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1822,6 +1843,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminStickyNotesRoute: AdminStickyNotesRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminVisaLinksRoute: AdminVisaLinksRoute,
+  AdminVendorsRoute: AdminVendorsRoute,
   AdminVouchersRoute: AdminVouchersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

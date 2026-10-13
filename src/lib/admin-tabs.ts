@@ -1,4 +1,4 @@
-import { Phone, Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator, Settings, type LucideIcon } from "lucide-react";
+import { Store, Phone, Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator, Settings, type LucideIcon } from "lucide-react";
 
 export type TabDef = {
   id: string;
@@ -16,6 +16,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "tickets", to: "/admin/tickets", label: "Group Tickets Confirmed", icon: Ticket },
   { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
   { id: "agents", to: "/admin/agents", label: "Registered Agents", icon: Users, adminOnly: false },
+  { id: "vendors", to: "/admin/vendors", label: "Vendors", icon: Store, adminOnly: false },
   { id: "bookings", to: "/admin/bookings", label: "Agent Group Bookings", icon: Ticket, adminOnly: false },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Print Group Tickets", icon: FileText },
   { id: "branded-ticket-pdf", to: "/print-format", label: "Print Tickets", icon: Printer },
@@ -51,6 +52,7 @@ export type TabGroupDef = {
 export const TAB_GROUPS: TabGroupDef[] = [
   { id: "fares", label: "Fares & Tickets", icon: Plane, tabIds: ["fares", "tickets", "self-groups", "ok-to-board"] },
   { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "ledger", "queries", "visa-links"] },
+  { id: "vendors", label: "Vendors", icon: Store, tabIds: ["vendors"] },
   { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["airline-accounts", "accounts-book", "airline-contacts"] },
   { id: "bank-details", label: "Bank Details", icon: Landmark, tabIds: ["bank-details"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },

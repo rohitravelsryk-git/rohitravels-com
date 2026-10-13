@@ -125,6 +125,18 @@ function normaliseGroups(saved: unknown): GroupsState {
     }
   }
 
+  // Keep Vendors as its own top-level menu — guarantees Vendors appears in header
+  const vendorsGroup = cleaned.find((group) => group.id === "vendors");
+  if (vendorsGroup) {
+    for (const group of cleaned) {
+      if (group.id === "vendors") continue;
+      group.tabIds = group.tabIds.filter((id) => id !== "vendors");
+    }
+    if (!vendorsGroup.tabIds.includes("vendors")) {
+      vendorsGroup.tabIds.push("vendors");
+    }
+  }
+
   return cleaned;
 }
 
