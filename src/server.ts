@@ -25,7 +25,7 @@ async function normalizeCatastrophicSsrResponse(request: Request, response: Resp
   // Server-function responses are typed RPC payloads, not documents. Replacing
   // their JSON errors with an HTML page breaks every client query and can turn
   // a recoverable request failure into a blank screen.
-  if (new URL(request.url).pathname.startsWith("/_serverfn/")) return response;
+  if (new URL(request.url).pathname.toLowerCase().startsWith("/_serverfn/")) return response;
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -79,7 +79,7 @@ function withSecurityHeaders(request: Request, response: Response): Response {
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   const url = new URL(request.url);
   if (url.protocol === "https:") headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/auth") || url.pathname.startsWith("/_serverfn/")) {
+  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/auth") || url.pathname.toLowerCase().startsWith("/_serverfn/")) {
     headers.set("Cache-Control", "no-store, max-age=0");
     headers.set("Pragma", "no-cache");
   }

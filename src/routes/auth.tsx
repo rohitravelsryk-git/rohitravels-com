@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanAuthErrorMessage } from "@/lib/auth-error-cleanup";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
@@ -46,7 +47,7 @@ function AuthPage() {
           });
     const { error } = await fn;
     setBusy(false);
-    if (error) return setErr(error.message);
+    if (error) return setErr(cleanAuthErrorMessage(error, "Authentication failed. Please check your credentials."));
     navigate({ to: dest });
   }
 

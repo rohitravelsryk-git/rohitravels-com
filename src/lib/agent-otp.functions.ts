@@ -45,7 +45,8 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
 
     const { data: signIn, error } = await client.auth.signInWithPassword({ email, password: data.password });
     if (error || !signIn.user) return { ok: false as const, error: "Invalid email or password." };
-    await client.auth.signOut().catch(() => {});
+    // Client is ephemeral with persistSession: false. Do not invoke remote global signOut
+    // because that revokes the newly authorized GoTrue session before the browser signs in.
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: agent } = await supabaseAdmin

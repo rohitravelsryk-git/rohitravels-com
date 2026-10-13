@@ -23,6 +23,7 @@ import {
   resendAgentLoginCode,
   verifyAgentLoginCode,
 } from "@/lib/agent-otp.functions";
+import { cleanAuthErrorMessage } from "@/lib/auth-error-cleanup";
 
 const WA_COMMUNITY_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 
@@ -88,15 +89,20 @@ function LoginPage() {
     setErr(null);
     setNote(null);
     try {
-      const res = await requestCode({ data: { email: email.trim(), password } });
-      if (!res.ok) return setErr(res.error);
+      const trimmedEmail = email.trim().toLowerCase();
+      const res = await requestCode({ data: { email: trimmedEmail, password } });
+      if (!res.ok) {
+        return setErr(cleanAuthErrorMessage(res.error, "Invalid email or password."));
+      }
 
       if ((res as any).skipMfa) {
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: trimmedEmail,
           password,
         });
-        if (error) return setErr(error.message);
+        if (error) {
+          return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
+        }
         navigate({ to: "/agent/fares" });
         return;
       }
@@ -110,7 +116,7 @@ function LoginPage() {
           : "Code created, but the email could not be delivered. Contact priority desk."
       );
     } catch (e2) {
-      setErr((e2 as Error).message);
+      setErr(cleanAuthErrorMessage(e2, "Unable to sign in. Please verify your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -123,21 +129,25 @@ function LoginPage() {
     try {
       const res = await verifyCode({ data: { challenge, code: code.trim() } });
       if (!res.ok) {
-        setErr(res.error);
-        if (/again/i.test(res.error)) {
+        const errorText = cleanAuthErrorMessage(res.error, "Verification failed. Please try again.");
+        setErr(errorText);
+        if (/again/i.test(errorText)) {
           setStep("password");
           setCode("");
         }
         return;
       }
+      const trimmedEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
       });
-      if (error) return setErr(error.message);
+      if (error) {
+        return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
+      }
       navigate({ to: "/agent/fares" });
     } catch (e2) {
-      setErr((e2 as Error).message);
+      setErr(cleanAuthErrorMessage(e2, "Verification error. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -469,8 +479,10 @@ function LoginPage() {
                               setChallenge(r.challenge);
                               setNote(`New verification code delivered to ${r.maskedEmail}.`);
                             } else {
-                              setErr(r.error);
+                              setErr(cleanAuthErrorMessage(r.error, "Failed to resend code. Please try signing in again."));
                             }
+                          } catch (e2) {
+                            setErr(cleanAuthErrorMessage(e2, "Failed to resend code. Please try signing in again."));
                           } finally {
                             setBusy(false);
                           }
