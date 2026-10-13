@@ -3140,6 +3140,8 @@ function Modals(props: {
     vendor: string;
     sale_amount: string;
     purchase_amount: string;
+    customAgent?: boolean;
+    customVendor?: boolean;
   }
 
   const createEmptySaleRow = (initialDate?: string): SaleTableRow => ({
@@ -3231,6 +3233,13 @@ function Modals(props: {
     });
     return Array.from(values.values());
   }, [props.registeredAgents]);
+
+  const registeredVendorsList = useMemo(() => {
+    return (props.registeredVendors ?? []).map((v: any) => ({
+      name: String(v.name ?? "").trim(),
+      code: String(v.vendor_code ?? "").trim(),
+    })).filter((v: any) => Boolean(v.name));
+  }, [props.registeredVendors]);
 
   const vendorOptions = useMemo(() => {
     const values = new Set<string>();
@@ -3326,6 +3335,15 @@ function Modals(props: {
       legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(batchSaleTotal)} · Cost ${fmt(batchCostTotal)} · Net Profit ${fmt(batchProfitTotal)}` });
       legs.push({ where: "Daily Cash Book (Master Journal)", what: `Consolidated entry under ${recvName} (${isRecvCash ? "Physical Cash In" : "Bank/Online Inflow — cash drawer untouched"})` });
       if (paid && batchCostTotal > 0) legs.push({ where: `Cost Paid Account (${nameOf(paid)})`, what: `Cost outflow -${fmt(batchCostTotal)}` });
+
+      const agentsInBatch = Array.from(new Set(salesRows.map((r) => r.agent.trim()).filter(Boolean)));
+      if (agentsInBatch.length > 0) {
+        legs.push({ where: "Agent Ledger Accounts", what: `Direct ledger debit to ${agentsInBatch.join(", ")} & live Google Sheet sync` });
+      }
+      const vendorsInBatch = Array.from(new Set(salesRows.map((r) => r.vendor.trim()).filter(Boolean)));
+      if (vendorsInBatch.length > 0 && batchCostTotal > 0) {
+        legs.push({ where: "Vendors & Vendor Ledger", what: `Direct ledger credit to ${vendorsInBatch.join(", ")} & live Google Sheet sync` });
+      }
     } else if (txType === "transfer") {
       legs.push({ where: `Source Account (${nameOf(from)})`, what: `Outflow -${fmt(amt)}` });
       legs.push({ where: `Destination Account (${nameOf(to)})`, what: `Inflow +${fmt(amt)}` });
@@ -3473,11 +3491,119 @@ function Modals(props: {
                         return <tr key={row.id}>
                           <td className="sr-col">{idx + 1}</td>
                           <td><input type="date" value={row.date || todayISO()} onChange={(e) => updateSaleRow(row.id, "date", e.target.value)} /></td>
-                          <td><input list="agent-datalist" placeholder="Type / Pick Agent" value={row.agent} onChange={(e) => onAgentSelected(row.id, e.target.value)} /></td>
+                          <td>
+                            {row.customAgent ? (
+                              <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                                <input
+                                  autoFocus
+                                  placeholder="Type Custom Agent"
+                                  value={row.agent}
+                                  onChange={(e) => updateSaleRow(row.id, "agent", e.target.value)}
+                                  style={{ flex: 1 }}
+                                />
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  onClick={() => {
+                                    setSalesRows((prev) => prev.map((r) => r.id === row.id ? { ...r, customAgent: false } : r));
+                                  }}
+                                  title="Switch to Agent Dropdown"
+                                  style={{ padding: "2px 4px", fontSize: 11 }}
+                                >
+                                  ▼
+                                </button>
+                              </div>
+                            ) : (
+                              <select
+                                value={row.agent}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "__custom__") {
+                                    setSalesRows((prev) => prev.map((r) => r.id === row.id ? { ...r, customAgent: true, agent: "" } : r));
+                                  } else {
+                                    onAgentSelected(row.id, val);
+                                  }
+                                }}
+                                style={{ width: "100%", padding: "4px 6px", fontSize: 12.5 }}
+                              >
+                                <option value="">-- Select Agent --</option>
+                                <option value="Abdul Razzaq">Abdul Razzaq (Direct)</option>
+                                {agentOptions
+                                  .filter((a) => a.name.toLowerCase() !== "abdul razzaq")
+                                  .map((agent) => (
+                                    <option key={agent.name} value={agent.name}>
+                                      {agent.name} {agent.contact ? `(${agent.contact})` : ""}
+                                    </option>
+                                  ))}
+                                {row.agent && !agentOptions.some((o) => o.name.toLowerCase() === row.agent.toLowerCase()) && (
+                                  <option value={row.agent}>{row.agent}</option>
+                                )}
+                                <option value="__custom__">+ Custom Agent...</option>
+                              </select>
+                            )}
+                          </td>
                           <td><input list="country-datalist" placeholder="Country / Location" value={row.country} onChange={(e) => updateSaleRow(row.id, "country", e.target.value)} /></td>
                           <td><input placeholder="Pax name" value={row.pax_name} onChange={(e) => updateSaleRow(row.id, "pax_name", e.target.value)} /></td>
                           <td><input placeholder={passengerContact ? "Passenger Contact No" : "Agent Contact No"} value={row.contact_no} onChange={(e) => updateSaleRow(row.id, "contact_no", e.target.value)} /></td>
-                          <td><input list="vendor-datalist" placeholder="Type / Pick Vendor" value={row.vendor} onChange={(e) => updateSaleRow(row.id, "vendor", e.target.value)} /></td>
+                          <td>
+                            {row.customVendor ? (
+                              <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+                                <input
+                                  autoFocus
+                                  placeholder="Type Custom Vendor"
+                                  value={row.vendor}
+                                  onChange={(e) => updateSaleRow(row.id, "vendor", e.target.value)}
+                                  style={{ flex: 1 }}
+                                />
+                                <button
+                                  type="button"
+                                  className="icon-btn"
+                                  onClick={() => {
+                                    setSalesRows((prev) => prev.map((r) => r.id === row.id ? { ...r, customVendor: false } : r));
+                                  }}
+                                  title="Switch to Vendor Dropdown"
+                                  style={{ padding: "2px 4px", fontSize: 11 }}
+                                >
+                                  ▼
+                                </button>
+                              </div>
+                            ) : (
+                              <select
+                                value={row.vendor}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "__custom__") {
+                                    setSalesRows((prev) => prev.map((r) => r.id === row.id ? { ...r, customVendor: true, vendor: "" } : r));
+                                  } else {
+                                    updateSaleRow(row.id, "vendor", val);
+                                  }
+                                }}
+                                style={{ width: "100%", padding: "4px 6px", fontSize: 12.5 }}
+                              >
+                                <option value="">-- Select Vendor --</option>
+                                {registeredVendorsList.length > 0 && (
+                                  <optgroup label="Registered Suppliers & Vendors">
+                                    {registeredVendorsList.map((v: any) => (
+                                      <option key={v.name} value={v.name}>
+                                        {v.name} {v.code ? `(${v.code})` : ""}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                <optgroup label="Airlines & GDS Partners">
+                                  {knownVendors.map((v) => (
+                                    <option key={v} value={v}>
+                                      {v}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                                {row.vendor && !vendorOptions.some((o) => o.toLowerCase() === row.vendor.toLowerCase()) && (
+                                  <option value={row.vendor}>{row.vendor}</option>
+                                )}
+                                <option value="__custom__">+ Custom Vendor...</option>
+                              </select>
+                            )}
+                          </td>
                           <td><input type="number" min="0" placeholder="0" className="num" value={row.sale_amount} onChange={(e) => updateSaleRow(row.id, "sale_amount", e.target.value)} /></td>
                           <td><input type="number" min="0" placeholder="0" className="num" value={row.purchase_amount} onChange={(e) => updateSaleRow(row.id, "purchase_amount", e.target.value)} /></td>
                           <td className="profit-cell" style={{ color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{saleAmount > 0 || purchaseAmount > 0 ? fmt(profit) : "—"}</td>
@@ -3678,14 +3804,60 @@ function Modals(props: {
               </div>
               <div className="field-row">
                 <div className="field"><label>Country</label><input type="text" list="country-datalist" value={editSaleCountry} onChange={(e) => setEditSaleCountry(e.target.value)} placeholder="e.g. Saudi Arabia" /></div>
-                <div className="field"><label>Agent</label><input type="text" value={editSaleAgent} onChange={(e) => setEditSaleAgent(e.target.value)} placeholder="B2B Agent" /></div>
+                <div className="field">
+                  <label>Agent</label>
+                  <select
+                    value={editSaleAgent}
+                    onChange={(e) => setEditSaleAgent(e.target.value)}
+                  >
+                    <option value="">-- Select Agent --</option>
+                    <option value="Abdul Razzaq">Abdul Razzaq (Direct)</option>
+                    {agentOptions
+                      .filter((a) => a.name.toLowerCase() !== "abdul razzaq")
+                      .map((agent) => (
+                        <option key={agent.name} value={agent.name}>
+                          {agent.name} {agent.contact ? `(${agent.contact})` : ""}
+                        </option>
+                      ))}
+                    {editSaleAgent && !agentOptions.some((o) => o.name.toLowerCase() === editSaleAgent.toLowerCase()) && (
+                      <option value={editSaleAgent}>{editSaleAgent}</option>
+                    )}
+                  </select>
+                </div>
               </div>
               <div className="field-row">
                 <div className="field"><label>Pax Name</label><input type="text" value={editSalePax} onChange={(e) => setEditSalePax(e.target.value)} placeholder="Passenger name" /></div>
                 <div className="field"><label>Contact No.</label><input type="text" value={editSaleContact} onChange={(e) => setEditSaleContact(e.target.value)} placeholder="03xx-xxxxxxx" /></div>
               </div>
               <div className="field-row">
-                <div className="field"><label>Vendor</label><input type="text" list="vendor-datalist" value={editSaleVendor} onChange={(e) => setEditSaleVendor(e.target.value)} placeholder="Airline / Vendor" /></div>
+                <div className="field">
+                  <label>Vendor</label>
+                  <select
+                    value={editSaleVendor}
+                    onChange={(e) => setEditSaleVendor(e.target.value)}
+                  >
+                    <option value="">-- Select Vendor --</option>
+                    {registeredVendorsList.length > 0 && (
+                      <optgroup label="Registered Suppliers & Vendors">
+                        {registeredVendorsList.map((v: any) => (
+                          <option key={v.name} value={v.name}>
+                            {v.name} {v.code ? `(${v.code})` : ""}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <optgroup label="Airlines & GDS Partners">
+                      {knownVendors.map((v) => (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {editSaleVendor && !vendorOptions.some((o) => o.toLowerCase() === editSaleVendor.toLowerCase()) && (
+                      <option value={editSaleVendor}>{editSaleVendor}</option>
+                    )}
+                  </select>
+                </div>
                 <div className="field"><label>Received via Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
               </div>
               <div className="field-row">

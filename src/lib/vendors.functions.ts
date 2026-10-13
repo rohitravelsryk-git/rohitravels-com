@@ -298,7 +298,7 @@ export const syncVendorsLive = createServerFn({ method: "POST" }).handler(async 
  * Spreadsheet ID: 1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw
  * Tab: 'Vendors'
  */
-async function syncVendorsSheetInternal(): Promise<{ status: "success" | "failed"; count: number; error?: string }> {
+export async function syncVendorsSheetInternal(): Promise<{ status: "success" | "failed"; count: number; error?: string }> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let rows: Vendor[] = [];
@@ -455,5 +455,111 @@ async function syncVendorsSheetInternal(): Promise<{ status: "success" | "failed
   } catch (err: any) {
     console.error("[vendors] syncVendorsSheet error:", err);
     return { status: "failed", count: 0, error: err?.message || String(err) };
+  }
+}
+
+
+/**
+ * Links a Sale entry purchase amount to a registered vendor in public.vendor_ledger
+ * and updates public.vendors.current_balance atomically.
+ */
+export async function linkVendorLedgerEntry(entry: {
+  source_id: string;
+  vendorName: string;
+  category: string;
+  paxName?: string;
+  agentName?: string;
+  purchaseAmount: number;
+  costPaidAccountId?: string | null;
+  entryDate: string;
+}): Promise<{ ok: boolean; vendor_id?: string; ledger_id?: string }> {
+  const vendorQuery = (entry.vendorName || "").trim();
+  const purchase = Number(entry.purchaseAmount) || 0;
+  if (!vendorQuery || purchase <= 0) return { ok: false };
+
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Match vendor in public.vendors
+    const { data: vendors } = await supabaseAdmin
+      .from("vendors")
+      .select("id, name, vendor_code, current_balance, opening_balance")
+      .or(`name.ilike.%${vendorQuery}%,vendor_code.ilike.%${vendorQuery}%`)
+      .limit(1);
+
+    const matchedVendor = vendors && vendors.length > 0 ? vendors[0] : null;
+    if (!matchedVendor) {
+      console.info(`[vendors] Vendor "${vendorQuery}" not found in registered vendors; skipping vendor_ledger insertion.`);
+      return { ok: false };
+    }
+
+    const description = `${entry.category} - ${entry.paxName || "Purchase"}${entry.agentName ? ` • Agent: ${entry.agentName}` : ""} • Ref: ${entry.source_id}`;
+    const costPaid = Boolean(entry.costPaidAccountId);
+    const debit = costPaid ? purchase : 0;
+    const credit = purchase;
+    const currentBal = Number(matchedVendor.current_balance) || 0;
+    const newBal = currentBal + (credit - debit);
+
+    const { data: inserted, error: ledgerError } = await supabaseAdmin
+      .from("vendor_ledger")
+      .insert({
+        vendor_id: matchedVendor.id,
+        transaction_date: entry.entryDate,
+        reference_no: entry.source_id,
+        description,
+        debit,
+        credit,
+        balance: newBal,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (ledgerError) {
+      console.warn("[vendors] Could not insert vendor_ledger row:", ledgerError.message);
+    } else {
+      await supabaseAdmin
+        .from("vendors")
+        .update({ current_balance: newBal, updated_at: new Date().toISOString() })
+        .eq("id", matchedVendor.id);
+    }
+
+    return { ok: true, vendor_id: matchedVendor.id, ledger_id: inserted?.id };
+  } catch (err) {
+    console.warn("[vendors] linkVendorLedgerEntry error:", err);
+    return { ok: false };
+  }
+}
+
+/**
+ * Removes any linked vendor ledger entries for a deleted sale transaction
+ * and recalculates the vendor balance.
+ */
+export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok: boolean }> {
+  if (!sourceId) return { ok: false };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: vEntries } = await supabaseAdmin
+      .from("vendor_ledger")
+      .select("id, vendor_id, debit, credit")
+      .eq("reference_no", sourceId);
+
+    if (vEntries && vEntries.length > 0) {
+      const vendorIds = Array.from(new Set(vEntries.map((e: any) => e.vendor_id)));
+      await supabaseAdmin.from("vendor_ledger").delete().eq("reference_no", sourceId);
+
+      for (const vId of vendorIds) {
+        const { data: vRecord } = await supabaseAdmin.from("vendors").select("opening_balance").eq("id", vId).maybeSingle();
+        const { data: remaining } = await supabaseAdmin.from("vendor_ledger").select("debit, credit").eq("vendor_id", vId);
+        const opening = Number(vRecord?.opening_balance || 0);
+        const totalCredit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.credit) || 0), 0);
+        const totalDebit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.debit) || 0), 0);
+        const currentBalance = opening + totalCredit - totalDebit;
+        await supabaseAdmin.from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
+      }
+    }
+    return { ok: true };
+  } catch (err) {
+    console.warn("[vendors] unlinkVendorLedgerEntries error:", err);
+    return { ok: false };
   }
 }

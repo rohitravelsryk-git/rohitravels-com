@@ -246,7 +246,7 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   return { accounts: accounts ?? [], transactions: inCreationOrder(transactions ?? []), services: services ?? [] };
 });
 
-export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses";
+export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses" | "agents" | "vendors";
 
 let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 
@@ -257,11 +257,16 @@ export async function triggerLiveAccountsSync(waitForCompletion: boolean = true,
   const runSyncAction = async () => {
     const mod = await import("@/lib/backup/engine.server");
 
+    const { syncAgentLedgersLiveInternal } = await import("@/lib/ledger-admin.functions");
+    const { syncVendorsSheetInternal } = await import("@/lib/vendors.functions");
+
     const allSyncs: Array<[LiveSyncScope, string, () => Promise<any>]> = [
       ["banks", "Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
       ["cash", "Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
       ["sales", "Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
       ["expenses", "Expenses", () => mod.reconcileExpensesToSheets()],
+      ["agents", "Agent Ledger Accounts", () => syncAgentLedgersLiveInternal()],
+      ["vendors", "Vendors", () => syncVendorsSheetInternal()],
     ];
     const syncs: Array<[string, () => Promise<any>]> = allSyncs
       .filter(([scope]) => !scopes || scopes.includes(scope))
@@ -566,10 +571,22 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
     const { error: groupError } = await query;
     if (groupError) throw new Error(groupError.message);
   }
+  // Unlink any associated Agent or Vendor ledger entries
+  if (row.source_id) {
+    try {
+      const { unlinkAgentLedgerEntries } = await import("@/lib/ledger-admin.functions");
+      const { unlinkVendorLedgerEntries } = await import("@/lib/vendors.functions");
+      await unlinkAgentLedgerEntries(row.source_id);
+      await unlinkVendorLedgerEntries(row.source_id);
+    } catch (unlinkErr) {
+      console.warn("[accounts-book] Error unlinking agent/vendor ledgers on delete:", unlinkErr);
+    }
+  }
+
   // Ensure the target row itself is definitely deleted if it wasn't caught by group query
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses", "agents", "vendors"]);
   return { success: true, sheetSync };
 });
 
@@ -589,7 +606,48 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
+  if (data.source_type === "sale" && data.source_id) {
+    try {
+      const { parseSaleDescription } = await import("@/lib/accounts-book-sales");
+      const { unlinkAgentLedgerEntries, linkAgentLedgerEntry } = await import("@/lib/ledger-admin.functions");
+      const { unlinkVendorLedgerEntries, linkVendorLedgerEntry } = await import("@/lib/vendors.functions");
+      await unlinkAgentLedgerEntries(data.source_id);
+      await unlinkVendorLedgerEntries(data.source_id);
+
+      const meta = parseSaleDescription(data.description);
+      const agentName = meta.agent || data.party || "";
+      const vendorName = meta.vendor || "";
+
+      if (agentName) {
+        await linkAgentLedgerEntry({
+          source_id: data.source_id,
+          agentName,
+          category: data.category,
+          paxName: meta.pax,
+          country: meta.country,
+          vendor: vendorName,
+          saleAmount: data.amount,
+          entryDate: data.entry_date,
+        });
+      }
+      if (vendorName && data.direct_cost > 0) {
+        await linkVendorLedgerEntry({
+          source_id: data.source_id,
+          vendorName,
+          category: data.category,
+          paxName: meta.pax,
+          agentName,
+          purchaseAmount: data.direct_cost,
+          costPaidAccountId: null,
+          entryDate: data.entry_date,
+        });
+      }
+    } catch (relinkErr) {
+      console.warn("[accounts-book] Error relinking agent/vendor on update:", relinkErr);
+    }
+  }
+
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses", "agents", "vendors"]);
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -684,13 +742,50 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       saved = inserted ?? [];
     }
 
+    if (data.kind === "sale") {
+      try {
+        const { parseSaleDescription } = await import("@/lib/accounts-book-sales");
+        const { linkAgentLedgerEntry } = await import("@/lib/ledger-admin.functions");
+        const { linkVendorLedgerEntry } = await import("@/lib/vendors.functions");
+        const meta = parseSaleDescription(data.description);
+        const agentName = meta.agent || data.party || "";
+        const vendorName = meta.vendor || "";
+        if (agentName) {
+          await linkAgentLedgerEntry({
+            source_id: data.source_id,
+            agentName,
+            category: data.category || "Sale",
+            paxName: meta.pax,
+            country: meta.country,
+            vendor: vendorName,
+            saleAmount: data.amount,
+            entryDate: data.entry_date,
+          });
+        }
+        if (vendorName && data.direct_cost > 0) {
+          await linkVendorLedgerEntry({
+            source_id: data.source_id,
+            vendorName,
+            category: data.category || "Sale",
+            paxName: meta.pax,
+            agentName,
+            purchaseAmount: data.direct_cost,
+            costPaidAccountId: data.cost_account_id,
+            entryDate: data.entry_date,
+          });
+        }
+      } catch (linkErr) {
+        console.warn("[accounts-book] Error linking group sale transaction:", linkErr);
+      }
+    }
+
     const scopes: LiveSyncScope[] = data.kind === "expense"
       ? ["banks", "cash", "expenses"]
       : data.kind === "sale"
-      ? ["banks", "cash", "sales"]
+      ? ["banks", "cash", "sales", "agents", "vendors"]
       : data.kind === "transfer"
       ? ["banks", "cash"]
-      : ["banks", "cash", "sales", "expenses"];
+      : ["banks", "cash", "sales", "expenses", "agents", "vendors"];
     const sheetSync = await syncLive(scopes);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
@@ -774,7 +869,47 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    const sheetSync = await syncLive(["banks", "cash", "sales"]);
+    // Atomically link every entry to Agent Ledger and Vendor Ledger in Supabase
+    try {
+      const { linkAgentLedgerEntry } = await import("@/lib/ledger-admin.functions");
+      const { linkVendorLedgerEntry } = await import("@/lib/vendors.functions");
+
+      for (let i = 0; i < data.entries.length; i++) {
+        const entry = data.entries[i];
+        const rowId = allRows[i]?.source_id;
+        if (!rowId) continue;
+
+        if (entry.agent) {
+          await linkAgentLedgerEntry({
+            source_id: rowId,
+            agentName: entry.agent,
+            category: data.category,
+            paxName: entry.pax_name,
+            country: entry.country,
+            vendor: entry.vendor,
+            saleAmount: entry.sale_amount,
+            entryDate: entry.entry_date,
+          });
+        }
+
+        if (entry.vendor && entry.purchase_amount > 0) {
+          await linkVendorLedgerEntry({
+            source_id: rowId,
+            vendorName: entry.vendor,
+            category: data.category,
+            paxName: entry.pax_name,
+            agentName: entry.agent,
+            purchaseAmount: entry.purchase_amount,
+            costPaidAccountId: data.cost_account_id,
+            entryDate: entry.entry_date,
+          });
+        }
+      }
+    } catch (linkBatchErr) {
+      console.warn("[accounts-book] Error linking sales batch to agent/vendor ledgers:", linkBatchErr);
+    }
+
+    const sheetSync = await syncLive(["banks", "cash", "sales", "agents", "vendors"]);
     return { count: data.entries.length, rows: inserted ?? [], sheetSync };
   });
 
@@ -795,7 +930,19 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses"]);
+
+  if (data.source_type === "sale") {
+    try {
+      const { unlinkAgentLedgerEntries } = await import("@/lib/ledger-admin.functions");
+      const { unlinkVendorLedgerEntries } = await import("@/lib/vendors.functions");
+      await unlinkAgentLedgerEntries(data.source_id);
+      await unlinkVendorLedgerEntries(data.source_id);
+    } catch (unlinkErr) {
+      console.warn("[accounts-book] Error unlinking agent/vendor ledgers:", unlinkErr);
+    }
+  }
+
+  const sheetSync = await syncLive(["banks", "cash", "sales", "expenses", "agents", "vendors"]);
   return { success: true, sheetSync };
 });
 
