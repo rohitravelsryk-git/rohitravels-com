@@ -51,6 +51,8 @@ export type AirlineLedgerRow = {
   currency?: string | null;
   roe?: number | string | null;
   foreignAmount?: number | string | null;
+  receivedVia?: string | null;
+  receivedViaAccountId?: string | null;
 };
 export type AirlineLedgerData = {
   airlines: AirlineLedgerAirline[];
@@ -75,6 +77,8 @@ const rowSchema = z.object({
   currency: z.string().nullish(),
   roe: z.union([z.number(), z.string()]).nullish(),
   foreignAmount: z.union([z.number(), z.string()]).nullish(),
+  receivedVia: z.string().nullish(),
+  receivedViaAccountId: z.string().nullish(),
 });
 
 const dataSchema = z.object({
@@ -189,6 +193,8 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
       currency: t.currency ?? null,
       roe: t.roe ?? null,
       foreignAmount: t.foreign_amount ?? null,
+      receivedVia: t.received_via ?? null,
+      receivedViaAccountId: t.received_via_account_id ?? null,
     });
   }
 
@@ -245,6 +251,8 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           currency: str(r.currency),
           roe: num(r.roe),
           foreign_amount: num(r.foreignAmount),
+          received_via: str(r.receivedVia),
+          received_via_account_id: str(r.receivedViaAccountId),
         })),
       ),
     };
@@ -351,6 +359,17 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         await syncAirlineTransactionsToAgentLedgers(committedSnapshot.transactions, committedSnapshot.airlines);
       } catch (agentSyncErr) {
         console.warn("[airline-ledger] Error syncing airline agent sales to agent ledgers:", agentSyncErr);
+      }
+    })();
+
+    // Link ticket-sale receipts to the selected cash/bank/wallet account idempotently.
+    // Top Up transactions are deliberately excluded from the account receipts.
+    (async () => {
+      try {
+        const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+        await syncAirlineTransactionsToAccountsBook(committedSnapshot.transactions, committedSnapshot.airlines);
+      } catch (accountSyncErr) {
+        console.warn("[airline-ledger] Error syncing ticket receipts to Accounts Book:", accountSyncErr);
       }
     })();
 
@@ -468,3 +487,24 @@ export const reorderAirlineLedger = createServerFn({ method: "POST" })
 
     return { success: true, persisted: true, revision: savedRevision, syncPending: false, syncError: null };
   });
+
+export const listActivePaymentAccounts = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("accounts_book_accounts")
+    .select("id, name, kind, is_active")
+    .eq("is_active", true);
+
+  if (error || !data) {
+    console.warn("[airline-ledger] Failed to list payment accounts:", error?.message);
+    return [];
+  }
+
+  // Sort cash accounts first ("Cash in Hand"), then banks & wallets alphabetically
+  return [...data].sort((a, b) => {
+    if (a.kind === "cash" && b.kind !== "cash") return -1;
+    if (a.kind !== "cash" && b.kind === "cash") return 1;
+    return a.name.localeCompare(b.name);
+  });
+});

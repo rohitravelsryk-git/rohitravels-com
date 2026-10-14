@@ -287,14 +287,30 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     }
   }
 
-  // 4. Prune tabs for deleted/unregistered agents and obsolete system tabs
+  // 4. Prune tabs for deleted/unregistered parties and obsolete system tabs.
+  // CRITICAL REQUIREMENT: Preserve all vendor data and tabs — no vendor sheets may ever be deleted.
   const protectedTabs = new Set([
     "Balances Overview",
     "Agent_Transactions",
     "README",
     "_DATA",
   ]);
-  const activeAgentTabNames = new Set(
+
+  let vendorTabNames = new Set<string>();
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: dbVendors } = await supabaseAdmin.from("vendors").select("name, vendor_code");
+    if (dbVendors) {
+      for (const v of dbVendors) {
+        if (v.name) vendorTabNames.add(v.name.replace(/[\[\]\*\?:\/\\]/g, "_").slice(0, 30).trim().toLowerCase());
+        if (v.vendor_code) vendorTabNames.add(v.vendor_code.replace(/[\[\]\*\?:\/\\]/g, "_").slice(0, 30).trim().toLowerCase());
+      }
+    }
+  } catch (vErr) {
+    console.warn("[ledger-sync] Could not read vendors for tab protection:", vErr);
+  }
+
+  const activePartyTabNames = new Set(
     data.map((a: any) =>
       (a.agency_name || "Account")
         .replace(/[\[\]\*\?:\/\\]/g, "_")
@@ -305,8 +321,12 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   );
 
   for (const [sheetTitle, sheetId] of existingSheets.entries()) {
-    if (protectedTabs.has(sheetTitle)) continue;
-    if (!activeAgentTabNames.has(sheetTitle.toLowerCase().trim())) {
+    const lowerTitle = sheetTitle.toLowerCase().trim();
+    if (protectedTabs.has(sheetTitle) || protectedTabs.has(lowerTitle)) continue;
+    // Strict preservation of vendor tabs: never delete any tab associated with a vendor
+    if (/vendor|supplier/i.test(sheetTitle) || vendorTabNames.has(lowerTitle)) continue;
+
+    if (!activePartyTabNames.has(lowerTitle)) {
       try {
         console.info(`[ledger-sync] Deleting removed/obsolete tab: "${sheetTitle}" (sheetId: ${sheetId})`);
         await deleteSheet(spreadsheetId, sheetId);

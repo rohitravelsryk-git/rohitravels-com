@@ -77,15 +77,33 @@ function AgentsInner() {
       } catch (err) {
         console.warn("listAgentsAdmin failed, falling back to direct Supabase fetch:", err);
       }
-      const { data, error } = await supabase
-        .from("agents")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) {
-        console.error("Direct Supabase agents fetch error:", error);
+      const [agentsRes, vendorsRes] = await Promise.all([
+        supabase.from("agents").select("*").order("created_at", { ascending: false }),
+        (supabase as any).from("vendors").select("id, name, vendor_code, contact_person, phone, email"),
+      ]);
+      if (agentsRes.error) {
+        console.error("Direct Supabase agents fetch error:", agentsRes.error);
         return [];
       }
-      return (data ?? []) as AgentRow[];
+      const rawAgents = (agentsRes.data ?? []) as AgentRow[];
+      const vendors = vendorsRes.data ?? [];
+      if (vendors.length === 0) return rawAgents;
+      const vendorNames = new Set(vendors.map((v: any) => (v.name || "").toLowerCase().trim()).filter(Boolean));
+      const vendorCodes = new Set(vendors.map((v: any) => (v.vendor_code || "").toLowerCase().trim()).filter(Boolean));
+      const vendorPhones = new Set(vendors.map((v: any) => (v.phone || "").replace(/\D/g, "")).filter((p: string) => p.length >= 7));
+      const vendorEmails = new Set(vendors.map((v: any) => (v.email || "").toLowerCase().trim()).filter(Boolean));
+
+      return rawAgents.filter((agent: any) => {
+        const aName = (agent.agency_name || "").toLowerCase().trim();
+        if (aName && vendorNames.has(aName)) return false;
+        const aCode = (agent.user_code || "").toLowerCase().trim();
+        if (aCode && vendorCodes.has(aCode)) return false;
+        const aPhone = (agent.cell_number || "").replace(/\D/g, "");
+        if (aPhone && aPhone.length >= 7 && vendorPhones.has(aPhone)) return false;
+        const aEmail = (agent.email || "").toLowerCase().trim();
+        if (aEmail && vendorEmails.has(aEmail)) return false;
+        return true;
+      });
     },
     staleTime: 60 * 1000,
   });

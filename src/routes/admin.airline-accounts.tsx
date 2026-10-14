@@ -21,7 +21,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
-import { getAirlineLedgerData, saveAirlineLedgerData, reorderAirlineLedger } from "@/lib/airline-ledger.functions";
+import { getAirlineLedgerData, saveAirlineLedgerData, reorderAirlineLedger, listActivePaymentAccounts } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAirlineLedgerGoogleSheetOnOpen } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
@@ -46,6 +46,7 @@ const COLUMNS: any[] = [
   { key: "sector", label: "Sector", type: "text", width: 90, computed: false },
   { key: "pnr", label: "PNR", type: "text", width: 90, computed: false },
   { key: "ticketSales", label: "Ticket Sales", type: "number", width: 110, computed: false },
+  { key: "receivedVia", label: "Received Via", type: "receivedVia", width: 130, computed: false },
   { key: "debitInId", label: "Debit In ID", type: "text", width: 100, computed: false },
   { key: "creditFromId", label: "Credit From ID", type: "number", width: 120, computed: false },
   { key: "balance", label: "Balance", type: "number", width: 110, computed: true },
@@ -59,8 +60,10 @@ const EMPTY_ROW = (): any => ({
   date: new Date().toISOString().slice(0, 10),
   transactionType: "Add Transaction",
   agentName: "", paxName: "", sector: "", pnr: "",
-  ticketSales: "", debitInId: "", creditFromId: "",
+  ticketSales: "", receivedVia: "", receivedViaAccountId: "",
+  debitInId: "", creditFromId: "",
   paxContact: "", voidCharges: "",
+  currency: "PKR", roe: 1, foreignAmount: "",
 });
 
 const fmt = (n: any) => {
@@ -508,6 +511,13 @@ function AirlineLedgerApp() {
       .filter(Boolean);
     return Array.from(new Set(names));
   }, [registeredAgentsQuery.data]);
+
+  const loadPaymentAccounts = useServerFn(listActivePaymentAccounts);
+  const paymentAccountsQuery = useQuery({
+    queryKey: ["airline-ledger", "payment-accounts"],
+    queryFn: () => loadPaymentAccounts(),
+    staleTime: 60 * 1000,
+  });
 
   useEffect(() => {
     (async () => {
@@ -1103,6 +1113,7 @@ function AirlineLedgerApp() {
             modal={modal}
             agents={registeredAgencyNames.length ? registeredAgencyNames : agents}
             agentDirectory={registeredAgentsQuery.data ?? []}
+            paymentAccounts={paymentAccountsQuery.data ?? []}
             airline={airlines.find((a) => a.id === modal.airlineId)}
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
@@ -1302,6 +1313,7 @@ function LedgerTable({
                 <td style={styles.tdMuted}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell }}>-</td>
                 <td style={styles.tdMuted}>-</td>
+                <td style={styles.tdMuted}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell }}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell, fontWeight: 800, color: "var(--ledger-red, var(--error))" }} className="num">
                   <div>{fmt(airline?.openingBalance ?? 0)}</div>
@@ -1397,7 +1409,7 @@ function LedgerTable({
   );
 }
 
-function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
+function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
   const [form, setForm] = useState<any>(() => {
     const row = modal.row || {};
@@ -1412,6 +1424,8 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
       currency: airline?.currency || "PKR",
       roe: initialRoe,
       foreignAmount: initialForeign,
+      receivedVia: row.receivedVia || "",
+      receivedViaAccountId: row.receivedViaAccountId || "",
       openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && defaultRoe ? (Number(airline?.openingBalance || 0) / defaultRoe).toFixed(2) : ""),
     };
   });
@@ -1472,6 +1486,8 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
       currency: airline?.currency || "PKR",
       roe: isForeignAirline ? activeRoe : 1,
       foreignAmount: isForeignAirline ? foreignCredit : null,
+      receivedVia: isTopUpRecord ? null : (form.receivedVia || null),
+      receivedViaAccountId: isTopUpRecord ? null : (form.receivedViaAccountId || null),
     });
   };
 
@@ -1755,6 +1771,38 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
                     </label>
                   ))}
                 </div>
+              ) : c.key === "receivedVia" ? (
+                <select
+                  style={styles.select}
+                  value={form.receivedViaAccountId || ""}
+                  onChange={(e) => {
+                    const accId = e.target.value;
+                    if (!accId) {
+                      update("receivedViaAccountId", "");
+                      update("receivedVia", "");
+                    } else {
+                      const acc = (paymentAccounts || []).find((a: any) => a.id === accId);
+                      update("receivedViaAccountId", accId);
+                      update("receivedVia", acc ? acc.name : "");
+                    }
+                  }}
+                >
+                  <option value="">None / On Credit (Receivable)</option>
+                  {paymentAccounts.filter((a: any) => a.kind === "cash").length > 0 && (
+                    <optgroup label="Cash">
+                      {paymentAccounts.filter((a: any) => a.kind === "cash").map((a: any) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {paymentAccounts.filter((a: any) => a.kind !== "cash").length > 0 && (
+                    <optgroup label="Banks & Wallets">
+                      {paymentAccounts.filter((a: any) => a.kind !== "cash").map((a: any) => (
+                        <option key={a.id} value={a.id}>{a.name} ({a.kind === "wallet" ? "Wallet" : "Bank"})</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
               ) : c.key === "foreignAmount" ? (
                 <input
                   type="number"

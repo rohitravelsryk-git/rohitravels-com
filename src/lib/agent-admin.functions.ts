@@ -51,12 +51,45 @@ export type AgentRow = {
 export const listAgentsAdmin = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("agents")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as AgentRow[];
+  const [agentsRes, vendorsRes] = await Promise.all([
+    supabaseAdmin.from("agents").select("*").order("created_at", { ascending: false }),
+    supabaseAdmin.from("vendors").select("id, name, vendor_code, contact_person, phone, email"),
+  ]);
+  if (agentsRes.error) throw new Error(agentsRes.error.message);
+
+  const agents = (agentsRes.data ?? []) as AgentRow[];
+  const vendors = vendorsRes.data ?? [];
+
+  if (vendors.length === 0) return agents;
+
+  const vendorNames = new Set(
+    vendors.map((v: any) => (v.name || "").toLowerCase().trim()).filter(Boolean)
+  );
+  const vendorCodes = new Set(
+    vendors.map((v: any) => (v.vendor_code || "").toLowerCase().trim()).filter(Boolean)
+  );
+  const vendorPhones = new Set(
+    vendors.map((v: any) => (v.phone || "").replace(/\D/g, "")).filter((p: string) => p.length >= 7)
+  );
+  const vendorEmails = new Set(
+    vendors.map((v: any) => (v.email || "").toLowerCase().trim()).filter(Boolean)
+  );
+
+  return agents.filter((agent) => {
+    const aName = (agent.agency_name || "").toLowerCase().trim();
+    if (aName && vendorNames.has(aName)) return false;
+
+    const aCode = (agent.user_code || "").toLowerCase().trim();
+    if (aCode && vendorCodes.has(aCode)) return false;
+
+    const aPhone = (agent.cell_number || "").replace(/\D/g, "");
+    if (aPhone && aPhone.length >= 7 && vendorPhones.has(aPhone)) return false;
+
+    const aEmail = (agent.email || "").toLowerCase().trim();
+    if (aEmail && vendorEmails.has(aEmail)) return false;
+
+    return true;
+  });
 });
 
 export const countPendingAgents = createServerFn({ method: "GET" }).handler(async () => {
