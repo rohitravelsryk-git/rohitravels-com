@@ -6,17 +6,12 @@ import { getPsf } from "@/lib/fares.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
-  CheckCircle2,
-  ExternalLink,
   Eye,
   EyeOff,
   Headphones,
   Lock,
   Mail,
   Plane,
-  ShieldCheck,
-  Sparkles,
-  Users,
 } from "lucide-react";
 import {
   requestAgentLoginCode,
@@ -25,8 +20,6 @@ import {
   syncAgentProfile,
 } from "@/lib/agent-otp.functions";
 import { cleanAuthErrorMessage } from "@/lib/auth-error-cleanup";
-
-const WA_COMMUNITY_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 
 export const Route = createFileRoute("/agent/login")({
   ssr: false,
@@ -230,128 +223,16 @@ function LoginPage() {
             <span>Return to Main Website</span>
           </Link>
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="hidden sm:inline-flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-              256-Bit SSL Encrypted B2B Portal
-            </span>
-          </div>
+
         </div>
       </header>
 
       {/* Main Container */}
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12 lg:py-16">
-        <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+      <div className="mx-auto max-w-md px-4 py-8 sm:py-12 lg:py-16">
+        <div className="grid items-center gap-8">
           
-          {/* Left Column: Rohi Branding, Value proposition & WhatsApp Community Callout */}
-          <div className="space-y-6 lg:col-span-6 lg:pr-4">
-            {/* Brand Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gold">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>B2B Partner & Agent Gateway</span>
-            </div>
-
-            {/* Main Branding Title */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/favicon.png"
-                  alt="Rohi International Travels"
-                  className="h-11 w-11 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-border"
-                />
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Official Travel Network
-                  </p>
-                  <p className="text-sm font-semibold text-navy">
-                    Rohi International Travels
-                  </p>
-                </div>
-              </div>
-
-              <h1 className="text-3xl font-extrabold tracking-tight text-navy sm:text-4xl lg:text-5xl">
-                Welcome to <br />
-                <span className="text-gold">Rohi International Travels</span>
-              </h1>
-              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Your premier B2B airline ticketing, group fares & Umrah operations platform.
-                Experience real-time flight seat locks, instant booking confirmation, and dedicated
-                wholesale ledger management.
-              </p>
-            </div>
-
-            {/* Feature Highlights Grid */}
-            <div className="grid gap-3 pt-2 sm:grid-cols-2">
-              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                <div className="text-xs">
-                  <p className="font-bold text-navy">Live Airline Inventory</p>
-                  <p className="text-muted-foreground">PIA, Saudia, Flyadeal, Flynas, Gulf Air & more</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                <div className="text-xs">
-                  <p className="font-bold text-navy">Instant Wholesale Net Fares</p>
-                  <p className="text-muted-foreground">Competitive rates with automatic PNR sync</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                <div className="text-xs">
-                  <p className="font-bold text-navy">Umrah & Group Blocks</p>
-                  <p className="text-muted-foreground">Direct seat holding & sub-agent issuance</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                <div className="text-xs">
-                  <p className="font-bold text-navy">24/7 Priority Support</p>
-                  <p className="text-muted-foreground">Fast manual interventions & ticket refunds</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Prominent WhatsApp Community Card / Button */}
-            <div className="relative overflow-hidden rounded-2xl border border-[#25D366]/30 bg-gradient-to-br from-secondary to-success-soft p-5 shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-md">
-                    <WhatsAppIcon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-navy">Agent WhatsApp Community</h2>
-                      <span className="inline-flex items-center rounded-full bg-[#25D366]/15 px-2 py-0.5 text-[10px] font-bold text-[#168a3f]">
-                        LIVE ALERTS
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Join verified travel agents for instant fare updates, flash sales & seat releases.
-                    </p>
-                  </div>
-                </div>
-
-                <a
-                  href={WA_COMMUNITY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-[#20ba5a] hover:shadow-lg active:scale-[0.98] sm:self-center shrink-0"
-                >
-                  <WhatsAppIcon className="h-4 w-4" />
-                  <span>Join Community</span>
-                  <ExternalLink className="h-3.5 w-3.5 opacity-80" />
-                </a>
-              </div>
-            </div>
-
-          </div>
-
           {/* Right Column: Sleek 21st-Century Login Card */}
-          <div className="lg:col-span-6">
+          <div className="w-full">
             <div className="overflow-hidden rounded-3xl border border-border bg-secondary shadow-2xl backdrop-blur-xl transition-all">
               {/* Card Header Band: Warm Terracotta Brand Strip */}
               <div className="bg-gold px-6 py-4 text-white sm:px-8">
@@ -361,14 +242,11 @@ function LoginPage() {
                       <Plane className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
-                        Rohi International Travels
-                      </p>
-                      <p className="text-sm font-bold text-white">B2B Agent Portal Login</p>
+                      <p className="text-sm font-bold text-white">Rohi International Travels</p>
                     </div>
                   </div>
                   <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                    {step === "password" ? "Secure Entry" : "Step 2: 2FA"}
+                    {step === "password" ? "Agent Login" : "Step 2: 2FA"}
                   </span>
                 </div>
               </div>
@@ -472,10 +350,6 @@ function LoginPage() {
                       {busy ? "Verifying Agency Credentials…" : "Sign In to B2B Portal ›"}
                     </button>
 
-                    <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-muted-foreground">
-                      <ShieldCheck className="h-3.5 w-3.5 text-gold" />
-                      <span>Encrypted session with automatic security timeout</span>
-                    </div>
                   </form>
                 ) : (
                   <form onSubmit={submitCode} className="space-y-4">
@@ -583,7 +457,7 @@ function LoginPage() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-navy flex items-center gap-1.5">
                       <Headphones className="h-3.5 w-3.5 text-gold" />
-                      24/7 Agent Desk
+                      Agent Support
                     </span>
                     <span className="font-semibold text-gold">+92 305 6622988</span>
                   </div>
