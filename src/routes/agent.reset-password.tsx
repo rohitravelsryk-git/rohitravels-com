@@ -5,7 +5,7 @@ import { cleanAuthErrorMessage } from "@/lib/auth-error-cleanup";
 
 export const Route = createFileRoute("/agent/reset-password")({
   ssr: false,
-  head: () => [{ title: "Reset Agent Password — Rohi International Travels" }],
+  head: () => ({ meta: [{ title: "Reset Agent Password — Rohi International Travels" }] }),
   component: ResetAgentPasswordPage,
 });
 
