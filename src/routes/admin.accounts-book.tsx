@@ -936,6 +936,27 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .posting .leg{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;}
 .rohi-ab .posting .leg b{font-weight:700;}
 .rohi-ab .posting .leg span{color:var(--ink-soft);text-align:right;}
+/* ---- New Transaction popup: one fixed size for every tab (same as the Sale tab) ---- */
+.rohi-ab .modal.modal-txn{display:flex;flex-direction:column;height:min(92vh,800px);max-height:none;overflow:hidden;padding:20px 26px 18px;}
+.rohi-ab .modal.modal-txn .modal-head,.rohi-ab .modal.modal-txn .modal-sub,.rohi-ab .modal.modal-txn .txseg,.rohi-ab .modal.modal-txn .posting,.rohi-ab .modal.modal-txn .modal-actions{flex:0 0 auto;}
+.rohi-ab .modal.modal-txn .txseg{max-width:640px;}
+.rohi-ab .modal.modal-txn .txn-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 4px 2px 2px;}
+.rohi-ab .modal.modal-txn .txn-body.is-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 18px;align-content:start;padding-top:6px;}
+.rohi-ab .modal.modal-txn .txn-body.is-form .field-row{display:contents;}
+.rohi-ab .modal.modal-txn .txn-body.is-form .field{margin:0;}
+.rohi-ab .modal.modal-txn .txn-body.is-form > .field{grid-column:1 / -1;}
+.rohi-ab .modal.modal-txn .txn-body.is-form .field label{font-size:12px;margin-bottom:5px;}
+.rohi-ab .modal.modal-txn .txn-body.is-form .field input,.rohi-ab .modal.modal-txn .txn-body.is-form .field select{height:42px;padding:8px 12px;font-size:14px;}
+.rohi-ab .modal.modal-txn .sales-table-wrap{max-height:none;}
+/* Posting summary: its own block, clearly separated (extra gap) so the form stays the focus */
+.rohi-ab .modal.modal-txn .posting{margin-top:26px;border:1px solid var(--line);padding:12px 16px 12px;}
+.rohi-ab .modal.modal-txn .posting h4{margin-bottom:8px;}
+.rohi-ab .modal.modal-txn .posting .legs{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;}
+.rohi-ab .modal.modal-txn .posting .leg{flex-direction:column;justify-content:flex-start;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
+.rohi-ab .modal.modal-txn .posting .leg span{text-align:left;}
+.rohi-ab .modal.modal-txn .posting .hint{margin-top:8px;font-size:11.5px;color:var(--ink-soft);}
+@media (max-width:900px){.rohi-ab .modal.modal-txn .txn-body.is-form{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:560px){.rohi-ab .modal.modal-txn{height:94vh;padding:16px 14px 14px;}.rohi-ab .modal.modal-txn .txn-body.is-form{grid-template-columns:minmax(0,1fr);}}
 .rohi-ab .divider{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .rohi-ab .month-strong td{font-weight:600;background:var(--bg-accent-tint);}
 .rohi-ab .opening-input{width:130px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px;font-variant-numeric:tabular-nums;}
@@ -3366,9 +3387,9 @@ function Modals(props: {
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
-  const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void, wide?: boolean) => (
+  const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void, wide?: boolean, extraClass?: string) => (
     <div className="overlay" onClick={(event) => event.target === event.currentTarget && close()}>
-      <div className={`modal${wide ? " modal-wide" : ""}`}>
+      <div className={`modal${wide ? " modal-wide" : ""}${extraClass ? " " + extraClass : ""}`}>
         <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={(e) => { e.stopPropagation(); close(); }} aria-label="Close"><X size={18} /></button></div>
         {sub && <div className="modal-sub">{sub}</div>}
         {body}
@@ -3462,6 +3483,7 @@ function Modals(props: {
             ))}
           </div>
 
+          <div className={`txn-body ${txType === "sale" ? "is-sale" : "is-form"}`}>
           {/* For non-sale types, show standard top fields */}
           {txType !== "sale" && (
             <div className="field-row">
@@ -3713,9 +3735,13 @@ function Modals(props: {
             </div>
           )}
 
+          </div>
+
           <div className="posting" aria-live="polite">
             <h4>1 Single Atomic Entry (No Double Counting)</h4>
-            {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
+            <div className="legs">
+              {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
+            </div>
             <div className="hint">Posts exactly 1 single record to your database. Updates the chosen account balance and synchronizes to your ledgers and Google Sheets together.</div>
           </div>
         </>
@@ -3777,7 +3803,8 @@ function Modals(props: {
           props.onGroup({ ...base, kind: "entry", account_id: recv, direction: dir });
         }
       },
-      txType === "sale"
+      true,
+      "modal-txn",
     );
   }
 
