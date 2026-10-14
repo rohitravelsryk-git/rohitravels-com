@@ -841,8 +841,9 @@ export async function linkVendorLedgerEntry(entry: {
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
 
-    const { data: vendors, error: vErr } = await supabaseAdmin
+    const { data: vendors, error: vErr } = await admin
       .from("vendors")
       .select("id, name, vendor_code, current_balance, opening_balance");
 
@@ -880,7 +881,7 @@ export async function linkVendorLedgerEntry(entry: {
     const currentBal = Number(matchedVendor.current_balance) || 0;
     const newBal = currentBal + (credit - debit);
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await admin
       .from("vendor_ledger")
       .select("id, balance, debit, credit")
       .eq("reference_no", entry.source_id)
@@ -907,7 +908,7 @@ export async function linkVendorLedgerEntry(entry: {
         console.warn("[vendors] Could not update vendor_ledger row:", updateErr.message);
       } else {
         ledgerId = updated?.id;
-        await supabaseAdmin
+        await admin
           .from("vendors")
           .update({ current_balance: newBal, updated_at: new Date().toISOString() })
           .eq("id", matchedVendor.id);
@@ -931,7 +932,7 @@ export async function linkVendorLedgerEntry(entry: {
         console.warn("[vendors] Could not insert vendor_ledger row:", ledgerError.message);
       } else {
         ledgerId = inserted?.id;
-        await supabaseAdmin
+        await admin
           .from("vendors")
           .update({ current_balance: newBal, updated_at: new Date().toISOString() })
           .eq("id", matchedVendor.id);
@@ -962,23 +963,24 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
   if (!sourceId) return { ok: false };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: vEntries } = await supabaseAdmin
+    const admin = supabaseAdmin as any;
+    const { data: vEntries } = await admin
       .from("vendor_ledger")
       .select("id, vendor_id, debit, credit")
       .eq("reference_no", sourceId);
 
     if (vEntries && vEntries.length > 0) {
       const vendorIds = Array.from(new Set(vEntries.map((e: any) => e.vendor_id)));
-      await supabaseAdmin.from("vendor_ledger").delete().eq("reference_no", sourceId);
+      await admin.from("vendor_ledger").delete().eq("reference_no", sourceId);
 
       for (const vId of vendorIds) {
-        const { data: vRecord } = await supabaseAdmin.from("vendors").select("opening_balance").eq("id", vId).maybeSingle();
-        const { data: remaining } = await supabaseAdmin.from("vendor_ledger").select("debit, credit").eq("vendor_id", vId);
+        const { data: vRecord } = await admin.from("vendors").select("opening_balance").eq("id", vId).maybeSingle();
+        const { data: remaining } = await admin.from("vendor_ledger").select("debit, credit").eq("vendor_id", vId);
         const opening = Number(vRecord?.opening_balance || 0);
         const totalCredit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.credit) || 0), 0);
         const totalDebit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.debit) || 0), 0);
         const currentBalance = opening + totalCredit - totalDebit;
-        await supabaseAdmin.from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
+        await admin.from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
       }
     }
 
