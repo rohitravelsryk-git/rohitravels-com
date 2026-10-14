@@ -338,7 +338,7 @@ export const listAirlineContacts = createServerFn({ method: "GET" }).handler(asy
   await requireUnlocked();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as any)
       .from("airline_contacts")
       .select("*")
       .eq("is_active", true)
@@ -376,7 +376,7 @@ export const createAirlineContact = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: inserted, error } = await supabaseAdmin
+    const { data: inserted, error } = await (supabaseAdmin as any)
       .from("airline_contacts")
       .insert({
         airline_name: data.airline_name,
@@ -448,7 +448,7 @@ export const updateAirlineContact = createServerFn({ method: "POST" })
       updatePayload.sort_order = data.sort_order;
     }
 
-    const { data: updated, error } = await supabaseAdmin
+    const { data: updated, error } = await (supabaseAdmin as any)
       .from("airline_contacts")
       .update(updatePayload)
       .eq("id", data.id)
@@ -474,7 +474,7 @@ export const deleteAirlineContact = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from("airline_contacts")
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq("id", data.id);
