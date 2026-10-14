@@ -48,11 +48,9 @@ function createSupabaseClient() {
   // project_id (jqanltwhgdmckrlltdnh, from supabase/config.toml) rather
   // than Rohi's real runtime project -- that ref is for local migrations
   // tooling only and must never be used as the live connection URL.
-  const rawUrl =
-    import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
-    DEFAULT_SUPABASE_URL;
-  const SUPABASE_URL = rawUrl.includes('jqanltwhgdmckrlltdnh') ? DEFAULT_SUPABASE_URL : rawUrl;
+  // Keep the URL paired with the verified production publishable key. A stale
+  // host-injected URL combined with this project's key causes "Invalid API key".
+  const SUPABASE_URL = DEFAULT_SUPABASE_URL;
 
   // Use the verified key for Rohi's fixed production project first.
   // Stale host-injected VITE_* values otherwise override this key and cause
