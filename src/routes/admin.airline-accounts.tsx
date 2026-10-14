@@ -118,14 +118,14 @@ function computeLedgerRows(rows: any[], airline: any) {
 
   return rows.map((r) => {
     const txType = r.transactionType || "Add Transaction";
-    const isBalanceIncrease = txType === "Top Up" || txType === "Cancel/Refund";
+    const isBalanceIncrease = txType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(txType.toLowerCase());
     const debitIdAmount = Number(r.debitInId);
     const credit = (isBalanceIncrease && r.debitInId !== "" && r.debitInId !== null && r.debitInId !== undefined && Number.isFinite(debitIdAmount))
       ? debitIdAmount
       : (Number(r.creditFromId) || 0);
     running = running + (isBalanceIncrease ? credit : -credit);
     const isTopUp = txType === "Top Up";
-    const profit = isTopUp || txType === "Cancel/Refund" ? 0 : (Number(r.ticketSales) || 0) - credit;
+    const profit = isTopUp || ["cancel/refund", "refund"].includes(txType.toLowerCase()) ? 0 : (Number(r.ticketSales) || 0) - credit;
 
     // Transaction ROE is immutable once recorded; defaults to airline active ROE
     const txRoe = Number(r.roe) || defaultRoe || 1;
@@ -1487,14 +1487,14 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       ? computeLedgerRows(priorRows, airline)[priorRows.length - 1].balance
       : openingBalance;
     const txType = form.transactionType || "Add Transaction";
-    const isBalanceIncrease = txType === "Top Up" || txType === "Cancel/Refund";
+    const isBalanceIncrease = txType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(txType.toLowerCase());
     const debitIdAmount = Number(form.debitInId);
     const credit = (isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined && Number.isFinite(debitIdAmount))
       ? debitIdAmount
       : (Number(form.creditFromId) || 0);
     const isTopUp = txType === "Top Up";
     const balance = priorBalance + (isBalanceIncrease ? credit : -credit);
-    const profit = isTopUp || txType === "Cancel/Refund" ? 0 : (Number(form.ticketSales) || 0) - credit;
+    const profit = isTopUp || ["cancel/refund", "refund"].includes(txType.toLowerCase()) ? 0 : (Number(form.ticketSales) || 0) - credit;
     const ledgerEntry = [form.paxName, form.sector, form.pnr, airline?.code]
       .map((v: any) => (v || "").toString().trim())
       .filter(Boolean)
@@ -1509,7 +1509,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     }
     const activeRoe = Number(form.roe || airline?.roe) || 1;
     const transactionType = form.transactionType || "Add Transaction";
-    const isBalanceIncrease = transactionType === "Top Up" || transactionType === "Cancel/Refund";
+    const isBalanceIncrease = transactionType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(transactionType.toLowerCase());
     const enteredForeignAmount = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
       ? Number(form.foreignAmount)
       : null;
