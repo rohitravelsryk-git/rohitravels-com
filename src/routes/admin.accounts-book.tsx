@@ -956,7 +956,13 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .modal.modal-txn .posting .leg span{text-align:left;}
 .rohi-ab .modal.modal-txn .posting .hint{margin-top:8px;font-size:11.5px;color:var(--ink-soft);}
 @media (max-width:900px){.rohi-ab .modal.modal-txn .txn-body.is-form{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media (max-width:560px){.rohi-ab .modal.modal-txn{height:94vh;padding:16px 14px 14px;}.rohi-ab .modal.modal-txn .txn-body.is-form{grid-template-columns:minmax(0,1fr);}}
+@media (max-width:560px){.rohi-ab .modal.modal-txn{height:94vh;padding:16px 14px 14px;overflow-y:auto;overscroll-behavior:contain;}.rohi-ab .modal.modal-txn .txn-body.is-form{grid-template-columns:minmax(0,1fr);}
+/* Phones: the whole popup scrolls (form first, summary below) and Cancel/Post stay pinned, so the form is never squeezed out by the summary */
+.rohi-ab .modal.modal-txn .txn-body{flex:0 0 auto;min-height:auto;overflow:visible;}
+.rohi-ab .modal.modal-txn .posting{margin-top:18px;padding:10px 12px;}
+.rohi-ab .modal.modal-txn .posting .legs{gap:8px;}
+.rohi-ab .modal.modal-txn .posting .leg{padding:6px 10px;}
+.rohi-ab .modal.modal-txn .modal-actions{position:sticky;bottom:-18px;margin:12px -14px -14px;padding:12px 14px 14px;background:var(--card);border-top:1px solid var(--line);z-index:2;}}
 .rohi-ab .divider{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .rohi-ab .month-strong td{font-weight:600;background:var(--bg-accent-tint);}
 .rohi-ab .opening-input{width:130px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px;font-variant-numeric:tabular-nums;}
