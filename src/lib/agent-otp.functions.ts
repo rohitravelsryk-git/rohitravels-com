@@ -28,12 +28,15 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     // If the server and browser use different Supabase projects/keys, the browser
     // receives an access token whose JWT signing-key ID is unknown to its API.
     const env = typeof process !== "undefined" ? process.env : undefined;
+    // Use the key verified against Rohi's production Supabase project first.
+    // Stale deployment environment variables can otherwise override it and
+    // cause "Invalid API key" during the initial password sign-in request.
     const rawKey =
+      KNOWN_SUPABASE_PUBLISHABLE_KEY ||
       env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
       env?.VITE_SUPABASE_ANON_KEY ||
       env?.SUPABASE_PUBLISHABLE_KEY ||
-      env?.SUPABASE_ANON_KEY ||
-      KNOWN_SUPABASE_PUBLISHABLE_KEY;
+      env?.SUPABASE_ANON_KEY;
     const key = rawKey.split(".").length === 3 || rawKey.startsWith("sb_publishable_")
       ? rawKey
       : KNOWN_SUPABASE_PUBLISHABLE_KEY;
