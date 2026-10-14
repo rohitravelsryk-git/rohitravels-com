@@ -95,6 +95,12 @@ export const setAgentStatusAdmin = createServerFn({ method: "POST" })
         agentApprovedEmail(updated.agency_name, updated.contact_person, loginUrl),
       );
     }
+    try {
+      const { syncAgentLedgersLiveInternal } = await import("@/lib/ledger-admin.functions");
+      await syncAgentLedgersLiveInternal();
+    } catch (sheetErr) {
+      console.warn("[agent-admin] Google Sheets sync after status change failed:", sheetErr);
+    }
     return { ok: true as const };
   });
 
@@ -137,6 +143,14 @@ export const deleteAgentAdmin = createServerFn({ method: "POST" })
     // 2. Delete agent record if it persists
     const { error: agentError } = await supabaseAdmin.from("agents").delete().eq("user_id", data.user_id);
     if (agentError) throw new Error(`Agent record deletion failed: ${agentError.message}`);
+
+    // Instant Google Sheets sync: prune deleted agent's tab and update overview
+    try {
+      const { syncAgentLedgersLiveInternal } = await import("@/lib/ledger-admin.functions");
+      await syncAgentLedgersLiveInternal();
+    } catch (sheetErr) {
+      console.warn("[agent-admin] Google Sheets sync after delete agent failed:", sheetErr);
+    }
 
     return { ok: true as const };
   });
@@ -188,6 +202,14 @@ export const createAgentAdmin = createServerFn({ method: "POST" })
       // Rollback auth user
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       throw new Error(agentError.message);
+    }
+
+    // Instant Google Sheets sync: create agent's tab and update Balances Overview
+    try {
+      const { syncAgentLedgersLiveInternal } = await import("@/lib/ledger-admin.functions");
+      await syncAgentLedgersLiveInternal();
+    } catch (sheetErr) {
+      console.warn("[agent-admin] Google Sheets sync after create agent failed:", sheetErr);
     }
 
     return { ok: true as const, tempPassword };

@@ -5,6 +5,7 @@ import {
   batchUpdateSpreadsheet,
   clearSheet,
   colLetter,
+  deleteSheet,
   getSpreadsheet,
   quoteSheet,
   writeRange,
@@ -252,6 +253,30 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${agentValues.length}`, agentValues);
     if (tabSheetId !== null) {
       await applyRohiExportFormat(spreadsheetId, tabSheetId, agentValues.length, ledgerHeaders.length, [2, 3, 4]);
+    }
+  }
+
+  // 4. Prune tabs for deleted agents (protected system tabs are preserved)
+  const protectedTabs = new Set([
+    "Balances Overview",
+    "Agent_Transactions",
+    "Agent_Directory",
+    "README",
+    "_DATA",
+  ]);
+  const activeAgentTabNames = new Set(
+    data.map((a: any) => String(a.agency_name || "").slice(0, 30).trim().toLowerCase())
+  );
+
+  for (const [sheetTitle, sheetId] of existingSheets.entries()) {
+    if (protectedTabs.has(sheetTitle)) continue;
+    if (!activeAgentTabNames.has(sheetTitle.toLowerCase().trim())) {
+      try {
+        console.info(`[ledger-sync] Deleting removed agent tab: "${sheetTitle}" (sheetId: ${sheetId})`);
+        await deleteSheet(spreadsheetId, sheetId);
+      } catch (delErr) {
+        console.warn(`[ledger-sync] Could not delete orphaned sheet "${sheetTitle}":`, delErr);
+      }
     }
   }
   

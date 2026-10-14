@@ -344,6 +344,16 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       transactions: txRes.data ?? [],
     };
 
+    // Link Agent Sales in Airline Accounts to Agent Ledgers in Supabase & Google Sheets
+    (async () => {
+      try {
+        const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+        await syncAirlineTransactionsToAgentLedgers(committedSnapshot.transactions, committedSnapshot.airlines);
+      } catch (agentSyncErr) {
+        console.warn("[airline-ledger] Error syncing airline agent sales to agent ledgers:", agentSyncErr);
+      }
+    })();
+
     // Database commit is authoritative and durable. Trigger Google Sheets backup
     // asynchronously in the background so the HTTP response returns immediately (<100ms)
     // without stalling the user or risking data loss if the tab is closed/refreshed.

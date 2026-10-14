@@ -839,9 +839,11 @@ export const salesBatchInput = z.object({
       entry_date: z.string().min(8),
       country: z.string().optional().default(""),
       agent: z.string().optional().default(""),
+      agent_user_id: z.string().uuid().optional().nullable(),
       pax_name: z.string().optional().default(""),
       contact_no: z.string().optional().default(""),
       vendor: z.string().optional().default(""),
+      vendor_id: z.string().uuid().optional().nullable(),
       sale_amount: z.number().positive(),
       purchase_amount: z.number().nonnegative().default(0),
     })
@@ -932,10 +934,11 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
         const rowId = saleSourceIds[i];
         if (!rowId) continue;
 
-        if (entry.agent) {
+        if (entry.agent || entry.agent_user_id) {
           await linkAgentLedgerEntry({
             source_id: rowId,
             agentName: entry.agent,
+            agentUserId: entry.agent_user_id || undefined,
             category: data.category,
             paxName: entry.pax_name,
             country: entry.country,
@@ -945,10 +948,11 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
           });
         }
 
-        if (entry.vendor && entry.purchase_amount > 0) {
+        if ((entry.vendor || entry.vendor_id) && entry.purchase_amount > 0) {
           await linkVendorLedgerEntry({
             source_id: rowId,
             vendorName: entry.vendor,
+            vendorId: entry.vendor_id || undefined,
             category: data.category,
             paxName: entry.pax_name,
             agentName: entry.agent,

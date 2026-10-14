@@ -318,47 +318,151 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
       rows = DEFAULT_VENDORS;
     }
 
-    const { clearSheet, writeRange, quoteSheet, batchUpdateSpreadsheet, getSpreadsheet } = await import("@/lib/backup/sheets.server");
-
-    const spreadsheetId = "1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw";
-    const tabName = "Vendors";
-
-    // 1. Inspect sheet metadata
-    let sheetId = 919527787;
+    // Fetch all vendor ledger entries
+    let allLedgerRows: any[] = [];
     try {
-      const meta = await getSpreadsheet(spreadsheetId);
-      const found = (meta.sheets ?? []).find((s: any) => s.properties?.title === tabName);
-      if (found?.properties?.sheetId !== undefined) {
-        sheetId = found.properties.sheetId;
-      }
-    } catch (metaErr) {
-      console.warn("[vendors] Error fetching sheet meta:", metaErr);
+      const { data: lData } = await supabaseAdmin
+        .from("vendor_ledger")
+        .select("*")
+        .order("transaction_date", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (lData) allLedgerRows = lData;
+    } catch (lErr) {
+      console.warn("[vendors] Could not fetch vendor_ledger entries for sheet sync:", lErr);
     }
 
-    // 2. Build values with 5-row header structure matching Rohi International Travels export standard
-    const values: unknown[][] = [
+    const {
+      addSheet,
+      deleteSheet,
+      clearSheet,
+      writeRange,
+      quoteSheet,
+      batchUpdateSpreadsheet,
+      getSpreadsheet,
+      colLetter,
+    } = await import("@/lib/backup/sheets.server");
+
+    const spreadsheetId = "1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw";
+
+    // Inspect existing sheets
+    const meta = await getSpreadsheet(spreadsheetId);
+    const existingSheets = new Map<string, number>(
+      (meta.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
+    );
+
+    const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 }; // #D97757
+    const BRAND_DARK = { red: 20 / 255, green: 20 / 255, blue: 19 / 255 };     // #141413
+    const BRAND_CREAM = { red: 250 / 255, green: 249 / 255, blue: 245 / 255 }; // #FAF9F5
+    const BRAND_WHITE = { red: 1.0, green: 1.0, blue: 1.0 };
+
+    async function applyRohiTableFormat(sheetId: number, totalRows: number, colCount: number, currencyCols: number[] = []) {
+      const requests: any[] = [
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: BRAND_ACCENT,
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE",
+                textFormat: { bold: true, fontSize: 13, foregroundColor: BRAND_WHITE },
+              },
+            },
+            fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+          },
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 4, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: colCount },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: BRAND_DARK,
+                horizontalAlignment: "CENTER",
+                verticalAlignment: "MIDDLE",
+                textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND_WHITE },
+              },
+            },
+            fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+          },
+        },
+        {
+          repeatCell: {
+            range: { sheetId, startRowIndex: 5, endRowIndex: Math.max(totalRows, 6), startColumnIndex: 0, endColumnIndex: colCount },
+            cell: {
+              userEnteredFormat: {
+                backgroundColor: BRAND_CREAM,
+                textFormat: { fontSize: 9.5 },
+                verticalAlignment: "MIDDLE",
+              },
+            },
+            fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment)",
+          },
+        },
+        {
+          updateSheetProperties: {
+            properties: { sheetId, gridProperties: { frozenRowCount: 5 } },
+            fields: "gridProperties.frozenRowCount",
+          },
+        },
+      ];
+
+      for (const c of currencyCols) {
+        requests.push({
+          repeatCell: {
+            range: { sheetId, startRowIndex: 5, endRowIndex: Math.max(totalRows, 6), startColumnIndex: c, endColumnIndex: c + 1 },
+            cell: {
+              userEnteredFormat: {
+                numberFormat: { type: "NUMBER", pattern: "#,##0.00" },
+                horizontalAlignment: "RIGHT",
+              },
+            },
+            fields: "userEnteredFormat(numberFormat,horizontalAlignment)",
+          },
+        });
+      }
+
+      try {
+        await batchUpdateSpreadsheet(spreadsheetId, requests);
+      } catch (fErr) {
+        console.warn("[vendors] Format warning for sheet " + sheetId + ":", fErr);
+      }
+    }
+
+    // ==========================================
+    // 1. Tab 'Vendors': Directory of registered vendors
+    // ==========================================
+    const tabName = "Vendors";
+    let directorySheetId = existingSheets.get(tabName) ?? null;
+    if (directorySheetId === null) {
+      directorySheetId = await addSheet(spreadsheetId, tabName);
+      if (directorySheetId !== null) existingSheets.set(tabName, directorySheetId);
+    }
+
+    const dirHeaders = [
+      "Vendor Code",
+      "Vendor Name",
+      "Category",
+      "Contact Person",
+      "Phone",
+      "Email",
+      "City",
+      "Opening Balance",
+      "Current Balance",
+      "Active",
+      "ID",
+      "Created At",
+    ];
+
+    const dirValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
       ["VENDORS - REGISTERED SUPPLIERS"],
       [`Official Live Record • ${rows.length} entries`],
-      [
-        "Vendor Code",
-        "Vendor Name",
-        "Category",
-        "Contact Person",
-        "Phone",
-        "Email",
-        "City",
-        "Opening Balance",
-        "Current Balance",
-        "Active",
-        "ID",
-        "Created At",
-      ],
+      dirHeaders,
     ];
 
     for (const v of rows) {
-      values.push([
+      dirValues.push([
         String(v.vendor_code || "").trim(),
         String(v.name || "").trim(),
         String(v.category || "Vendor").trim(),
@@ -374,81 +478,144 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
       ]);
     }
 
-    // 3. Clear and write
     await clearSheet(spreadsheetId, tabName);
-    await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:L${values.length}`, values);
+    await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:${colLetter(dirHeaders.length - 1)}${dirValues.length}`, dirValues);
+    if (directorySheetId !== null) {
+      await applyRohiTableFormat(directorySheetId, dirValues.length, dirHeaders.length, [7, 8]);
+    }
 
-    // 4. Apply Rohi Warm Clay formatting
-    const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 }; // #D97757
-    const BRAND_DARK = { red: 20 / 255, green: 20 / 255, blue: 19 / 255 };     // #141413
-    const BRAND_CREAM = { red: 250 / 255, green: 249 / 255, blue: 245 / 255 }; // #FAF9F5
-    const BRAND_WHITE = { red: 1.0, green: 1.0, blue: 1.0 };
-    const BRAND_BORDER = { red: 231 / 255, green: 229 / 255, blue: 228 / 255 }; // #E7E5E4
+    // ==========================================
+    // 2. Tab 'Registered Vendors': Master Vendors Ledger
+    // ==========================================
+    const ledgerTabName = "Registered Vendors";
+    let ledgerSheetId = existingSheets.get(ledgerTabName) ?? null;
+    if (ledgerSheetId === null) {
+      ledgerSheetId = await addSheet(spreadsheetId, ledgerTabName);
+      if (ledgerSheetId !== null) existingSheets.set(ledgerTabName, ledgerSheetId);
+    }
 
-    const formatRequests: any[] = [
-      // Banner row 1
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 12 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: BRAND_ACCENT,
-              horizontalAlignment: "CENTER",
-              verticalAlignment: "MIDDLE",
-              textFormat: { bold: true, fontSize: 13, foregroundColor: BRAND_WHITE },
-            },
-          },
-          fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
-        },
-      },
-      // Header row 5 (Column Titles)
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 4, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 12 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: BRAND_DARK,
-              horizontalAlignment: "CENTER",
-              verticalAlignment: "MIDDLE",
-              textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND_WHITE },
-            },
-          },
-          fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
-        },
-      },
-      // Alternating row background and borders
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 5, endRowIndex: values.length, startColumnIndex: 0, endColumnIndex: 12 },
-          cell: {
-            userEnteredFormat: {
-              backgroundColor: BRAND_CREAM,
-              textFormat: { fontSize: 9.5 },
-              verticalAlignment: "MIDDLE",
-            },
-          },
-          fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment)",
-        },
-      },
-      // Currency format on Opening and Current Balance (Columns H & I -> indexes 7, 8)
-      {
-        repeatCell: {
-          range: { sheetId, startRowIndex: 5, endRowIndex: values.length, startColumnIndex: 7, endColumnIndex: 9 },
-          cell: {
-            userEnteredFormat: {
-              numberFormat: { type: "NUMBER", pattern: "#,##0.00" },
-              horizontalAlignment: "RIGHT",
-            },
-          },
-          fields: "userEnteredFormat(numberFormat,horizontalAlignment)",
-        },
-      },
+    const vendorMap = new Map<string, Vendor>(rows.map((v) => [v.id, v]));
+
+    const ledgerHeaders = [
+      "Tx ID",
+      "Date",
+      "Vendor Name",
+      "Vendor Code",
+      "Category",
+      "Reference",
+      "Debit (Paid PKR)",
+      "Credit (Cost PKR)",
+      "Balance (PKR)",
+      "Description",
     ];
 
-    try {
-      await batchUpdateSpreadsheet(spreadsheetId, formatRequests);
-    } catch (fmtErr) {
-      console.warn("[vendors] Formatting warning:", fmtErr);
+    const masterLedgerValues: unknown[][] = [
+      ["ROHI INTERNATIONAL TRAVELS"],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
+      ["VENDORS LEDGER - REGISTERED VENDORS TRANSACTIONS"],
+      [`Official Live Record • ${allLedgerRows.length} entries across all registered vendors`],
+      ledgerHeaders,
+    ];
+
+    for (const l of allLedgerRows) {
+      const v = vendorMap.get(l.vendor_id);
+      const rawDate = l.transaction_date ? String(l.transaction_date).slice(0, 10) : "—";
+      masterLedgerValues.push([
+        String(l.id || "—").slice(0, 18),
+        rawDate,
+        v ? v.name : "—",
+        v ? v.vendor_code : "—",
+        v ? v.category : "Vendor",
+        String(l.reference_no || "—"),
+        Number(l.debit) || 0,
+        Number(l.credit) || 0,
+        Number(l.balance) || 0,
+        String(l.description || "—"),
+      ]);
+    }
+
+    await clearSheet(spreadsheetId, ledgerTabName);
+    await writeRange(spreadsheetId, `${quoteSheet(ledgerTabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${masterLedgerValues.length}`, masterLedgerValues);
+    if (ledgerSheetId !== null) {
+      await applyRohiTableFormat(ledgerSheetId, masterLedgerValues.length, ledgerHeaders.length, [6, 7, 8]);
+    }
+
+    // ==========================================
+    // 3. Individual Statement Tabs for Each Registered Vendor
+    // ==========================================
+    for (const v of rows) {
+      const vendorTab = v.name.slice(0, 30);
+      let vSheetId = existingSheets.get(vendorTab) ?? null;
+      if (vSheetId === null) {
+        vSheetId = await addSheet(spreadsheetId, vendorTab);
+        if (vSheetId !== null) existingSheets.set(vendorTab, vSheetId);
+      }
+
+      const vLedger = allLedgerRows.filter((l) => l.vendor_id === v.id);
+      const statementHeaders = [
+        "Date",
+        "Reference",
+        "Details / Description",
+        "Debit (Paid PKR)",
+        "Credit (Cost PKR)",
+        "Balance (PKR)",
+      ];
+
+      const vValues: unknown[][] = [
+        ["ROHI INTERNATIONAL TRAVELS"],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
+        [`VENDOR STATEMENT - ${v.name.toUpperCase()}`],
+        [`Current Outstanding Balance: Rs ${Number(v.current_balance || 0).toLocaleString()}  •  ${vLedger.length} entries`],
+        statementHeaders,
+      ];
+
+      // Add opening balance row if non-zero
+      if (Number(v.opening_balance) !== 0 && vLedger.length === 0) {
+        vValues.push([
+          String(v.created_at || new Date().toISOString()).slice(0, 10),
+          "OPENING",
+          "Opening Balance",
+          0,
+          Number(v.opening_balance) || 0,
+          Number(v.opening_balance) || 0,
+        ]);
+      }
+
+      for (const l of vLedger) {
+        const rawDate = l.transaction_date ? String(l.transaction_date).slice(0, 10) : "—";
+        vValues.push([
+          rawDate,
+          String(l.reference_no || "—"),
+          String(l.description || "—"),
+          Number(l.debit) || 0,
+          Number(l.credit) || 0,
+          Number(l.balance) || 0,
+        ]);
+      }
+
+      await clearSheet(spreadsheetId, vendorTab);
+      await writeRange(spreadsheetId, `${quoteSheet(vendorTab)}!A1:${colLetter(statementHeaders.length - 1)}${vValues.length}`, vValues);
+      if (vSheetId !== null) {
+        await applyRohiTableFormat(vSheetId, vValues.length, statementHeaders.length, [3, 4, 5]);
+      }
+    }
+
+    // ==========================================
+    // 4. Prune Tabs for Deleted Vendors
+    // ==========================================
+    const protectedTabs = new Set(["Vendors", "Registered Vendors", "README", "_DATA"]);
+    const activeVendorNames = new Set(rows.map((v) => v.name.slice(0, 30).trim().toLowerCase()));
+
+    for (const [sheetTitle, sheetId] of existingSheets.entries()) {
+      if (protectedTabs.has(sheetTitle)) continue;
+      if (!activeVendorNames.has(sheetTitle.toLowerCase().trim())) {
+        try {
+          console.info(`[vendors] Deleting removed vendor tab: "${sheetTitle}" (sheetId: ${sheetId})`);
+          await deleteSheet(spreadsheetId, sheetId);
+        } catch (delErr) {
+          console.warn(`[vendors] Could not delete orphaned sheet "${sheetTitle}":`, delErr);
+        }
+      }
     }
 
     return { status: "success", count: rows.length };
@@ -458,7 +625,6 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
   }
 }
 
-
 /**
  * Links a Sale entry purchase amount to a registered vendor in public.vendor_ledger
  * and updates public.vendors.current_balance atomically.
@@ -466,6 +632,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
 export async function linkVendorLedgerEntry(entry: {
   source_id: string;
   vendorName: string;
+  vendorId?: string;
   category: string;
   paxName?: string;
   agentName?: string;
@@ -475,19 +642,38 @@ export async function linkVendorLedgerEntry(entry: {
 }): Promise<{ ok: boolean; vendor_id?: string; ledger_id?: string }> {
   const vendorQuery = (entry.vendorName || "").trim();
   const purchase = Number(entry.purchaseAmount) || 0;
-  if (!vendorQuery || purchase <= 0) return { ok: false };
+  if ((!vendorQuery && !entry.vendorId) || purchase <= 0) return { ok: false };
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Match vendor in public.vendors
-    const { data: vendors } = await supabaseAdmin
+    // Fetch all registered vendors to match safely in memory without brittle PostgREST query syntax errors
+    const { data: vendors, error: vErr } = await supabaseAdmin
       .from("vendors")
-      .select("id, name, vendor_code, current_balance, opening_balance")
-      .or(`name.ilike.%${vendorQuery}%,vendor_code.ilike.%${vendorQuery}%`)
-      .limit(1);
+      .select("id, name, vendor_code, current_balance, opening_balance");
 
-    const matchedVendor = vendors && vendors.length > 0 ? vendors[0] : null;
+    if (vErr || !vendors || vendors.length === 0) {
+      console.warn("[vendors] No vendors found in database:", vErr?.message);
+      return { ok: false };
+    }
+
+    let matchedVendor: any = null;
+    if (entry.vendorId) {
+      matchedVendor = vendors.find((v: any) => v.id === entry.vendorId);
+    }
+    if (!matchedVendor && vendorQuery) {
+      const q = vendorQuery.toLowerCase().trim();
+      matchedVendor = vendors.find((v: any) => {
+        const name = (v.name || "").toLowerCase().trim();
+        const code = (v.vendor_code || "").toLowerCase().trim();
+        return name === q || code === q;
+      }) || vendors.find((v: any) => {
+        const name = (v.name || "").toLowerCase().trim();
+        const code = (v.vendor_code || "").toLowerCase().trim();
+        return name.includes(q) || q.includes(name) || code.includes(q);
+      });
+    }
+
     if (!matchedVendor) {
       console.info(`[vendors] Vendor "${vendorQuery}" not found in registered vendors; skipping vendor_ledger insertion.`);
       return { ok: false };
@@ -500,30 +686,73 @@ export async function linkVendorLedgerEntry(entry: {
     const currentBal = Number(matchedVendor.current_balance) || 0;
     const newBal = currentBal + (credit - debit);
 
-    const { data: inserted, error: ledgerError } = await supabaseAdmin
+    // Check if an existing vendor ledger entry already exists for this reference_no
+    const { data: existing } = await supabaseAdmin
       .from("vendor_ledger")
-      .insert({
-        vendor_id: matchedVendor.id,
-        transaction_date: entry.entryDate,
-        reference_no: entry.source_id,
-        description,
-        debit,
-        credit,
-        balance: newBal,
-      })
-      .select("id")
+      .select("id, balance, debit, credit")
+      .eq("reference_no", entry.source_id)
       .maybeSingle();
 
-    if (ledgerError) {
-      console.warn("[vendors] Could not insert vendor_ledger row:", ledgerError.message);
+    let ledgerId: string | undefined;
+
+    if (existing) {
+      const { data: updated, error: updateErr } = await supabaseAdmin
+        .from("vendor_ledger")
+        .update({
+          vendor_id: matchedVendor.id,
+          transaction_date: entry.entryDate,
+          description,
+          debit,
+          credit,
+          balance: newBal,
+        })
+        .eq("id", existing.id)
+        .select("id")
+        .maybeSingle();
+
+      if (updateErr) {
+        console.warn("[vendors] Could not update vendor_ledger row:", updateErr.message);
+      } else {
+        ledgerId = updated?.id;
+        await supabaseAdmin
+          .from("vendors")
+          .update({ current_balance: newBal, updated_at: new Date().toISOString() })
+          .eq("id", matchedVendor.id);
+      }
     } else {
-      await supabaseAdmin
-        .from("vendors")
-        .update({ current_balance: newBal, updated_at: new Date().toISOString() })
-        .eq("id", matchedVendor.id);
+      const { data: inserted, error: ledgerError } = await supabaseAdmin
+        .from("vendor_ledger")
+        .insert({
+          vendor_id: matchedVendor.id,
+          transaction_date: entry.entryDate,
+          reference_no: entry.source_id,
+          description,
+          debit,
+          credit,
+          balance: newBal,
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (ledgerError) {
+        console.warn("[vendors] Could not insert vendor_ledger row:", ledgerError.message);
+      } else {
+        ledgerId = inserted?.id;
+        await supabaseAdmin
+          .from("vendors")
+          .update({ current_balance: newBal, updated_at: new Date().toISOString() })
+          .eq("id", matchedVendor.id);
+      }
     }
 
-    return { ok: true, vendor_id: matchedVendor.id, ledger_id: inserted?.id };
+    // Trigger instant background sync to Google Sheets (Vendors workbook)
+    try {
+      await syncVendorsSheetInternal();
+    } catch (sheetErr) {
+      console.warn("[vendors] Instant Google Sheet sync failed:", sheetErr);
+    }
+
+    return { ok: true, vendor_id: matchedVendor.id, ledger_id: ledgerId };
   } catch (err) {
     console.warn("[vendors] linkVendorLedgerEntry error:", err);
     return { ok: false };
@@ -557,6 +786,14 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
         await supabaseAdmin.from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
       }
     }
+
+    // Instant Google Sheets sync after unlink
+    try {
+      await syncVendorsSheetInternal();
+    } catch (sheetErr) {
+      console.warn("[vendors] Instant Google Sheet sync after unlink failed:", sheetErr);
+    }
+
     return { ok: true };
   } catch (err) {
     console.warn("[vendors] unlinkVendorLedgerEntries error:", err);
