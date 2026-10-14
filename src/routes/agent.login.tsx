@@ -212,22 +212,22 @@ function LoginPage() {
       </div>
 
       {/* Single clean header */}
-      <header className="relative z-10 border-b border-[#E7DED5]/80 bg-[#FAF9F5]/90 backdrop-blur-md">
+      <header className="relative z-10 border-b border-[#302C29] bg-[#141413] text-[#FAF9F5]">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link to="/" className="group flex items-center gap-3.5" aria-label="Rohi International Travels home">
             <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-[#D97757] text-white shadow-md shadow-[#D97757]/20 transition-transform group-hover:scale-105">
               <Plane className="h-5 w-5 -rotate-12" />
             </span>
             <span className="leading-tight">
-              <span className="block font-serif text-2xl font-bold tracking-tight text-[#1C1917]">Rohi</span>
-              <span className="block text-[9px] font-bold uppercase tracking-[.25em] text-[#766B62]">
+              <span className="block font-serif text-2xl font-bold tracking-tight text-[#FAF9F5]">Rohi</span>
+              <span className="block text-[9px] font-bold uppercase tracking-[.25em] text-[#B7A99E]">
                 International Travels
               </span>
             </span>
           </Link>
 
           <div className="flex items-center gap-4">
-            <span className="hidden text-xs font-medium text-[#766B62] md:inline">Not an agent yet?</span>
+            <span className="hidden text-xs font-medium text-[#B7A99E] md:inline">Not an agent yet?</span>
             {!psfData?.registrationHidden ? (
               <Link
                 to="/agent/register"
@@ -253,23 +253,23 @@ function LoginPage() {
       <div className="relative z-10 mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:px-10 lg:py-14">
         <div className="grid items-start gap-12 lg:grid-cols-12 lg:gap-14">
           {/* Left Column: Editorial & Airplane Hero */}
-          <div className="flex flex-col justify-between space-y-8 lg:col-span-7">
+          <div className="relative flex flex-col justify-between space-y-8 overflow-hidden rounded-[32px] border border-[#302C29] bg-[#141413] p-6 text-[#FAF9F5] shadow-2xl shadow-black/20 sm:p-9 lg:col-span-7 lg:min-h-[760px] lg:p-10">
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E7DED5] pb-3">
-                <span className="text-[10px] font-bold uppercase tracking-[.28em] text-[#9D5038]">
+                <span className="text-[10px] font-bold uppercase tracking-[.28em] text-[#E9A48A]">
                   B2B Agent Portal
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-[.22em] text-[#766B62]">
+                <span className="text-[10px] font-semibold uppercase tracking-[.22em] text-[#B7A99E]">
                   Global Destinations · Stronger Together
                 </span>
               </div>
 
-              <h1 className="font-serif text-4xl font-normal tracking-tight text-[#1C1917] sm:text-5xl lg:text-6xl">
+              <h1 className="font-serif text-4xl font-normal tracking-tight text-[#FAF9F5] sm:text-5xl lg:text-6xl">
                 Your Trusted <br className="hidden sm:inline" />
-                <span className="italic text-[#C86E4E]">Travel Partner</span>
+                <span className="italic text-[#E9A48A]">Travel Partner</span>
               </h1>
 
-              <p className="text-xs font-bold uppercase tracking-[.3em] text-[#766B62]">
+              <p className="text-xs font-bold uppercase tracking-[.3em] text-[#B7A99E]">
                 Flights &middot; Hotels &middot; Holidays &middot; Visas
               </p>
             </div>
@@ -281,24 +281,26 @@ function LoginPage() {
                 return (
                   <div
                     key={s.label}
-                    className="rounded-2xl border border-[#E7DED5] bg-white/70 p-4 shadow-sm backdrop-blur-sm transition hover:bg-white"
+                    className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-sm backdrop-blur-sm transition hover:bg-white/10"
                   >
                     <Icon className="h-5 w-5 text-[#D97757]" />
-                    <div className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#1C1917]">{s.value}</div>
-                    <div className="mt-1 text-[11px] leading-tight text-[#766B62]">{s.label}</div>
+                    <div className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#FAF9F5]">{s.value}</div>
+                    <div className="mt-1 text-[11px] leading-tight text-[#B7A99E]">{s.label}</div>
                   </div>
                 );
               })}
             </div>
 
             {/* Airplane Hero Card */}
-            <div className="group relative overflow-hidden rounded-3xl border border-[#E7DED5] bg-[#FAF9F5] shadow-lg shadow-black/5">
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#FAF9F5]">
+            <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#302C29] shadow-lg shadow-black/20">
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#302C29]">
                 <img
-                  src="/assets/agent-airplane-hero.jpg"
+                  src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1600&q=82"
                   alt="Rohi International Travels commercial airliner flying over golden sunset clouds"
                   className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141413]/60 via-transparent to-transparent" />
                 <div className="absolute bottom-4 left-5 right-5 flex items-center justify-between text-white">
@@ -561,10 +563,10 @@ function LoginPage() {
 
             {/* Bottom branding footer */}
             <div className="mt-6 text-center space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-[.25em] text-[#766B62]">
+              <p className="text-[10px] font-bold uppercase tracking-[.25em] text-[#B7A99E]">
                 Rohi International Travels
               </p>
-              <p className="text-[9px] uppercase tracking-[.2em] text-[#A0968D]">
+              <p className="text-[9px] uppercase tracking-[.2em] text-[#766B62]">
                 Trusted by Agents &middot; Connecting the World
               </p>
             </div>
