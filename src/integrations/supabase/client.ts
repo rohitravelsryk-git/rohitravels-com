@@ -54,13 +54,16 @@ function createSupabaseClient() {
     DEFAULT_SUPABASE_URL;
   const SUPABASE_URL = rawUrl.includes('jqanltwhgdmckrlltdnh') ? DEFAULT_SUPABASE_URL : rawUrl;
 
+  // Use the verified key for Rohi's fixed production project first.
+  // Stale host-injected VITE_* values otherwise override this key and cause
+  // Supabase to return "Invalid API key" before an agent can sign in.
   const rawKey =
+    DEFAULT_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     (typeof process !== 'undefined'
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
-      : undefined) ||
-    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+      : undefined);
   const SUPABASE_PUBLISHABLE_KEY = isUsableSupabasePublicKey(rawKey || '')
     ? rawKey!
     : DEFAULT_SUPABASE_PUBLISHABLE_KEY;
