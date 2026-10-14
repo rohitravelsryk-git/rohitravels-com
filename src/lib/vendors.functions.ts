@@ -251,7 +251,7 @@ export const deleteVendor = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("vendors").delete().eq("id", data.id);
+    const { error } = await (supabaseAdmin as any).from("vendors").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
 
     // Trigger instant background sync to Google Sheets
@@ -841,7 +841,7 @@ export async function linkVendorLedgerEntry(entry: {
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as any;
+    
 
     const { data: vendors, error: vErr } = await admin
       .from("vendors")
@@ -963,7 +963,7 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
   if (!sourceId) return { ok: false };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as any;
+    
     const { data: vEntries } = await admin
       .from("vendor_ledger")
       .select("id, vendor_id, debit, credit")
@@ -971,16 +971,16 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
 
     if (vEntries && vEntries.length > 0) {
       const vendorIds = Array.from(new Set(vEntries.map((e: any) => e.vendor_id)));
-      await admin.from("vendor_ledger").delete().eq("reference_no", sourceId);
+      await (supabaseAdmin as any).from("vendor_ledger").delete().eq("reference_no", sourceId);
 
       for (const vId of vendorIds) {
-        const { data: vRecord } = await admin.from("vendors").select("opening_balance").eq("id", vId).maybeSingle();
-        const { data: remaining } = await admin.from("vendor_ledger").select("debit, credit").eq("vendor_id", vId);
+        const { data: vRecord } = await (supabaseAdmin as any).from("vendors").select("opening_balance").eq("id", vId).maybeSingle();
+        const { data: remaining } = await (supabaseAdmin as any).from("vendor_ledger").select("debit, credit").eq("vendor_id", vId);
         const opening = Number(vRecord?.opening_balance || 0);
         const totalCredit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.credit) || 0), 0);
         const totalDebit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.debit) || 0), 0);
         const currentBalance = opening + totalCredit - totalDebit;
-        await admin.from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
+        await (supabaseAdmin as any).from("vendors").update({ current_balance: currentBalance, updated_at: new Date().toISOString() }).eq("id", vId);
       }
     }
 
