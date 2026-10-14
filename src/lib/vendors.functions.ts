@@ -337,7 +337,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
       clearSheet,
       writeRange,
       quoteSheet,
-      batchUpdateSpreadsheet,
+      applyRohiExportFormatting,
       getSpreadsheet,
       colLetter,
     } = await import("@/lib/backup/sheets.server");
@@ -349,84 +349,6 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     const existingSheets = new Map<string, number>(
       (meta.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
     );
-
-    const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 }; // #D97757
-    const BRAND_DARK = { red: 20 / 255, green: 20 / 255, blue: 19 / 255 };     // #141413
-    const BRAND_CREAM = { red: 250 / 255, green: 249 / 255, blue: 245 / 255 }; // #FAF9F5
-    const BRAND_WHITE = { red: 1.0, green: 1.0, blue: 1.0 };
-
-    async function applyRohiTableFormat(sheetId: number, totalRows: number, colCount: number, currencyCols: number[] = []) {
-      const requests: any[] = [
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: colCount },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: BRAND_ACCENT,
-                horizontalAlignment: "CENTER",
-                verticalAlignment: "MIDDLE",
-                textFormat: { bold: true, fontSize: 13, foregroundColor: BRAND_WHITE },
-              },
-            },
-            fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
-          },
-        },
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 4, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: colCount },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: BRAND_DARK,
-                horizontalAlignment: "CENTER",
-                verticalAlignment: "MIDDLE",
-                textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND_WHITE },
-              },
-            },
-            fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
-          },
-        },
-        {
-          repeatCell: {
-            range: { sheetId, startRowIndex: 5, endRowIndex: Math.max(totalRows, 6), startColumnIndex: 0, endColumnIndex: colCount },
-            cell: {
-              userEnteredFormat: {
-                backgroundColor: BRAND_CREAM,
-                textFormat: { fontSize: 9.5 },
-                verticalAlignment: "MIDDLE",
-              },
-            },
-            fields: "userEnteredFormat(backgroundColor,textFormat,verticalAlignment)",
-          },
-        },
-        {
-          updateSheetProperties: {
-            properties: { sheetId, gridProperties: { frozenRowCount: 5 } },
-            fields: "gridProperties.frozenRowCount",
-          },
-        },
-      ];
-
-      for (const c of currencyCols) {
-        requests.push({
-          repeatCell: {
-            range: { sheetId, startRowIndex: 5, endRowIndex: Math.max(totalRows, 6), startColumnIndex: c, endColumnIndex: c + 1 },
-            cell: {
-              userEnteredFormat: {
-                numberFormat: { type: "NUMBER", pattern: "#,##0.00" },
-                horizontalAlignment: "RIGHT",
-              },
-            },
-            fields: "userEnteredFormat(numberFormat,horizontalAlignment)",
-          },
-        });
-      }
-
-      try {
-        await batchUpdateSpreadsheet(spreadsheetId, requests);
-      } catch (fErr) {
-        console.warn("[vendors] Format warning for sheet " + sheetId + ":", fErr);
-      }
-    }
 
     // ==========================================
     // 1. Tab 'Vendors': Directory of registered vendors
@@ -446,22 +368,29 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
       "Phone",
       "Email",
       "City",
-      "Opening Balance",
-      "Current Balance",
+      "Opening Balance (PKR)",
+      "Current Balance (PKR)",
       "Active",
-      "ID",
       "Created At",
     ];
 
     const dirValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-      ["VENDORS - REGISTERED SUPPLIERS"],
-      [`Official Live Record • ${rows.length} entries`],
+      ["VENDORS & SUPPLIERS - DIRECTORY & BALANCES"],
+      [`Official Live Record • ${rows.length} registered vendors • Generated ${new Date().toISOString().slice(0, 10)}`],
       dirHeaders,
     ];
 
+    let sumOpening = 0;
+    let sumCurrent = 0;
+
     for (const v of rows) {
+      const op = Number(v.opening_balance) || 0;
+      const cur = Number(v.current_balance) || 0;
+      sumOpening += op;
+      sumCurrent += cur;
+
       dirValues.push([
         String(v.vendor_code || "").trim(),
         String(v.name || "").trim(),
@@ -470,18 +399,42 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
         String(v.phone || "").trim(),
         String(v.email || "").trim(),
         String(v.city || "").trim(),
-        Number(v.opening_balance) || 0,
-        Number(v.current_balance) || 0,
+        op,
+        cur,
         v.is_active !== false ? "Yes" : "No",
-        String(v.id || "").trim(),
-        v.created_at || new Date().toISOString(),
+        String(v.created_at || new Date().toISOString()).slice(0, 10),
       ]);
     }
+
+    // Grand totals
+    dirValues.push([
+      "TOTALS",
+      `Grand Total (${rows.length} Vendors)`,
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+      sumOpening,
+      sumCurrent,
+      "—",
+      new Date().toISOString().slice(0, 10),
+    ]);
 
     await clearSheet(spreadsheetId, tabName);
     await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:${colLetter(dirHeaders.length - 1)}${dirValues.length}`, dirValues);
     if (directorySheetId !== null) {
-      await applyRohiTableFormat(directorySheetId, dirValues.length, dirHeaders.length, [7, 8]);
+      try {
+        await applyRohiExportFormatting(spreadsheetId, directorySheetId, {
+          columnCount: dirHeaders.length,
+          dataEndRow: dirValues.length,
+          numericColumnIndexes: [7, 8],
+          hasTotalRow: true,
+          totalRowIndex: dirValues.length - 1,
+        });
+      } catch (fErr) {
+        console.warn("[vendors] Format error on Vendors tab:", fErr);
+      }
     }
 
     // ==========================================
@@ -512,7 +465,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     const masterLedgerValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-      ["VENDORS LEDGER - REGISTERED VENDORS TRANSACTIONS"],
+      ["VENDORS LEDGER - REGISTERED VENDORS TRANSACTIONS JOURNAL"],
       [`Official Live Record • ${allLedgerRows.length} entries across all registered vendors`],
       ledgerHeaders,
     ];
@@ -537,7 +490,16 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     await clearSheet(spreadsheetId, ledgerTabName);
     await writeRange(spreadsheetId, `${quoteSheet(ledgerTabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${masterLedgerValues.length}`, masterLedgerValues);
     if (ledgerSheetId !== null) {
-      await applyRohiTableFormat(ledgerSheetId, masterLedgerValues.length, ledgerHeaders.length, [6, 7, 8]);
+      try {
+        await applyRohiExportFormatting(spreadsheetId, ledgerSheetId, {
+          columnCount: ledgerHeaders.length,
+          dataEndRow: masterLedgerValues.length,
+          numericColumnIndexes: [6, 7, 8],
+          dateColumnIndexes: [1],
+        });
+      } catch (fErr) {
+        console.warn("[vendors] Format error on Registered Vendors tab:", fErr);
+      }
     }
 
     // ==========================================
@@ -569,34 +531,64 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
         statementHeaders,
       ];
 
+      let vDebits = 0;
+      let vCredits = 0;
+
       // Add opening balance row if non-zero
-      if (Number(v.opening_balance) !== 0 && vLedger.length === 0) {
+      if (Number(v.opening_balance) !== 0) {
+        const op = Number(v.opening_balance);
         vValues.push([
           String(v.created_at || new Date().toISOString()).slice(0, 10),
           "OPENING",
           "Opening Balance",
           0,
-          Number(v.opening_balance) || 0,
-          Number(v.opening_balance) || 0,
+          op > 0 ? op : 0,
+          op,
         ]);
+        if (op > 0) vCredits += op;
       }
 
       for (const l of vLedger) {
         const rawDate = l.transaction_date ? String(l.transaction_date).slice(0, 10) : "—";
+        const d = Number(l.debit) || 0;
+        const c = Number(l.credit) || 0;
+        vDebits += d;
+        vCredits += c;
         vValues.push([
           rawDate,
           String(l.reference_no || "—"),
           String(l.description || "—"),
-          Number(l.debit) || 0,
-          Number(l.credit) || 0,
+          d,
+          c,
           Number(l.balance) || 0,
         ]);
       }
 
+      // Totals Row
+      vValues.push([
+        "TOTALS",
+        "Summary",
+        "Statement Total",
+        vDebits,
+        vCredits,
+        Number(v.current_balance) || 0,
+      ]);
+
       await clearSheet(spreadsheetId, vendorTab);
       await writeRange(spreadsheetId, `${quoteSheet(vendorTab)}!A1:${colLetter(statementHeaders.length - 1)}${vValues.length}`, vValues);
       if (vSheetId !== null) {
-        await applyRohiTableFormat(vSheetId, vValues.length, statementHeaders.length, [3, 4, 5]);
+        try {
+          await applyRohiExportFormatting(spreadsheetId, vSheetId, {
+            columnCount: statementHeaders.length,
+            dataEndRow: vValues.length,
+            numericColumnIndexes: [3, 4, 5],
+            dateColumnIndexes: [0],
+            hasTotalRow: true,
+            totalRowIndex: vValues.length - 1,
+          });
+        } catch (fErr) {
+          console.warn(`[vendors] Format error on tab "${vendorTab}":`, fErr);
+        }
       }
     }
 
@@ -626,6 +618,209 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
 }
 
 /**
+ * Lists all vendors with complete ledger calculation for the admin panel.
+ */
+export const listVendorLedgersAdmin = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: vendors, error: vErr } = await supabaseAdmin
+    .from("vendors")
+    .select("*")
+    .order("vendor_code", { ascending: true });
+
+  if (vErr) throw new Error(vErr.message);
+
+  const { data: allLedger, error: lErr } = await supabaseAdmin
+    .from("vendor_ledger")
+    .select("*")
+    .order("transaction_date", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const ledgerByVendor = new Map<string, any[]>();
+  for (const row of allLedger ?? []) {
+    const list = ledgerByVendor.get(row.vendor_id) || [];
+    list.push(row);
+    ledgerByVendor.set(row.vendor_id, list);
+  }
+
+  const results = [];
+  for (const v of vendors ?? []) {
+    const opening = Number(v.opening_balance) || 0;
+    const entries = ledgerByVendor.get(v.id) || [];
+
+    let totalDebits = 0;
+    let totalCredits = 0;
+    let runningBalance = opening;
+    const ledgerRows: any[] = [];
+
+    if (opening !== 0) {
+      ledgerRows.push({
+        id: `opening-${v.id}`,
+        date: v.created_at || new Date().toISOString(),
+        reference_no: "OPENING",
+        description: "Opening Balance",
+        debit: 0,
+        credit: opening,
+        balance: opening,
+        isManual: false,
+        isOpening: true,
+      });
+      totalCredits += opening;
+    }
+
+    for (const item of entries) {
+      const debit = Number(item.debit) || 0;
+      const credit = Number(item.credit) || 0;
+      runningBalance += (credit - debit);
+      totalDebits += debit;
+      totalCredits += credit;
+
+      ledgerRows.push({
+        id: item.id,
+        date: item.transaction_date || item.created_at,
+        reference_no: item.reference_no || "—",
+        description: item.description || "—",
+        debit,
+        credit,
+        balance: runningBalance,
+        isManual: true,
+      });
+    }
+
+    results.push({
+      ...v,
+      opening_balance: opening,
+      total_debits: totalDebits,
+      total_credits: totalCredits,
+      balance: runningBalance,
+      ledger: ledgerRows,
+    });
+  }
+
+  return results;
+});
+
+/**
+ * Adds a manual ledger entry for a vendor and updates their balance.
+ */
+export const addVendorManualLedgerEntry = createServerFn({ method: "POST" })
+  .validator((d: any) =>
+    z.object({
+      vendor_id: z.string().uuid(),
+      date: z.string().min(8),
+      reference_no: z.string().optional().default("MANUAL"),
+      description: z.string().min(1),
+      debit: z.number().nonnegative().default(0),
+      credit: z.number().nonnegative().default(0),
+    }).parse(d)
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Fetch vendor current balance
+    const { data: vRecord } = await supabaseAdmin
+      .from("vendors")
+      .select("id, current_balance")
+      .eq("id", data.vendor_id)
+      .maybeSingle();
+
+    const currentBal = Number(vRecord?.current_balance || 0);
+    const newBal = currentBal + (data.credit - data.debit);
+
+    const { data: inserted, error: insertErr } = await supabaseAdmin
+      .from("vendor_ledger")
+      .insert({
+        vendor_id: data.vendor_id,
+        transaction_date: data.date,
+        reference_no: data.reference_no,
+        description: data.description,
+        debit: data.debit,
+        credit: data.credit,
+        balance: newBal,
+      })
+      .select()
+      .maybeSingle();
+
+    if (insertErr) throw new Error(insertErr.message);
+
+    await supabaseAdmin
+      .from("vendors")
+      .update({ current_balance: newBal, updated_at: new Date().toISOString() })
+      .eq("id", data.vendor_id);
+
+    // Instant Google Sheets sync in background
+    (async () => {
+      try {
+        await syncVendorsSheetInternal();
+      } catch (sheetErr) {
+        console.warn("[vendors] Google Sheet sync failed after manual entry:", sheetErr);
+      }
+    })();
+
+    return { ok: true, entry: inserted };
+  });
+
+/**
+ * Deletes a manual vendor ledger entry and recalculates the vendor balance.
+ */
+export const deleteVendorManualLedgerEntry = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: row } = await supabaseAdmin
+      .from("vendor_ledger")
+      .select("vendor_id")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    if (!row) throw new Error("Entry not found");
+    const vendorId = row.vendor_id;
+
+    const { error: delErr } = await supabaseAdmin
+      .from("vendor_ledger")
+      .delete()
+      .eq("id", data.id);
+
+    if (delErr) throw new Error(delErr.message);
+
+    // Recalculate balance
+    const { data: vRecord } = await supabaseAdmin
+      .from("vendors")
+      .select("opening_balance")
+      .eq("id", vendorId)
+      .maybeSingle();
+
+    const { data: remaining } = await supabaseAdmin
+      .from("vendor_ledger")
+      .select("debit, credit")
+      .eq("vendor_id", vendorId);
+
+    const opening = Number(vRecord?.opening_balance || 0);
+    const totalCredit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.credit) || 0), 0);
+    const totalDebit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.debit) || 0), 0);
+    const currentBalance = opening + totalCredit - totalDebit;
+
+    await supabaseAdmin
+      .from("vendors")
+      .update({ current_balance: currentBalance, updated_at: new Date().toISOString() })
+      .eq("id", vendorId);
+
+    (async () => {
+      try {
+        await syncVendorsSheetInternal();
+      } catch (sheetErr) {
+        console.warn("[vendors] Google Sheet sync failed after entry delete:", sheetErr);
+      }
+    })();
+
+    return { ok: true };
+  });
+
+/**
  * Links a Sale entry purchase amount to a registered vendor in public.vendor_ledger
  * and updates public.vendors.current_balance atomically.
  */
@@ -647,7 +842,6 @@ export async function linkVendorLedgerEntry(entry: {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Fetch all registered vendors to match safely in memory without brittle PostgREST query syntax errors
     const { data: vendors, error: vErr } = await supabaseAdmin
       .from("vendors")
       .select("id, name, vendor_code, current_balance, opening_balance");
@@ -686,7 +880,6 @@ export async function linkVendorLedgerEntry(entry: {
     const currentBal = Number(matchedVendor.current_balance) || 0;
     const newBal = currentBal + (credit - debit);
 
-    // Check if an existing vendor ledger entry already exists for this reference_no
     const { data: existing } = await supabaseAdmin
       .from("vendor_ledger")
       .select("id, balance, debit, credit")
@@ -745,12 +938,14 @@ export async function linkVendorLedgerEntry(entry: {
       }
     }
 
-    // Trigger instant background sync to Google Sheets (Vendors workbook)
-    try {
-      await syncVendorsSheetInternal();
-    } catch (sheetErr) {
-      console.warn("[vendors] Instant Google Sheet sync failed:", sheetErr);
-    }
+    // Trigger instant background sync to Google Sheets
+    (async () => {
+      try {
+        await syncVendorsSheetInternal();
+      } catch (sheetErr) {
+        console.warn("[vendors] Instant Google Sheet sync failed:", sheetErr);
+      }
+    })();
 
     return { ok: true, vendor_id: matchedVendor.id, ledger_id: ledgerId };
   } catch (err) {
@@ -787,12 +982,13 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
       }
     }
 
-    // Instant Google Sheets sync after unlink
-    try {
-      await syncVendorsSheetInternal();
-    } catch (sheetErr) {
-      console.warn("[vendors] Instant Google Sheet sync after unlink failed:", sheetErr);
-    }
+    (async () => {
+      try {
+        await syncVendorsSheetInternal();
+      } catch (sheetErr) {
+        console.warn("[vendors] Instant Google Sheet sync after unlink failed:", sheetErr);
+      }
+    })();
 
     return { ok: true };
   } catch (err) {

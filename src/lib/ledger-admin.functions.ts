@@ -61,12 +61,39 @@ export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success
         .eq("agent_user_id", agent.user_id)
         .order("date", { ascending: true });
 
-      let balance = 0;
+      // Check for opening balance
+      let openingBalance = Number((agent as any).opening_balance) || 0;
+      const regularManualEntries: any[] = [];
+      for (const m of manualEntries ?? []) {
+        const isOp = (m.details || "").toLowerCase().trim().startsWith("opening balance") || (m.details || "").toLowerCase().trim() === "opening";
+        if (isOp && openingBalance === 0) {
+          openingBalance = (Number(m.debit) || 0) - (Number(m.credit) || 0);
+        } else {
+          regularManualEntries.push(m);
+        }
+      }
+
+      let balance = openingBalance;
+      let totalDebits = openingBalance > 0 ? openingBalance : 0;
+      let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
       const ledgerRows: any[] = [];
+
+      if (openingBalance !== 0) {
+        ledgerRows.push({
+          id: `opening-${agent.user_id}`,
+          date: agent.created_at || new Date().toISOString(),
+          details: "Opening Balance",
+          debit: openingBalance > 0 ? openingBalance : 0,
+          credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+          balance: openingBalance,
+          isManual: false,
+          isOpening: true,
+        });
+      }
 
       const combined = [
         ...(bookings ?? []).map((b: any) => ({ type: "booking" as const, ...b })),
-        ...(manualEntries ?? []).map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
+        ...regularManualEntries.map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
       ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
       for (const item of combined) {
@@ -91,6 +118,8 @@ export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success
         }
 
         balance += debit - credit;
+        totalDebits += debit;
+        totalCredits += credit;
 
         ledgerRows.push({
           id,
@@ -115,6 +144,9 @@ export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success
 
       const agentData = {
         ...agent,
+        opening_balance: openingBalance,
+        total_debits: totalDebits,
+        total_credits: totalCredits,
         balance,
         contact: `${agent.country_code || ""} ${agent.cell_number || ""}`.trim(),
         ledger: ledgerRows,
@@ -417,35 +449,80 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
   
   const { data: agents, error: agentsError } = await supabaseAdmin
     .from("agents")
-    .select("user_id, agency_name, contact_person, cell_number, country_code, user_code")
-    .neq("status", "rejected");
+    .select("user_id, agency_name, contact_person, cell_number, country_code, user_code, created_at")
+    .neq("status", "rejected")
+    .order("agency_name", { ascending: true });
   
   if (agentsError) throw new Error(agentsError.message);
   
+  // Fast batch queries instead of N separate queries
+  const { data: allBookings } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("id, agent_user_id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
+    .eq("status", "confirmed")
+    .order("created_at", { ascending: true });
+
+  const { data: allManualEntries } = await supabaseAdmin
+    .from("ledger_manual_entries")
+    .select("*")
+    .order("date", { ascending: true });
+
+  const bookingsByAgent = new Map<string, any[]>();
+  for (const b of allBookings ?? []) {
+    if (!b.agent_user_id) continue;
+    const list = bookingsByAgent.get(b.agent_user_id) || [];
+    list.push(b);
+    bookingsByAgent.set(b.agent_user_id, list);
+  }
+
+  const manualByAgent = new Map<string, any[]>();
+  for (const m of allManualEntries ?? []) {
+    if (!m.agent_user_id) continue;
+    const list = manualByAgent.get(m.agent_user_id) || [];
+    list.push(m);
+    manualByAgent.set(m.agent_user_id, list);
+  }
+
   const results = [];
-  const masterSyncData = [];
-  const allTransactions = [];
 
   for (const agent of agents ?? []) {
-    const { data: bookings } = await supabaseAdmin
-      .from("agent_bookings")
-      .select("id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
-      .eq("agent_user_id", agent.user_id)
-      .eq("status", "confirmed")
-      .order("created_at", { ascending: true });
+    const bookings = bookingsByAgent.get(agent.user_id) || [];
+    const manualEntries = manualByAgent.get(agent.user_id) || [];
 
-    const { data: manualEntries } = await supabaseAdmin
-      .from("ledger_manual_entries")
-      .select("*")
-      .eq("agent_user_id", agent.user_id)
-      .order("date", { ascending: true });
+    // Check for opening balance
+    let openingBalance = Number((agent as any).opening_balance) || 0;
+    const regularManualEntries: any[] = [];
+    for (const m of manualEntries) {
+      const isOp = (m.details || "").toLowerCase().trim().startsWith("opening balance") || (m.details || "").toLowerCase().trim() === "opening";
+      if (isOp && openingBalance === 0) {
+        openingBalance = (Number(m.debit) || 0) - (Number(m.credit) || 0);
+      } else {
+        regularManualEntries.push(m);
+      }
+    }
 
-    let balance = 0;
-    const ledgerRows = [];
+    let balance = openingBalance;
+    let totalDebits = openingBalance > 0 ? openingBalance : 0;
+    let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
+    const ledgerRows: any[] = [];
+
+    // Prepend opening balance row
+    if (openingBalance !== 0) {
+      ledgerRows.push({
+        id: `opening-${agent.user_id}`,
+        date: agent.created_at || new Date().toISOString(),
+        details: "Opening Balance",
+        debit: openingBalance > 0 ? openingBalance : 0,
+        credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+        balance: openingBalance,
+        isManual: false,
+        isOpening: true,
+      });
+    }
 
     const combined = [
-      ...(bookings ?? []).map((b: any) => ({ type: "booking" as const, ...b })),
-      ...(manualEntries ?? []).map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
+      ...bookings.map((b: any) => ({ type: "booking" as const, ...b })),
+      ...regularManualEntries.map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
     ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
     for (const item of combined) {
@@ -470,6 +547,8 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
       }
 
       balance += (debit - credit);
+      totalDebits += debit;
+      totalCredits += credit;
 
       ledgerRows.push({
         id,
@@ -480,38 +559,28 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
         balance,
         isManual: item.type === "manual",
       });
-
-      allTransactions.push({
-        tx_id: id,
-        date,
-        agent_name: agent.agency_name,
-        details,
-        debit,
-        credit,
-        balance,
-      });
     }
     
-    const agentData = {
+    results.push({
       ...agent,
+      opening_balance: openingBalance,
+      total_debits: totalDebits,
+      total_credits: totalCredits,
       balance,
       contact: `${agent.country_code || ""} ${agent.cell_number || ""}`.trim(),
       ledger: ledgerRows,
-    };
-    results.push(agentData);
-    masterSyncData.push(agentData);
-  }
-  
-  if (masterSyncData.length > 0) {
-    try {
-      const { syncMasterLedger } = await import("./backup/ledger-sync.server");
-      await syncMasterLedger(masterSyncData, allTransactions);
-    } catch (e) {
-      console.error("Master ledger sync failed:", e);
-    }
+    });
   }
   
   return results;
+});
+
+/**
+ * Explicit server action to trigger instant live Google Sheet sync for Agent Ledgers.
+ */
+export const syncAgentLedgersLiveAdmin = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  return await syncAgentLedgersLiveInternal();
 });
 
 export const addManualLedgerEntry = createServerFn({ method: "POST" })
