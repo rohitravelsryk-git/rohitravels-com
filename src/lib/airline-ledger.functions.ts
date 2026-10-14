@@ -408,20 +408,32 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         console.error("Async financial Google backup failed:", backupErr);
       }
 
-      try {
-        const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-        await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 15000, "Airline ledger Google Sheet sync");
-      } catch (sheetErr) {
-        console.error("Async airline ledger Google Sheet sync failed:", sheetErr);
-      }
+      // Airline Sheet sync is awaited below, after the durable database save.
     })().catch((err) => console.error("Background sync runner error:", err));
+
+    // Await Google Sheets before returning; detached promises can be terminated
+    // by serverless runtimes, leaving the sheet stale until a later transaction.
+    let syncPending = false;
+    let syncError: string | null = null;
+    try {
+      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+      const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 25000, "Airline ledger Google Sheet sync");
+      syncPending = !result.synced;
+      syncError = result.error ?? null;
+    } catch (error) {
+      syncPending = true;
+      syncError = String(error instanceof Error ? error.message : error);
+      console.error("Airline Sheet sync failed after database save:", syncError);
+      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
+        .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+    }
 
     return {
       success: true,
       revision: savedRevision,
       persisted: true,
-      syncPending: false,
-      syncError: null,
+      syncPending,
+      syncError,
     };
   });
 
