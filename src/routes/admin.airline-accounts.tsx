@@ -133,7 +133,7 @@ function computeLedgerRows(rows: any[], airline: any) {
       ? Number(r.foreignAmount)
       : (isForeign ? (credit / txRoe) : 0);
 
-    runningForeign = runningForeign + (isTopUp ? txForeignCredit : -txForeignCredit);
+    runningForeign = runningForeign + (isBalanceIncrease ? txForeignCredit : -txForeignCredit);
 
     const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
       .map((v) => (v || "").toString().trim())
@@ -1566,7 +1566,6 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
   const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
   const isCancelRefund = (form.transactionType || "Add Transaction") === "Cancel/Refund";
-  const isBalanceAdjustment = isTopUp || isCancelRefund;
   const topUpCurrency = /flynas/i.test(airline?.name || "") ? "SAR"
     : /airarabia/i.test(airline?.name || "") ? "AED"
     : /flyadeal/i.test(airline?.name || "") ? "USD"
@@ -1581,7 +1580,6 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     : isCancelRefund
       ? [
           COLUMNS.find((c) => c.key === "date"),
-          COLUMNS.find((c) => c.key === "pnr"),
           COLUMNS.find((c) => c.key === "agentName"),
           COLUMNS.find((c) => c.key === "paxName"),
           COLUMNS.find((c) => c.key === "sector"),
