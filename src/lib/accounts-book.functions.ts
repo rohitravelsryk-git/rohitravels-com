@@ -240,6 +240,23 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  // Self-heal / migration: rename 'KV Visit Visa' to 'Visit Visa' across services and transactions
+  try {
+    const { data: kvService } = await supabaseAdmin
+      .from("accounts_book_services")
+      .select("id, name")
+      .ilike("name", "%kv%visit%visa%")
+      .limit(1)
+      .maybeSingle();
+    if (kvService) {
+      await supabaseAdmin.from("accounts_book_services").update({ name: "Visit Visa" }).eq("id", kvService.id);
+      await supabaseAdmin.from("accounts_book_transactions").update({ category: "Visit Visa" }).ilike("category", "%kv%visit%visa%");
+    }
+  } catch (err) {
+    console.warn("[accounts-book] auto-rename KV Visit Visa notice:", err);
+  }
+
   const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
     supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order").order("created_at"),
     supabaseAdmin.from("accounts_book_transactions").select("*").order("created_at", { ascending: true }).limit(50000),
@@ -248,7 +265,11 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   if (accountError) throw new Error(accountError.message);
   if (transactionError) throw new Error(transactionError.message);
   if (serviceError) throw new Error(serviceError.message);
-  return { accounts: accounts ?? [], transactions: inCreationOrder(transactions ?? []), services: services ?? [] };
+
+  const cleanServices = (services ?? []).map((s) => (/kv\s*visit\s*visa/i.test(s.name) ? { ...s, name: "Visit Visa" } : s));
+  const cleanTransactions = inCreationOrder(transactions ?? []).map((t) => (t.category && /kv\s*visit\s*visa/i.test(t.category) ? { ...t, category: "Visit Visa" } : t));
+
+  return { accounts: accounts ?? [], transactions: cleanTransactions, services: cleanServices };
 });
 
 export type LiveSyncScope = "banks" | "cash" | "sales" | "expenses" | "agents" | "vendors";
@@ -342,8 +363,12 @@ export const createAccountsBookService = createServerFn({ method: "POST" }).vali
 export const updateAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: current } = await supabaseAdmin.from("accounts_book_services").select("name").eq("id", data.id).maybeSingle();
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ name: data.name }).eq("id", data.id);
   if (error) throw new Error(error.message);
+  if (current?.name && current.name !== data.name) {
+    await supabaseAdmin.from("accounts_book_transactions").update({ category: data.name }).eq("category", current.name);
+  }
   const sheetSync = await syncLive(["sales", "expenses"]);
   return { success: true, sheetSync };
 });

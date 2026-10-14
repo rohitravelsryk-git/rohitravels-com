@@ -33,6 +33,7 @@ import {
   reorderAccountsBookServices,
   updateAccountsBookAccountLogo,
   updateAccountsBookAccount,
+  updateAccountsBookService,
 } from "@/lib/accounts-book.functions";
 import { formatDateShort } from "@/lib/date-format";
 
@@ -1052,6 +1053,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
+  const updateServiceFn = useServerFn(updateAccountsBookService);
   const reorderAccountsFn = useServerFn(reorderAccountsBookAccounts);
   const reorderServicesFn = useServerFn(reorderAccountsBookServices);
 
@@ -1064,6 +1066,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const [tab, setTab] = useState<TabId>(initialTab ?? "dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editingService, setEditingService] = useState<{ id: string; name: string; kind: "sales" | "expense" } | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(DEFAULT_SIDEBAR_ORDER);
@@ -1621,6 +1624,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
+  const updateService = mutate((payload: { id: string; name: string }) => updateServiceFn({ data: payload }), "Category updated");
 
   const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending || addGroup.isPending || addSalesBatch.isPending;
 
@@ -2301,6 +2305,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   <DraggablePills
                     items={services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name }))}
                     storageKey="accounts-book-pills-settings-sales"
+                    onEdit={(item) => setEditingService({ id: item.id, name: item.label, kind: "sales" })}
                     onDelete={(id) => {
                       const service = services.find((s) => s.id === id);
                       if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name });
@@ -2321,6 +2326,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   <DraggablePills
                     items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}
                     storageKey="accounts-book-pills-settings-expenses"
+                    onEdit={(item) => setEditingService({ id: item.id, name: item.label, kind: "expense" })}
                     onDelete={(id) => {
                       const service = services.find((s) => s.id === id);
                       if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) });
@@ -2333,6 +2339,21 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
           )}
         </main>
       </div>
+
+      {editingService && (
+        <RenameCategoryModal
+          initialName={editingService.name}
+          kind={editingService.kind}
+          busy={updateService.isPending}
+          onClose={() => setEditingService(null)}
+          onSave={(newName) => {
+            const finalName = editingService.kind === "expense" ? EXPENSE_PREFIX + newName : newName;
+            updateService.mutate({ id: editingService.id, name: finalName }, {
+              onSuccess: () => setEditingService(null),
+            });
+          }}
+        />
+      )}
 
       {deleteGuard && <ProtectedDeleteDialog guard={deleteGuard} close={() => setDeleteGuard(null)} onDelete={async (password) => {
         if (deleteGuard.kind === "account") await removeAccount.mutateAsync({ id: deleteGuard.id, password });
@@ -2857,6 +2878,7 @@ function DraggablePills({
   activeId,
   onSelect,
   storageKey,
+  onEdit,
   onDelete,
   onReorder,
   hideReset,
@@ -2865,6 +2887,7 @@ function DraggablePills({
   activeId?: string | null;
   onSelect?: (id: string) => void;
   storageKey: string;
+  onEdit?: (item: PillItem) => void;
   onDelete?: (id: string) => void;
   onReorder?: (ids: string[]) => void;
   hideReset?: boolean;
@@ -2994,6 +3017,27 @@ function DraggablePills({
               style={{ display: "inline-flex", marginRight: 6, opacity: 0.55 }}
             >⋮⋮</span>
             <span>{item.label}</span>
+            {onEdit && (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={"Rename " + item.label}
+                onPointerDown={(event) => event.stopPropagation()}
+                style={{ cursor: "pointer", marginLeft: 6, opacity: 0.65, fontSize: 11 }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit(item);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onEdit(item);
+                  }
+                }}
+                title={"Rename " + item.label}
+              >✎</span>
+            )}
             {onDelete && (
               <span
                 role="button"
@@ -4059,4 +4103,62 @@ function Modals(props: {
     if (!name.trim()) { toast.error("Enter a category name"); return; }
     props.onCategory(kind === "addSalesCat" ? name.trim() : `${EXPENSE_PREFIX}${name.trim()}`);
   });
+}
+
+function RenameCategoryModal({
+  initialName,
+  kind,
+  busy,
+  onClose,
+  onSave,
+}: {
+  initialName: string;
+  kind: "sales" | "expense";
+  busy: boolean;
+  onClose: () => void;
+  onSave: (name: string) => void;
+}) {
+  const [name, setName] = useState(initialName);
+  return (
+    <div className="overlay" onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
+      <div className="modal" style={{ maxWidth: 440 }}>
+        <div className="modal-head">
+          <h3>Rename {kind === "sales" ? "Sales Account" : "Expense Category"}</h3>
+          <button type="button" className="icon-btn" onClick={onClose} disabled={busy} aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!name.trim()) {
+              toast.error("Enter a category name");
+              return;
+            }
+            onSave(name.trim());
+          }}
+        >
+          <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="field">
+              <label>Category Name</label>
+              <input
+                type="text"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Visit Visa"
+                disabled={busy}
+              />
+            </div>
+          </div>
+          <div className="modal-foot">
+            <button type="button" className="btn ghost" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="btn" disabled={busy || !name.trim()}>
+              {busy ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
