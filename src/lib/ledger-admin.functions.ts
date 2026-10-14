@@ -503,9 +503,27 @@ export async function syncAirlineTransactionsToAgentLedgers(
     for (const tx of transactions) {
       const rawAgent = String(tx.agent_name || "").trim();
       const ticketSales = Number(tx.ticket_sales) || 0;
-      const isAgentSale = Boolean(rawAgent && rawAgent !== "—" && (ticketSales !== 0 || tx.pnr));
+      const transactionType = String(tx.transaction_type || "").trim().toLowerCase();
+      // Refunds and top-ups affect the airline account only. They must never
+      // create/update an automatic Agent Ledger entry; those are manual-only.
+      const isRefundOrTopUp = transactionType === "cancel/refund" ||
+        transactionType === "refund" || transactionType === "top up";
+      const isAgentSale = !isRefundOrTopUp &&
+        Boolean(rawAgent && rawAgent !== "—" && (ticketSales !== 0 || tx.pnr));
 
-      if (!isAgentSale) continue;
+      if (!isAgentSale) {
+        // Remove a previously auto-created agent entry if this transaction was
+        // changed to a refund/top-up. Never touch manually entered ledger rows.
+        if (isRefundOrTopUp) {
+          const txId = String(tx.id || "");
+          const existing = txId ? existingByTxId.get(txId) : null;
+          if (existing) {
+            await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", existing.id);
+            existingByTxId.delete(txId);
+          }
+        }
+        continue;
+      }
 
       const txId = String(tx.id || "");
       if (!txId) continue;
