@@ -180,7 +180,7 @@ export function buildAirlineBalanceFormatRequests(sheetId: number, airlineCount:
     },
     {
       repeatCell: {
-        range: { sheetId, startRowIndex: totalRowIndex, endIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 },
         cell: {
           userEnteredFormat: {
             backgroundColor: BRAND_DARK,
