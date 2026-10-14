@@ -1535,8 +1535,8 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       currency: airline?.currency || "PKR",
       roe: isForeignAirline ? activeRoe : 1,
       foreignAmount: isForeignAirline ? foreignCredit : null,
-      receivedVia: isTopUpRecord ? null : (form.receivedVia || null),
-      receivedViaAccountId: isTopUpRecord ? null : (form.receivedViaAccountId || null),
+      receivedVia: transactionType === "Top Up" ? null : (form.receivedVia || null),
+      receivedViaAccountId: transactionType === "Top Up" ? null : (form.receivedViaAccountId || null),
     });
   };
 
