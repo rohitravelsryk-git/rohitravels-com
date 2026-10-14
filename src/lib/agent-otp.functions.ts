@@ -40,8 +40,8 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     const key = rawKey.split(".").length === 3 || rawKey.startsWith("sb_publishable_")
       ? rawKey
       : KNOWN_SUPABASE_PUBLISHABLE_KEY;
-    const rawUrl = env?.VITE_SUPABASE_URL || env?.SUPABASE_URL || KNOWN_SUPABASE_URL;
-    const url = rawUrl.includes("jqanltwhgdmckrlltdnh") ? KNOWN_SUPABASE_URL : rawUrl;
+    // Keep auth requests on the same verified project as the public key.
+    const url = KNOWN_SUPABASE_URL;
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
