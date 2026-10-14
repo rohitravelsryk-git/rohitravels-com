@@ -466,17 +466,17 @@ export async function syncAirlineAccountsSheet(revision: number) {
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
       const credit = n(r.credit_from_id);
-      // Refund/Top Up entries persist the amount in both debit_in_id and credit_from_id.
+      // Use persisted transaction type; refund debit and credit values may differ.
+      const txType = String(r.transaction_type || "").trim().toLowerCase();
+      const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
       const debitAmount = Number(r.debit_in_id);
-      const isBalanceIncrease = r.debit_in_id !== null && r.debit_in_id !== undefined &&
-        String(r.debit_in_id).trim() !== "" && Number.isFinite(debitAmount) &&
-        debitAmount > 0 && Math.abs(debitAmount - credit) < 0.01;
-      running += isBalanceIncrease ? credit : -credit;
+      const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
+      running += isBalanceIncrease ? balanceDelta : -credit;
       const txRoe = n(r.roe) || roeVal;
-      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
+      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== ""
         ? n(r.foreign_amount)
-        : (isForeign ? (credit / txRoe) : 0);
-      runningForeign -= txForeignCr;
+        : (isForeign ? (balanceDelta / txRoe) : 0);
+      runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
     }
 
     const logoPng = isServiceOnly ? "" : airlineSheetLogoUrl(air.code, air.name);
@@ -635,16 +635,16 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     for (const r of rows) {
       const credit = n(r.credit_from_id);
-      // Refund/Top Up entries persist the amount in both debit_in_id and credit_from_id.
+      // Use persisted transaction type; refund debit and credit values may differ.
+      const txType = String(r.transaction_type || "").trim().toLowerCase();
+      const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
       const debitAmount = Number(r.debit_in_id);
-      const isBalanceIncrease = r.debit_in_id !== null && r.debit_in_id !== undefined &&
-        String(r.debit_in_id).trim() !== "" && Number.isFinite(debitAmount) &&
-        debitAmount > 0 && Math.abs(debitAmount - credit) < 0.01;
-      running += isBalanceIncrease ? credit : -credit;
+      const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
+      running += isBalanceIncrease ? balanceDelta : -credit;
       const txRoe = n(r.roe) || roeVal;
-      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
+      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== ""
         ? n(r.foreign_amount)
-        : (isForeign ? (credit / txRoe) : 0);
+        : (isForeign ? (balanceDelta / txRoe) : 0);
       runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
       const sales = isBalanceIncrease ? 0 : n(r.ticket_sales);
       const voids = n(r.void_charges);
