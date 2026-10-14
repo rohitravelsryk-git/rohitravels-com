@@ -93,46 +93,15 @@ function LoginPage() {
         } catch {}
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password,
-      });
-
-      if (error) {
-        setErr(cleanAuthErrorMessage(error, "Invalid credentials. Please check your email and password."));
+      // Validate credentials through the server-side auth flow. This avoids
+      // browser-side key/session mismatches and returns a session when MFA is off.
+      const res = await requestCode({ data: { email: trimmedEmail, password } });
+      if (!res.ok) {
+        setErr(cleanAuthErrorMessage(res.error, "Unable to sign in. Please verify your email and password."));
         return;
       }
 
-      if (!data.user) {
-        setErr("Sign in failed. Please try again.");
-        return;
-      }
-
-      try {
-        await syncProfile();
-      } catch (profileErr) {
-        console.warn("syncProfile failed, continuing:", profileErr);
-      }
-
-      const { data: agent } = await supabase
-        .from("registered_agents")
-        .select("status, agency_name, mfa_enabled")
-        .eq("auth_user_id", data.user.id)
-        .maybeSingle();
-
-      if (agent?.status === "suspended") {
-        await supabase.auth.signOut();
-        setErr("Your agency account has been suspended. Please contact the priority partner desk.");
-        return;
-      }
-
-      if (agent?.mfa_enabled === true) {
-        await supabase.auth.signOut();
-        const res = await requestCode({ data: { email: trimmedEmail, password } });
-        if (!res.ok) {
-          setErr(cleanAuthErrorMessage(res.error, "Could not start two-step verification."));
-          return;
-        }
+      if (!(res as any).skipMfa) {
         setChallenge((res as any).challenge || "");
         setMaskedEmail((res as any).maskedEmail || "");
         setStep("code");
@@ -144,8 +113,45 @@ function LoginPage() {
         return;
       }
 
+      const session = (res as any).session;
+      if (!session?.access_token || !session?.refresh_token) {
+        setErr("Sign-in was verified, but a secure session could not be created. Please try again.");
+        return;
+      }
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+      if (sessionError || !sessionData.user) {
+        setErr(cleanAuthErrorMessage(sessionError, "Unable to establish your session. Please try again."));
+        return;
+      }
+
+      try {
+        await syncProfile({ data: { email: trimmedEmail, userId: sessionData.user.id } });
+      } catch (profileErr) {
+        console.warn("syncProfile failed, continuing:", profileErr);
+      }
+
+      // Preserve the legacy suspended-account guard for existing agent records.
+      const { data: agent, error: agentLookupError } = await supabase
+        .from("registered_agents")
+        .select("status")
+        .eq("auth_user_id", sessionData.user.id)
+        .maybeSingle();
+
+      if (agentLookupError) {
+        console.warn("Agent status lookup failed after authentication:", agentLookupError);
+      }
+      if (agent?.status === "suspended") {
+        await supabase.auth.signOut();
+        setErr("Your agency account has been suspended. Please contact the priority partner desk.");
+        return;
+      }
+
       await router.invalidate();
-      navigate({ to: "/agent/fares" });
+      await navigate({ to: "/agent/fares" });
     } catch (e2) {
       setErr(cleanAuthErrorMessage(e2, "Unable to sign in. Please verify your connection and try again."));
     } finally {
