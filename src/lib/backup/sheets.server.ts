@@ -241,7 +241,11 @@ export async function clearSheet(id: string, sheet: string): Promise<void> {
 }
 
 export function quoteSheet(name: string): string {
-  return `'${name.replace(/'/g, "''")}'`;
+  let clean = name.trim();
+  if (clean.startsWith("'") && clean.endsWith("'") && clean.length >= 2) {
+    clean = clean.slice(1, -1).replace(/''/g, "'");
+  }
+  return `'${clean.replace(/'/g, "''")}'`;
 }
 
 // Column index (0-based) -> A1 letters.

@@ -151,7 +151,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     ]);
   }
 
-  await clearSheet(spreadsheetId, quoteSheet(overviewSheet));
+  await clearSheet(spreadsheetId, overviewSheet);
   await writeRange(spreadsheetId, `${quoteSheet(overviewSheet)}!A1:${colLetter(overviewHeaders.length - 1)}${overviewValues.length}`, overviewValues);
   if (overviewSheetId !== null) {
     await applyRohiExportFormat(spreadsheetId, overviewSheetId, overviewValues.length, overviewHeaders.length, [4]);
@@ -213,7 +213,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     ]);
   }
 
-  await clearSheet(spreadsheetId, quoteSheet(txSheet));
+  await clearSheet(spreadsheetId, txSheet);
   await writeRange(spreadsheetId, `${quoteSheet(txSheet)}!A1:${colLetter(txHeaders.length - 1)}${txValues.length}`, txValues);
   if (txSheetId !== null) {
     await applyRohiExportFormat(spreadsheetId, txSheetId, txValues.length, txHeaders.length, [5, 6, 7]);
@@ -248,7 +248,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
       ]);
     }
 
-    await clearSheet(spreadsheetId, quoteSheet(tabName));
+    await clearSheet(spreadsheetId, tabName);
     await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${agentValues.length}`, agentValues);
     if (tabSheetId !== null) {
       await applyRohiExportFormat(spreadsheetId, tabSheetId, agentValues.length, ledgerHeaders.length, [2, 3, 4]);

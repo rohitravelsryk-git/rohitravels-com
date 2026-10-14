@@ -32,6 +32,7 @@ import {
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
   updateAccountsBookAccountLogo,
+  updateAccountsBookAccount,
 } from "@/lib/accounts-book.functions";
 import { formatDateShort } from "@/lib/date-format";
 
@@ -412,6 +413,7 @@ function BankWalletOpeningRow({
   onSave,
   onSaveLogo,
   onRemove,
+  onEditAccount,
   isDragging,
   isOver,
   onDragStart,
@@ -425,6 +427,7 @@ function BankWalletOpeningRow({
   onSave: (id: string, opening: number, date: string) => Promise<void>;
   onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onRemove: () => void;
+  onEditAccount?: (account: Account) => void;
   isDragging: boolean;
   isOver: boolean;
   onDragStart: (e: React.DragEvent) => void;
@@ -645,7 +648,10 @@ function BankWalletOpeningRow({
               <button
                 type="button"
                 className="icon-btn"
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  if (onEditAccount) onEditAccount(account);
+                  else setIsEditing(true);
+                }}
                 title={`Edit ${account.name}`}
                 style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
               >
@@ -693,6 +699,7 @@ function BanksWalletsOpeningTable({
   onSaveLogo,
   onReorder,
   onDeleteAccount,
+  onEditAccount,
 }: {
   banks: Account[];
   txns: Txn[];
@@ -700,6 +707,7 @@ function BanksWalletsOpeningTable({
   onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onReorder: (ids: string[]) => void;
   onDeleteAccount: (account: Account) => void;
+  onEditAccount?: (account: Account) => void;
 }) {
   const [localBanks, setLocalBanks] = useState<Account[]>(banks);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -750,6 +758,7 @@ function BanksWalletsOpeningTable({
             onSave={onSaveOpening}
             onSaveLogo={onSaveLogo}
             onRemove={() => onDeleteAccount(account)}
+            onEditAccount={onEditAccount}
             isDragging={draggedId === account.id}
             isOver={dragOverId === account.id && draggedId !== account.id}
             onDragStart={(e) => {
@@ -1031,6 +1040,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const openingFn = useServerFn(updateAccountsBookOpening);
   const syncSheetsFn = useServerFn(syncAccountsBookSheets);
   const saveAccountLogoFn = useServerFn(updateAccountsBookAccountLogo);
+  const updateAccountFn = useServerFn(updateAccountsBookAccount);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
@@ -1053,6 +1063,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   const [tab, setTab] = useState<TabId>(initialTab ?? "dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(DEFAULT_SIDEBAR_ORDER);
@@ -1322,6 +1333,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added");
+  const updateAccount = mutate((payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => updateAccountFn({ data: payload }), "Account updated");
 
   const addTxn = mutate(
     (payload: Record<string, unknown>) => txnFn({ data: payload as never }),
@@ -1983,7 +1995,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                 }}
               />
               <div className="pillbar">
-                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
+                <button type="button" className="pill add" onClick={() => { setEditingAccount(null); setModal("addBank"); }}>+ Add Account</button>
               </div>
               {activeBank ? (
                 <Panel title={`${activeBank.name} Ledger`}>
@@ -2206,7 +2218,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                       <button
                         type="button"
                         className="btn small"
-                        onClick={() => setModal("addBank")}
+                        onClick={() => { setEditingAccount(null); setModal("addBank"); }}
                         style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                         title="Add a new bank or wallet account"
                       >
@@ -2218,6 +2230,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                   <BanksWalletsOpeningTable
                     banks={liquidAccounts}
                     txns={txns}
+                    onEditAccount={(acc) => { setEditingAccount(acc); setModal("addBank"); }}
                     onSaveOpening={async (id, opening_balance, opening_balance_date) => {
                       queryClient.setQueryData(["accounts-book"], (old: any) => {
                         if (!old || !Array.isArray(old.accounts)) return old;
@@ -2329,11 +2342,13 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
       {modal && (
         <Modals
-          key={modal}
+          key={`${modal}:${editingAccount?.id ?? "new"}`}
           kind={modal}
-          close={() => setModal(null)}
+          close={() => { setModal(null); setEditingAccount(null); }}
           open={setModal}
-          busy={busy}
+          busy={busy || updateAccount.isPending}
+          editingAccount={editingAccount}
+          onUpdateAccount={(payload) => updateAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); } })}
           cash={cash ?? null}
           banks={banks}
           accounts={accounts}
@@ -3072,6 +3087,7 @@ function Modals(props: {
   close: () => void;
   open: (kind: ModalKind) => void;
   busy: boolean;
+  editingAccount?: Account | null;
   cash: Account | null;
   banks: Account[];
   accounts: Account[];
@@ -3086,6 +3102,7 @@ function Modals(props: {
   onTransfer: (payload: Record<string, unknown>) => void;
   onGroup: (payload: Record<string, unknown>) => void;
   onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => void;
+  onUpdateAccount?: (payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => void;
   onCategory: (name: string) => void;
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
@@ -3095,7 +3112,7 @@ function Modals(props: {
   registeredAgents?: any[];
   registeredVendors?: any[];
 }) {
-  const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
+  const { kind, close, open, busy, editingAccount, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
   const [date, setDate] = useState(todayISO());
   const [desc, setDesc] = useState("");
   const [dir, setDir] = useState<"in" | "out">("in");
@@ -3265,15 +3282,23 @@ function Modals(props: {
   // draft on entry so a previous account/category name can never carry over.
   useEffect(() => {
     if (kind === "addBank") {
-      setName("");
-      setAccountKind("bank");
-      setOpening("0");
-      setOpeningDate(todayISO());
-      setAccountLogoUrl("");
+      if (editingAccount) {
+        setName(editingAccount.name);
+        setAccountKind(editingAccount.kind === "wallet" ? "wallet" : "bank");
+        setOpening(String(editingAccount.opening_balance ?? 0));
+        setOpeningDate(editingAccount.opening_balance_date ?? todayISO());
+        setAccountLogoUrl(editingAccount.logo_url ?? "");
+      } else {
+        setName("");
+        setAccountKind("bank");
+        setOpening("0");
+        setOpeningDate(todayISO());
+        setAccountLogoUrl("");
+      }
     } else if (kind === "addSalesCat" || kind === "addExpenseCat") {
       setName("");
     }
-  }, [kind]);
+  }, [kind, editingAccount]);
 
   useEffect(() => {
     if (kind === "editTransaction" && editTxn) {
@@ -3996,19 +4021,36 @@ function Modals(props: {
   }
 
   if (kind === "addBank")
-    return shell("Add Bank / Wallet Account", null, (
-      <>
-        <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
-        <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
-        <div className="field"><label>Logo URL (optional)</label><input type="url" value={accountLogoUrl} onChange={(e) => setAccountLogoUrl(e.target.value)} placeholder="https://... image link (optional)" /></div>
-        <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
-      </>
-    ), "Add Account", () => {
-      if (!name.trim()) { toast.error("Enter an account name"); return; }
-      const trimmedLogo = accountLogoUrl.trim();
-      if (trimmedLogo && !/^https:\/\//i.test(trimmedLogo)) { toast.error("Logo URL must start with https://"); return; }
-      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate, logo_url: trimmedLogo || null });
-    });
+    return shell(
+      editingAccount ? "Edit Bank / Wallet Account" : "Add Bank / Wallet Account",
+      editingAccount ? "Update account details, logo, and opening balance." : null,
+      (
+        <>
+          <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
+          <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
+          <div className="field"><label>Logo URL (optional)</label><input type="url" value={accountLogoUrl} onChange={(e) => setAccountLogoUrl(e.target.value)} placeholder="https://... image link (optional)" /></div>
+          <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
+        </>
+      ),
+      editingAccount ? "Save Changes" : "Add Account",
+      () => {
+        if (!name.trim()) { toast.error("Enter an account name"); return; }
+        const trimmedLogo = accountLogoUrl.trim();
+        if (trimmedLogo && !/^https:\/\//i.test(trimmedLogo)) { toast.error("Logo URL must start with https://"); return; }
+        const payload = {
+          name: name.trim(),
+          kind: (accountKind === "wallet" ? "wallet" : "bank") as "bank" | "wallet",
+          opening_balance: numeric(opening),
+          opening_balance_date: openingDate,
+          logo_url: trimmedLogo || null,
+        };
+        if (editingAccount && props.onUpdateAccount) {
+          props.onUpdateAccount({ ...payload, id: editingAccount.id });
+        } else {
+          props.onAccount(payload);
+        }
+      }
+    );
 
   const categoryTitle = kind === "addSalesCat" ? "Add Sales Category" : "Add Expense Category";
   return shell(categoryTitle, null, (

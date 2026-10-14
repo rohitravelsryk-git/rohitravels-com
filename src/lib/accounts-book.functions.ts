@@ -167,6 +167,23 @@ export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "PO
 
 async function insertLinkedRows(rows: TransactionInsert[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  // Idempotency: first check if a transaction with this source_type and source_id already exists.
+  const firstWithSource = rows.find((r) => r.source_type && r.source_id);
+  if (firstWithSource?.source_type && firstWithSource?.source_id) {
+    const { data: existing, error: lookupErr } = await supabaseAdmin
+      .from("accounts_book_transactions")
+      .select("*")
+      .eq("source_type", firstWithSource.source_type)
+      .eq("source_id", firstWithSource.source_id);
+    if (!lookupErr && existing && existing.length > 0) {
+      return {
+        rows: existing,
+        sheetSync: { status: "pending", sheets: "", failures: [] as string[] },
+      };
+    }
+  }
+
   const normalized = rows.map((row) => ({
     ...row,
     source_key:
@@ -175,59 +192,47 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
         : null,
   }));
 
-  // The database has a partial unique index on source_key, so ON CONFLICT
-  // cannot safely infer the index predicate. Insert each logical projection
-  // independently and recover the winner when a concurrent request hits the
-  // unique guard. This makes sale/expense/transfer writes idempotent without
-  // silently dropping the remaining rows in a multi-row group.
-  const resultRows: any[] = [];
+  // Atomic batch insert: insert all legs together in one statement so all succeed or none does
+  let { data: inserted, error: insertError } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .insert(normalized as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+    .select();
 
-  for (const row of normalized) {
-    if (row.source_key) {
-      const { data: existing, error: lookupError } = await supabaseAdmin
-        .from("accounts_book_transactions")
-        .select("*")
-        .eq("source_key", row.source_key)
-        .maybeSingle();
-      if (lookupError) throw new Error(lookupError.message);
-      if (existing) {
-        resultRows.push(existing);
-        continue;
-      }
-    }
-
-    let { data: inserted, error: insertError } = await supabaseAdmin
+  // If the database schema or PostgREST cache lacks source_key column, safely retry without source_key
+  if (insertError && (insertError.message?.includes("source_key") || insertError.code === "42703")) {
+    console.warn("[accounts-book] insertLinkedRows failed on source_key, retrying without source_key:", insertError.message);
+    const rowsWithoutKey = normalized.map(({ source_key, ...rest }) => rest);
+    const fallback = await supabaseAdmin
       .from("accounts_book_transactions")
-      .insert(row as unknown as TransactionInsert)
-      .select()
-      .single();
+      .insert(rowsWithoutKey as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+      .select();
+    inserted = fallback.data;
+    insertError = fallback.error;
+  }
 
-    if (!insertError && inserted) {
-      resultRows.push(inserted);
-      continue;
-    }
-
-    // Never retry without source_key. The source_key is the database-level idempotency
-    // contract for linked sale/expense/transfer projections. Dropping it would allow
-    // duplicate ledger rows if a deployment ever drifts from the current schema.
-    if (insertError?.code === "23505" && row.source_key) {
-      const { data: recovered, error: recoverError } = await supabaseAdmin
+  // If a unique violation occurred (concurrent save), recover the existing rows
+  if (insertError && (insertError.code === "23505" || insertError.message?.includes("duplicate key"))) {
+    if (firstWithSource?.source_type && firstWithSource?.source_id) {
+      const { data: recovered } = await supabaseAdmin
         .from("accounts_book_transactions")
         .select("*")
-        .eq("source_key", row.source_key)
-        .maybeSingle();
-      if (recoverError) throw new Error(recoverError.message);
-      if (recovered) {
-        resultRows.push(recovered);
-        continue;
+        .eq("source_type", firstWithSource.source_type)
+        .eq("source_id", firstWithSource.source_id);
+      if (recovered && recovered.length > 0) {
+        return {
+          rows: recovered,
+          sheetSync: { status: "pending", sheets: "", failures: [] as string[] },
+        };
       }
     }
+  }
 
-    throw new Error(insertError?.message || "Accounts Book transaction could not be saved.");
+  if (insertError) {
+    throw new Error(insertError.message || "Accounts Book transaction could not be saved.");
   }
 
   return {
-    rows: resultRows,
+    rows: inserted ?? [],
     sheetSync: { status: "pending", sheets: "", failures: [] as string[] },
   };
 }
@@ -734,10 +739,20 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
     }
     if (!saved) {
       // Single multi-row INSERT = one atomic statement: either every leg is saved or none is.
-      const { data: inserted, error } = await supabaseAdmin
+      let { data: inserted, error } = await supabaseAdmin
         .from("accounts_book_transactions")
         .insert(keyed as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
         .select();
+      if (error && (error.message?.includes("source_key") || error.code === "42703")) {
+        console.warn("[accounts-book] Group transaction insert failed on source_key, retrying without source_key:", error.message);
+        const rowsWithoutKey = keyed.map(({ source_key, ...rest }) => rest);
+        const fallback = await supabaseAdmin
+          .from("accounts_book_transactions")
+          .insert(rowsWithoutKey as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+          .select();
+        inserted = fallback.data;
+        error = fallback.error;
+      }
       if (error) throw new Error(error.message);
       saved = inserted ?? [];
     }
@@ -816,8 +831,10 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
     const { formatSaleDescription } = await import("@/lib/accounts-book-sales");
 
     const allRows: TransactionInsert[] = [];
+    const saleSourceIds: string[] = [];
     for (const entry of data.entries) {
       const source_id = crypto.randomUUID();
+      saleSourceIds.push(source_id);
       const party = (entry.agent || entry.pax_name || "").trim() || undefined;
       const description = formatSaleDescription({
         country: entry.country,
@@ -862,10 +879,21 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: inserted, error } = await supabaseAdmin
+    let { data: inserted, error } = await supabaseAdmin
       .from("accounts_book_transactions")
       .insert(allRows as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
       .select();
+
+    if (error && (error.message?.includes("source_key") || error.code === "42703")) {
+      console.warn("[accounts-book] Sales batch insert failed on source_key, retrying without source_key:", error.message);
+      const rowsWithoutKey = allRows.map(({ source_key, ...rest }) => rest);
+      const fallback = await supabaseAdmin
+        .from("accounts_book_transactions")
+        .insert(rowsWithoutKey as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+        .select();
+      inserted = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) throw new Error(error.message);
 
@@ -876,7 +904,7 @@ export const createAccountsBookSalesBatch = createServerFn({ method: "POST" })
 
       for (let i = 0; i < data.entries.length; i++) {
         const entry = data.entries[i];
-        const rowId = allRows[i]?.source_id;
+        const rowId = saleSourceIds[i];
         if (!rowId) continue;
 
         if (entry.agent) {

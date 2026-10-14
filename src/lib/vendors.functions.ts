@@ -375,7 +375,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     }
 
     // 3. Clear and write
-    await clearSheet(spreadsheetId, quoteSheet(tabName));
+    await clearSheet(spreadsheetId, tabName);
     await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:L${values.length}`, values);
 
     // 4. Apply Rohi Warm Clay formatting

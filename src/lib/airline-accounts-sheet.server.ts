@@ -830,7 +830,7 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
     }
 
     // Clear and write across A:J
-    await clearSheet(id, quoteSheet(tabName));
+    await clearSheet(id, tabName);
     await writeRange(id, `${quoteSheet(tabName)}!A1:J${values.length}`, values);
 
     // Apply Rohi Warm Clay formatting

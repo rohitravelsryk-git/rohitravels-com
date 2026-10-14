@@ -955,7 +955,8 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
         label = "Travel Insurance";
       }
       const norm = String(label || "").toLowerCase().trim();
-      const fallback = DEFAULT_SERVICES_CATALOGUE[norm] || DEFAULT_SERVICES_CATALOGUE["travel insurance"];
+      // Match against the built-in catalogue by exact normalized name. Never default to Travel Insurance!
+      const fallback = DEFAULT_SERVICES_CATALOGUE[norm] || null;
       return {
         id: item.id,
         label,
