@@ -117,10 +117,15 @@ function computeLedgerRows(rows: any[], airline: any) {
   let runningForeign = Number(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
 
   return rows.map((r) => {
-    const credit = Number(r.creditFromId) || 0;
-    const isTopUp = (r.transactionType || "Add Transaction") === "Top Up";
-    running = running + (isTopUp ? credit : -credit);
-    const profit = isTopUp ? 0 : (Number(r.ticketSales) || 0) - credit;
+    const txType = r.transactionType || "Add Transaction";
+    const isBalanceIncrease = txType === "Top Up" || txType === "Cancel/Refund";
+    const debitIdAmount = Number(r.debitInId);
+    const credit = (isBalanceIncrease && r.debitInId !== "" && r.debitInId !== null && r.debitInId !== undefined && Number.isFinite(debitIdAmount))
+      ? debitIdAmount
+      : (Number(r.creditFromId) || 0);
+    running = running + (isBalanceIncrease ? credit : -credit);
+    const isTopUp = txType === "Top Up";
+    const profit = isTopUp || txType === "Cancel/Refund" ? 0 : (Number(r.ticketSales) || 0) - credit;
 
     // Transaction ROE is immutable once recorded; defaults to airline active ROE
     const txRoe = Number(r.roe) || defaultRoe || 1;
@@ -1434,8 +1439,40 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const [error, setError] = useState("");
   const [savingOpeningBalance, setSavingOpeningBalance] = useState(false);
   const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
+  const [pnrLookupMessage, setPnrLookupMessage] = useState("");
+  const [pnrLookupDone, setPnrLookupDone] = useState(false);
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
+  const fetchPnrDetails = () => {
+    const requestedPnr = String(form.pnr || "").trim().toUpperCase();
+    if (!requestedPnr) {
+      setPnrLookupMessage("Enter a PNR first. If no previous ticket exists, fill the remaining fields manually.");
+      setPnrLookupDone(true);
+      return;
+    }
+    const match = (priorRows || []).find((row: any) => String(row.pnr || "").trim().toUpperCase() === requestedPnr);
+    if (!match) {
+      setPnrLookupMessage("No existing Airline Accounts record found for this PNR. You can still enter all refund details manually.");
+      setPnrLookupDone(true);
+      return;
+    }
+    setForm((current: any) => ({
+      ...current,
+      date: current.date || match.date || new Date().toISOString().slice(0, 10),
+      pnr: requestedPnr,
+      agentName: match.agentName || current.agentName || "",
+      paxName: match.paxName || current.paxName || "",
+      sector: match.sector || current.sector || "",
+      ticketSales: match.ticketSales ?? current.ticketSales ?? "",
+      receivedVia: match.receivedVia || current.receivedVia || "",
+      receivedViaAccountId: match.receivedViaAccountId || current.receivedViaAccountId || "",
+      paxContact: match.paxContact || current.paxContact || "",
+      voidCharges: match.voidCharges ?? current.voidCharges ?? "",
+    }));
+    setAgentSearch(match.agentName || "");
+    setPnrLookupMessage("PNR details loaded. Review the fields and enter the refund amount before saving.");
+    setPnrLookupDone(true);
+  };
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
@@ -1449,10 +1486,15 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     const priorBalance = priorRows.length
       ? computeLedgerRows(priorRows, airline)[priorRows.length - 1].balance
       : openingBalance;
-    const credit = Number(form.creditFromId) || 0;
-    const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
-    const balance = priorBalance + (isTopUp ? credit : -credit);
-    const profit = isTopUp ? 0 : (Number(form.ticketSales) || 0) - credit;
+    const txType = form.transactionType || "Add Transaction";
+    const isBalanceIncrease = txType === "Top Up" || txType === "Cancel/Refund";
+    const debitIdAmount = Number(form.debitInId);
+    const credit = (isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined && Number.isFinite(debitIdAmount))
+      ? debitIdAmount
+      : (Number(form.creditFromId) || 0);
+    const isTopUp = txType === "Top Up";
+    const balance = priorBalance + (isBalanceIncrease ? credit : -credit);
+    const profit = isTopUp || txType === "Cancel/Refund" ? 0 : (Number(form.ticketSales) || 0) - credit;
     const ledgerEntry = [form.paxName, form.sector, form.pnr, airline?.code]
       .map((v: any) => (v || "").toString().trim())
       .filter(Boolean)
@@ -1466,16 +1508,20 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       return;
     }
     const activeRoe = Number(form.roe || airline?.roe) || 1;
-    const isTopUpRecord = (form.transactionType || "Add Transaction") === "Top Up";
+    const transactionType = form.transactionType || "Add Transaction";
+    const isBalanceIncrease = transactionType === "Top Up" || transactionType === "Cancel/Refund";
     const enteredForeignAmount = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
       ? Number(form.foreignAmount)
       : null;
-    // A foreign-currency top-up must increase both the foreign balance and its
-    // PKR ledger equivalent. Previously the foreign amount could be saved while
-    // creditFromId stayed zero, so the PKR balance did not rise.
-    const finalCredit = isTopUpRecord && isForeignAirline && enteredForeignAmount !== null
+    const debitIdAmount = Number(form.debitInId);
+    // For Top Up and Cancel/Refund, the Debit In ID field accepts the PKR amount
+    // requested by the ledger workflow. Foreign-currency amount remains converted
+    // using the transaction's locked ROE when supplied.
+    const finalCredit = isBalanceIncrease && isForeignAirline && enteredForeignAmount !== null
       ? Math.round(enteredForeignAmount * activeRoe)
-      : (Number(form.creditFromId) || 0);
+      : (isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined && Number.isFinite(debitIdAmount)
+          ? debitIdAmount
+          : (Number(form.creditFromId) || 0));
     const foreignCredit = enteredForeignAmount !== null
       ? enteredForeignAmount
       : (isForeignAirline ? (finalCredit / activeRoe) : null);
@@ -1483,6 +1529,9 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     onSave(modal.airlineId, {
       ...form,
       creditFromId: finalCredit,
+      debitInId: isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined
+        ? String(form.debitInId)
+        : (form.debitInId || ""),
       currency: airline?.currency || "PKR",
       roe: isForeignAirline ? activeRoe : 1,
       foreignAmount: isForeignAirline ? foreignCredit : null,
@@ -1516,6 +1565,8 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   };
 
   const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
+  const isCancelRefund = (form.transactionType || "Add Transaction") === "Cancel/Refund";
+  const isBalanceAdjustment = isTopUp || isCancelRefund;
   const topUpCurrency = /flynas/i.test(airline?.name || "") ? "SAR"
     : /airarabia/i.test(airline?.name || "") ? "AED"
     : /flyadeal/i.test(airline?.name || "") ? "USD"
@@ -1524,14 +1575,24 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     ? [
         COLUMNS.find((c) => c.key === "date"),
         { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details" },
-        ...(topUpCurrency
-          ? [
-              { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID (PKR Amount ID)" },
-              { key: "foreignAmount", label: `Top Up Amount (${topUpCurrency})`, type: "number", width: 150 },
-            ]
-          : [{ ...COLUMNS.find((c) => c.key === "creditFromId"), label: "Top Up Amount (PKR)", type: "number", width: 150 }]),
+        { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Amount (PKR)", type: "number" },
+        ...(topUpCurrency ? [{ key: "foreignAmount", label: `Top Up Amount (${topUpCurrency})`, type: "number", width: 150 }] : []),
       ].filter(Boolean)
-    : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
+    : isCancelRefund
+      ? [
+          COLUMNS.find((c) => c.key === "date"),
+          COLUMNS.find((c) => c.key === "pnr"),
+          COLUMNS.find((c) => c.key === "agentName"),
+          COLUMNS.find((c) => c.key === "paxName"),
+          COLUMNS.find((c) => c.key === "sector"),
+          COLUMNS.find((c) => c.key === "debitInId") && { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Refund Amount (PKR)", type: "number" },
+          COLUMNS.find((c) => c.key === "ticketSales"),
+          COLUMNS.find((c) => c.key === "receivedVia"),
+          COLUMNS.find((c) => c.key === "creditFromId"),
+          COLUMNS.find((c) => c.key === "paxContact"),
+          COLUMNS.find((c) => c.key === "voidCharges"),
+        ].filter(Boolean)
+      : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
 
   return (
     <Overlay onClose={onClose}>
@@ -1738,6 +1799,24 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             ))}
           </div>
         </div>
+
+        {isCancelRefund && (
+          <div style={{ marginBottom: 14, padding: 12, border: "1px solid var(--border)", borderRadius: 10, background: "var(--card)" }}>
+            <label style={{ ...styles.label, display: "block", marginBottom: 7 }}>Find existing ticket by PNR (optional)</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                style={{ ...styles.input, flex: "1 1 180px" }}
+                value={form.pnr || ""}
+                placeholder="Enter booking PNR"
+                onChange={(e) => { update("pnr", e.target.value.toUpperCase()); setPnrLookupMessage(""); setPnrLookupDone(false); }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); fetchPnrDetails(); } }}
+              />
+              <button type="button" style={styles.ghostBtn} onClick={fetchPnrDetails}><Search size={14} /> Fetch PNR</button>
+            </div>
+            {pnrLookupDone && <p role="status" style={{ margin: "8px 0 0", fontSize: 12, color: pnrLookupMessage.startsWith("PNR details loaded") ? "var(--success)" : "var(--muted-foreground)" }}>{pnrLookupMessage}</p>}
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted-foreground)" }}>If no ticket record exists, continue by manually completing the fields below.</p>
+          </div>
+        )}
 
         <div style={styles.modalGrid}>
           {editableCols.map((c: any) => (
