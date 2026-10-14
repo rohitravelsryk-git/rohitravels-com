@@ -7,7 +7,6 @@ import {
   Calculator,
   CircleHelp,
   FileCheck2,
-  Globe2,
   Menu,
   MessageSquareText,
   Newspaper,
@@ -15,7 +14,6 @@ import {
   Plane,
   ShieldCheck,
   UserRound,
-  WalletCards,
   X,
 } from "lucide-react";
 import { LatestUpdatesButton } from "./LatestUpdatesButton";
@@ -114,15 +112,6 @@ export function SiteHeader() {
       {/* Compact utility strip */}
       <div className="hidden border-b border-border/70 bg-secondary/40 lg:block">
         <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-end gap-5 px-5 text-[11px] font-semibold text-muted-foreground">
-          <button type="button" className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
-            <Globe2 className="h-3.5 w-3.5" /> English <ChevronDown className="h-3 w-3" />
-          </button>
-          <button type="button" className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
-            <WalletCards className="h-3.5 w-3.5" /> PKR <ChevronDown className="h-3 w-3" />
-          </button>
-          <a href="/contact-us" className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
-            <CircleHelp className="h-3.5 w-3.5" /> Help & Support
-          </a>
           <a href="/agent/login" className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
             <UserRound className="h-3.5 w-3.5" /> Agent login
           </a>
