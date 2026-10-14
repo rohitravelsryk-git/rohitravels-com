@@ -97,8 +97,7 @@ export const listVendorsAdmin = createServerFn({ method: "GET" }).handler(async 
   await requireUnlocked();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("vendors")
+    const { data, error } = await (supabaseAdmin as any).from("vendors")
       .select("*")
       .order("vendor_code", { ascending: true });
 
@@ -137,8 +136,7 @@ export const listVendorsAdmin = createServerFn({ method: "GET" }).handler(async 
 export const listVendors = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("vendors")
+    const { data, error } = await (supabaseAdmin as any).from("vendors")
       .select("*")
       .order("name", { ascending: true });
 
@@ -175,8 +173,7 @@ export const createVendor = createServerFn({ method: "POST" })
     // Auto-generate vendor_code if missing
     let code = data.vendor_code;
     if (!code) {
-      const { data: latest } = await supabaseAdmin
-        .from("vendors")
+      const { data: latest } = await (supabaseAdmin as any).from("vendors")
         .select("vendor_code")
         .order("created_at", { ascending: false })
         .limit(1);
@@ -200,8 +197,7 @@ export const createVendor = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
     };
 
-    const { data: inserted, error } = await supabaseAdmin
-      .from("vendors")
+    const { data: inserted, error } = await (supabaseAdmin as any).from("vendors")
       .insert(payload)
       .select()
       .single();
@@ -224,8 +220,7 @@ export const updateVendor = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...patch } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: updated, error } = await supabaseAdmin
-      .from("vendors")
+    const { data: updated, error } = await (supabaseAdmin as any).from("vendors")
       .update({
         ...patch,
         updated_at: new Date().toISOString(),
@@ -269,8 +264,7 @@ export const toggleVendorStatusAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("vendors")
+    const { error } = await (supabaseAdmin as any).from("vendors")
       .update({ is_active: data.is_active, updated_at: new Date().toISOString() })
       .eq("id", data.id);
 
@@ -303,8 +297,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let rows: Vendor[] = [];
     try {
-      const { data, error } = await supabaseAdmin
-        .from("vendors")
+      const { data, error } = await (supabaseAdmin as any).from("vendors")
         .select("*")
         .order("vendor_code", { ascending: true });
       if (!error && data && data.length > 0) {
@@ -321,8 +314,7 @@ export async function syncVendorsSheetInternal(): Promise<{ status: "success" | 
     // Fetch all vendor ledger entries
     let allLedgerRows: any[] = [];
     try {
-      const { data: lData } = await supabaseAdmin
-        .from("vendor_ledger")
+      const { data: lData } = await (supabaseAdmin as any).from("vendor_ledger")
         .select("*")
         .order("transaction_date", { ascending: true })
         .order("created_at", { ascending: true });
@@ -624,15 +616,13 @@ export const listVendorLedgersAdmin = createServerFn({ method: "GET" }).handler(
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const { data: vendors, error: vErr } = await supabaseAdmin
-    .from("vendors")
+  const { data: vendors, error: vErr } = await (supabaseAdmin as any).from("vendors")
     .select("*")
     .order("vendor_code", { ascending: true });
 
   if (vErr) throw new Error(vErr.message);
 
-  const { data: allLedger, error: lErr } = await supabaseAdmin
-    .from("vendor_ledger")
+  const { data: allLedger, error: lErr } = await (supabaseAdmin as any).from("vendor_ledger")
     .select("*")
     .order("transaction_date", { ascending: true })
     .order("created_at", { ascending: true });
@@ -720,8 +710,7 @@ export const addVendorManualLedgerEntry = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Fetch vendor current balance
-    const { data: vRecord } = await supabaseAdmin
-      .from("vendors")
+    const { data: vRecord } = await (supabaseAdmin as any).from("vendors")
       .select("id, current_balance")
       .eq("id", data.vendor_id)
       .maybeSingle();
@@ -729,8 +718,7 @@ export const addVendorManualLedgerEntry = createServerFn({ method: "POST" })
     const currentBal = Number(vRecord?.current_balance || 0);
     const newBal = currentBal + (data.credit - data.debit);
 
-    const { data: inserted, error: insertErr } = await supabaseAdmin
-      .from("vendor_ledger")
+    const { data: inserted, error: insertErr } = await (supabaseAdmin as any).from("vendor_ledger")
       .insert({
         vendor_id: data.vendor_id,
         transaction_date: data.date,
@@ -745,8 +733,7 @@ export const addVendorManualLedgerEntry = createServerFn({ method: "POST" })
 
     if (insertErr) throw new Error(insertErr.message);
 
-    await supabaseAdmin
-      .from("vendors")
+    await (supabaseAdmin as any).from("vendors")
       .update({ current_balance: newBal, updated_at: new Date().toISOString() })
       .eq("id", data.vendor_id);
 
@@ -771,8 +758,7 @@ export const deleteVendorManualLedgerEntry = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: row } = await supabaseAdmin
-      .from("vendor_ledger")
+    const { data: row } = await (supabaseAdmin as any).from("vendor_ledger")
       .select("vendor_id")
       .eq("id", data.id)
       .maybeSingle();
@@ -780,22 +766,19 @@ export const deleteVendorManualLedgerEntry = createServerFn({ method: "POST" })
     if (!row) throw new Error("Entry not found");
     const vendorId = row.vendor_id;
 
-    const { error: delErr } = await supabaseAdmin
-      .from("vendor_ledger")
+    const { error: delErr } = await (supabaseAdmin as any).from("vendor_ledger")
       .delete()
       .eq("id", data.id);
 
     if (delErr) throw new Error(delErr.message);
 
     // Recalculate balance
-    const { data: vRecord } = await supabaseAdmin
-      .from("vendors")
+    const { data: vRecord } = await (supabaseAdmin as any).from("vendors")
       .select("opening_balance")
       .eq("id", vendorId)
       .maybeSingle();
 
-    const { data: remaining } = await supabaseAdmin
-      .from("vendor_ledger")
+    const { data: remaining } = await (supabaseAdmin as any).from("vendor_ledger")
       .select("debit, credit")
       .eq("vendor_id", vendorId);
 
@@ -804,8 +787,7 @@ export const deleteVendorManualLedgerEntry = createServerFn({ method: "POST" })
     const totalDebit = (remaining || []).reduce((acc: number, r: any) => acc + (Number(r.debit) || 0), 0);
     const currentBalance = opening + totalCredit - totalDebit;
 
-    await supabaseAdmin
-      .from("vendors")
+    await (supabaseAdmin as any).from("vendors")
       .update({ current_balance: currentBalance, updated_at: new Date().toISOString() })
       .eq("id", vendorId);
 
@@ -843,8 +825,7 @@ export async function linkVendorLedgerEntry(entry: {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
 
-    const { data: vendors, error: vErr } = await admin
-      .from("vendors")
+    const { data: vendors, error: vErr } = await (supabaseAdmin as any).from("vendors")
       .select("id, name, vendor_code, current_balance, opening_balance");
 
     if (vErr || !vendors || vendors.length === 0) {
@@ -881,8 +862,7 @@ export async function linkVendorLedgerEntry(entry: {
     const currentBal = Number(matchedVendor.current_balance) || 0;
     const newBal = currentBal + (credit - debit);
 
-    const { data: existing } = await admin
-      .from("vendor_ledger")
+    const { data: existing } = await (supabaseAdmin as any).from("vendor_ledger")
       .select("id, balance, debit, credit")
       .eq("reference_no", entry.source_id)
       .maybeSingle();
@@ -890,8 +870,7 @@ export async function linkVendorLedgerEntry(entry: {
     let ledgerId: string | undefined;
 
     if (existing) {
-      const { data: updated, error: updateErr } = await supabaseAdmin
-        .from("vendor_ledger")
+      const { data: updated, error: updateErr } = await (supabaseAdmin as any).from("vendor_ledger")
         .update({
           vendor_id: matchedVendor.id,
           transaction_date: entry.entryDate,
@@ -908,14 +887,12 @@ export async function linkVendorLedgerEntry(entry: {
         console.warn("[vendors] Could not update vendor_ledger row:", updateErr.message);
       } else {
         ledgerId = updated?.id;
-        await admin
-          .from("vendors")
+        await (supabaseAdmin as any).from("vendors")
           .update({ current_balance: newBal, updated_at: new Date().toISOString() })
           .eq("id", matchedVendor.id);
       }
     } else {
-      const { data: inserted, error: ledgerError } = await supabaseAdmin
-        .from("vendor_ledger")
+      const { data: inserted, error: ledgerError } = await (supabaseAdmin as any).from("vendor_ledger")
         .insert({
           vendor_id: matchedVendor.id,
           transaction_date: entry.entryDate,
@@ -932,8 +909,7 @@ export async function linkVendorLedgerEntry(entry: {
         console.warn("[vendors] Could not insert vendor_ledger row:", ledgerError.message);
       } else {
         ledgerId = inserted?.id;
-        await admin
-          .from("vendors")
+        await (supabaseAdmin as any).from("vendors")
           .update({ current_balance: newBal, updated_at: new Date().toISOString() })
           .eq("id", matchedVendor.id);
       }
@@ -964,8 +940,7 @@ export async function unlinkVendorLedgerEntries(sourceId: string): Promise<{ ok:
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     
-    const { data: vEntries } = await admin
-      .from("vendor_ledger")
+    const { data: vEntries } = await (supabaseAdmin as any).from("vendor_ledger")
       .select("id, vendor_id, debit, credit")
       .eq("reference_no", sourceId);
 
