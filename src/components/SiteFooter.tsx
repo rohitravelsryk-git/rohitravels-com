@@ -26,7 +26,7 @@ export function SiteFooter() {
   const router = useRouter();
   const path = router.state.location.pathname;
 
-  if (path === "/print-format" || path === "/testing" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
+  if (path === "/print-format" || path === "/testing" || path.startsWith("/admin") || path === "/agent/login" || (path.startsWith("/agent") && path !== "/agent/register")) return null;
 
   return (
     <footer className="print:hidden border-t border-[var(--rohi-border)] bg-[var(--rohi-surface-strong)] text-[var(--rohi-text-inverse)]">

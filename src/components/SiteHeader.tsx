@@ -96,7 +96,8 @@ export function SiteHeader() {
     path === "/print-format" ||
     path === "/testing" ||
     path.startsWith("/admin") ||
-    (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")
+    path === "/agent/login" ||
+    (path.startsWith("/agent") && path !== "/agent/register")
   ) {
     return null;
   }
