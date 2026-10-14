@@ -466,7 +466,12 @@ export async function syncAirlineAccountsSheet(revision: number) {
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
       const credit = n(r.credit_from_id);
-      running -= credit;
+      // Refund/Top Up entries persist the amount in both debit_in_id and credit_from_id.
+      const debitAmount = Number(r.debit_in_id);
+      const isBalanceIncrease = r.debit_in_id !== null && r.debit_in_id !== undefined &&
+        String(r.debit_in_id).trim() !== "" && Number.isFinite(debitAmount) &&
+        debitAmount > 0 && Math.abs(debitAmount - credit) < 0.01;
+      running += isBalanceIncrease ? credit : -credit;
       const txRoe = n(r.roe) || roeVal;
       const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
         ? n(r.foreign_amount)
@@ -630,13 +635,18 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     for (const r of rows) {
       const credit = n(r.credit_from_id);
-      running -= credit;
+      // Refund/Top Up entries persist the amount in both debit_in_id and credit_from_id.
+      const debitAmount = Number(r.debit_in_id);
+      const isBalanceIncrease = r.debit_in_id !== null && r.debit_in_id !== undefined &&
+        String(r.debit_in_id).trim() !== "" && Number.isFinite(debitAmount) &&
+        debitAmount > 0 && Math.abs(debitAmount - credit) < 0.01;
+      running += isBalanceIncrease ? credit : -credit;
       const txRoe = n(r.roe) || roeVal;
       const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
         ? n(r.foreign_amount)
         : (isForeign ? (credit / txRoe) : 0);
-      runningForeign -= txForeignCr;
-      const sales = n(r.ticket_sales);
+      runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
+      const sales = isBalanceIncrease ? 0 : n(r.ticket_sales);
       const voids = n(r.void_charges);
       specific.push([
         formatSheetDate(r.date),
@@ -647,9 +657,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
         sales,
         credit,
         voids,
-        sales - credit,
+        isBalanceIncrease ? 0 : sales - credit,
         running,
-        [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
+        [isBalanceIncrease ? "TOP UP / REFUND" : "", r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
       ]);
     }
 
