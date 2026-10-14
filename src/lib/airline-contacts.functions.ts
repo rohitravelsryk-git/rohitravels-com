@@ -28,22 +28,22 @@ async function requireUnlocked() {
 export type AirlineContact = {
   id: string;
   airline_name: string;
-  contact_person: string;
-  contact_number: string;
-  sales_support: string;
-  topup_email: string;
-  otb_email: string;
-  bank_name: string;
-  account_title: string;
-  iban: string;
-  address: string;
-  sort_order: number;
-  is_active: boolean;
+  contact_person?: string;
+  contact_number?: string;
+  sales_support?: string;
+  topup_email?: string;
+  otb_email?: string;
+  bank_name?: string;
+  account_title?: string;
+  iban?: string;
+  address?: string;
+  sort_order?: number;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 };
 
-export const DEFAULT_AIRLINE_CONTACTS: AirlineContact[] = [
+export const DEFAULT_AIRLINE_CONTACTS: any[] = [
   {
     "id": "contact-1",
     "airline_name": "PIA",
