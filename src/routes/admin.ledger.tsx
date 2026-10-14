@@ -2,12 +2,12 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry, syncAgentLedgersLiveAdmin } from "@/lib/ledger-admin.functions";
+import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { listVendorLedgersAdmin, addVendorManualLedgerEntry, deleteVendorManualLedgerEntry } from "@/lib/vendors.functions";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminPageHeading } from "@/components/AdminPageHeading";import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
-import { Home, LogOut, Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer, Store, RefreshCw, Search, Users, CreditCard, ChevronDown } from "lucide-react";
+import { Home, LogOut, Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer, Store, Search, Users, CreditCard, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
@@ -37,7 +37,6 @@ function AdminLedgerPage() {
 
   const listVendorLedgers = useServerFn(listVendorLedgersAdmin);
   const vendorQuery = useQuery({ queryKey: ["admin-vendor-ledgers"], queryFn: () => listVendorLedgers(), refetchInterval: 30000 });
-  const syncAgentLedgers = useServerFn(syncAgentLedgersLiveAdmin);
   const vendorRows = vendorQuery.data ?? [];
   const filteredAgents = (q.data ?? []).filter((a: any) => {
     const term = searchQuery.trim().toLowerCase();
@@ -60,6 +59,12 @@ function AdminLedgerPage() {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "ledger_manual_entries" }, () => {
         qc.invalidateQueries({ queryKey: ["admin-ledgers"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "vendors" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-vendor-ledgers"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "vendor_ledger" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-vendor-ledgers"] });
       })
       .subscribe();
     return () => {
@@ -124,24 +129,7 @@ function AdminLedgerPage() {
             <p className="text-sm text-[#78716C]">Live balances and statements for registered agents and vendors</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={async () => {
-                try {
-                  await syncAgentLedgers();
-                  await Promise.all([
-                    qc.invalidateQueries({ queryKey: ["admin-ledgers"] }),
-                    qc.invalidateQueries({ queryKey: ["admin-vendor-ledgers"] }),
-                  ]);
-                  toast.success("Ledgers refreshed and synced");
-                } catch (e: any) {
-                  toast.error(e?.message || "Ledger sync failed");
-                }
-              }}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-black"
-            >
-              <RefreshCw className="h-4 w-4" /> Refresh Ledgers
-            </button>
-            <a href="/admin/vendors" className="inline-flex items-center gap-2 rounded-lg bg-[#D97757] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#c66849]"><Store className="h-4 w-4" /> Manage Vendors</a>
+            <a href="/admin/vendors" className="inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-black"><Store className="h-4 w-4" /> Manage Vendors</a>
           </div>
         </div>
 
