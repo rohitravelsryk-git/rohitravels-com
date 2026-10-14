@@ -175,23 +175,28 @@ async function replaceAirlineTabs(
       [air.name, air.code || ""],
       ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date, "Entries", rows.length, "Current Balance", running],
       [],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In / Credit From", "Void Charges", "Profit", "Running Balance", "Remarks"],
       [air.opening_balance_date, "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
     ];
     for (const r of rows as any[]) {
       const credit = Number(r.credit_from_id) || 0;
-      const sales = Number(r.ticket_sales) || 0;
+      const txType = String(r.transaction_type || "").trim().toLowerCase();
+      const debitAmount = Number(r.debit_in_id);
+      const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
+      const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
+      const ledgerAmount = isBalanceIncrease ? balanceDelta : credit;
+      const sales = isBalanceIncrease ? 0 : (Number(r.ticket_sales) || 0);
       const voids = Number(r.void_charges) || 0;
-      running -= credit;
+      running += isBalanceIncrease ? balanceDelta : -credit;
       const txRoe = Number(r.roe) || roeVal;
       const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
         ? Number(r.foreign_amount)
-        : (isForeign ? (credit / txRoe) : 0);
-      runningForeign -= txForeignCr;
+        : (isForeign ? (balanceDelta / txRoe) : 0);
+      runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
 
       values.push([
         r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-        sales, credit, voids, sales - credit, running,
+        sales, ledgerAmount, voids, sales - ledgerAmount, running,
         [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
       ]);
     }
