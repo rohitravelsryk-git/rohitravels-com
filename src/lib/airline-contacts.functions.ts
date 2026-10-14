@@ -499,7 +499,7 @@ export const reorderAirlineContacts = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const updates = data.ids.map((id, index) =>
-      supabaseAdmin
+      (supabaseAdmin as any)
         .from("airline_contacts")
         .update({ sort_order: (index + 1) * 10, updated_at: new Date().toISOString() })
         .eq("id", id)

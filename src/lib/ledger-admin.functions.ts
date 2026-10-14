@@ -62,7 +62,7 @@ export async function getUnifiedPartyLedgers(supabaseAdmin: any): Promise<{
     .select("*")
     .order("date", { ascending: true });
 
-  const { data: allVendorLedger } = await supabaseAdmin
+  const { data: allVendorLedger } = await (supabaseAdmin as any)
     .from("vendor_ledger")
     .select("*")
     .order("transaction_date", { ascending: true });
@@ -629,7 +629,7 @@ export const addManualLedgerEntry = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     } else {
       // It's a vendor account
-      const { error } = await supabaseAdmin.from("vendor_ledger").insert({
+      const { error } = await (supabaseAdmin as any).from("vendor_ledger").insert({
         vendor_id: data.agent_user_id,
         transaction_date: data.date.slice(0, 10),
         reference_no: "MANUAL",
@@ -665,7 +665,7 @@ export const deleteManualLedgerEntry = createServerFn({ method: "POST" })
 
     if (!delAgent || delAgent.length === 0) {
       // If not in agent entries, delete from vendor_ledger
-      await supabaseAdmin.from("vendor_ledger").delete().eq("id", id);
+      await (supabaseAdmin as any).from("vendor_ledger").delete().eq("id", id);
     }
 
     // Instant live sync to designated Agent Ledger workbook

@@ -781,7 +781,7 @@ export async function reconcileBanksWalletsToSheets() {
         if (isMoneyIn) runningBalance += amt;
         else runningBalance -= amt;
 
-        const cleanDesc = t.entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
+        const cleanDesc = (t as any).entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
           ? formatSaleDisplaySummary(t.description, t.party, t.category).title
           : cleanSaleDescriptionDisplay(t.description || "");
         const formattedDesc = cleanDesc || String(t.party || (isMoneyIn ? "Deposit" : "Payment"));
@@ -1319,7 +1319,7 @@ export async function reconcileDailyCashBookToSheets() {
       if (isCashIn) runningBalance += amt;
       else runningBalance -= amt;
 
-      const cleanDesc = t.entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
+      const cleanDesc = (t as any).entry_type === "sale" || String(t.description || "").includes("[[SALE_META:")
         ? formatSaleDisplaySummary(t.description, t.party, t.category).title
         : cleanSaleDescriptionDisplay(t.description || "");
       const accName = accountMap.get(String(t.account_id)) || "Account";
@@ -1456,7 +1456,7 @@ export async function reconcileExpensesToSheets() {
     const allExpenses = inCreationOrder(
       (txnsResult.data ?? []).filter((t) => {
         if (t.entry_type === "transfer" || t.source_type === "transfer") return false;
-        if (t.entry_type === "sale" || t.source_type === "sale") return false;
+        if ((t as any).entry_type === "sale" || t.source_type === "sale") return false;
         return true;
       })
     );
