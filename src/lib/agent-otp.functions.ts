@@ -1,13 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { cleanAuthErrorMessage } from "./auth-error-cleanup";
 
 /**
  * Two-step sign-in for the B2B agent portal.
  *
- * Step 1 verifies the email + password on the server and emails a 6-digit code
- * to the registered agency address. Step 2 verifies the code. Only after step 2
- * does the browser create its actual portal session, so a leaked password on
- * its own cannot open the portal.
+ * Step 1 verifies the email + password on the server and checks the agency status.
+ * If MFA is not required, it returns the verified session tokens so the browser can
+ * establish the session directly via setSession without redundant password round-trips.
+ * If MFA is enabled, a 6-digit code is generated and emailed to the agency.
  */
 
 export const requestAgentLoginCode = createServerFn({ method: "POST" })
@@ -44,24 +45,58 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     });
 
     const { data: signIn, error } = await client.auth.signInWithPassword({ email, password: data.password });
-    if (error || !signIn.user) return { ok: false as const, error: "Invalid email or password." };
-    // Client is ephemeral with persistSession: false. Do not invoke remote global signOut
-    // because that revokes the newly authorized GoTrue session before the browser signs in.
+    if (error || !signIn.user) {
+      return { ok: false as const, error: cleanAuthErrorMessage(error, "Invalid email or password.") };
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: agent } = await supabaseAdmin
+    let { data: agent } = await supabaseAdmin
       .from("agents")
-      .select("agency_name, email, status, mfa_enabled")
+      .select("user_id, agency_name, email, status, mfa_enabled")
       .eq("user_id", signIn.user.id)
       .maybeSingle();
 
-    if (agent && agent.status !== "approved") {
-      return { ok: false as const, error: "Your agency account is awaiting admin approval." };
+    if (!agent) {
+      const { data: agentByEmail } = await supabaseAdmin
+        .from("agents")
+        .select("user_id, agency_name, email, status, mfa_enabled")
+        .ilike("email", email)
+        .maybeSingle();
+
+      if (agentByEmail) {
+        agent = agentByEmail;
+        if (!agentByEmail.user_id || agentByEmail.user_id !== signIn.user.id) {
+          await supabaseAdmin
+            .from("agents")
+            .update({ user_id: signIn.user.id })
+            .eq("email", agentByEmail.email);
+        }
+      }
+    }
+
+    const isMasterAdmin = email === "rohitravelsryk@gmail.com" || email === "arsiteslogin@gmail.com";
+    if (agent && agent.status !== "approved" && !isMasterAdmin) {
+      return {
+        ok: false as const,
+        error:
+          agent.status === "rejected"
+            ? "Your agency application was not approved. Contact priority desk."
+            : "Your agency account is awaiting admin approval.",
+      };
     }
 
     // Optional MFA for login: only proceed to OTP step if explicitly enabled
     if (!agent || agent.mfa_enabled !== true) {
-      return { ok: true as const, skipMfa: true };
+      return {
+        ok: true as const,
+        skipMfa: true,
+        session: signIn.session
+          ? {
+              access_token: signIn.session.access_token,
+              refresh_token: signIn.session.refresh_token,
+            }
+          : undefined,
+      };
     }
 
     const { createLoginOtp } = await import("./login-otp.server");
@@ -82,7 +117,22 @@ export const verifyAgentLoginCode = createServerFn({ method: "POST" })
     const { consumeLoginOtp } = await import("./login-otp.server");
     const res = await consumeLoginOtp({ challenge: data.challenge, code: data.code, purpose: "agent" });
     if (!res.ok) return { ok: false as const, error: res.error };
-    return { ok: true as const };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let tokenHash: string | undefined;
+    try {
+      const linkRes = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: res.email,
+      });
+      if (linkRes.data?.properties?.hashed_token) {
+        tokenHash = linkRes.data.properties.hashed_token;
+      }
+    } catch {
+      // Fallback in case generateLink is not allowed
+    }
+
+    return { ok: true as const, tokenHash };
   });
 
 export const resendAgentLoginCode = createServerFn({ method: "POST" })

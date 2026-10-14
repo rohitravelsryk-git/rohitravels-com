@@ -96,6 +96,19 @@ function LoginPage() {
       }
 
       if ((res as any).skipMfa) {
+        const session = (res as any).session;
+        if (session?.access_token && session?.refresh_token) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          });
+          if (!sessionError) {
+            await router.invalidate();
+            navigate({ to: "/agent/fares" });
+            return;
+          }
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
           password,
@@ -103,6 +116,7 @@ function LoginPage() {
         if (error) {
           return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
         }
+        await router.invalidate();
         navigate({ to: "/agent/fares" });
         return;
       }
@@ -137,6 +151,19 @@ function LoginPage() {
         }
         return;
       }
+
+      if ((res as any).tokenHash) {
+        const { error: otpError } = await supabase.auth.verifyOtp({
+          token_hash: (res as any).tokenHash,
+          type: "magiclink",
+        });
+        if (!otpError) {
+          await router.invalidate();
+          navigate({ to: "/agent/fares" });
+          return;
+        }
+      }
+
       const trimmedEmail = email.trim().toLowerCase();
       const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
@@ -145,6 +172,7 @@ function LoginPage() {
       if (error) {
         return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
       }
+      await router.invalidate();
       navigate({ to: "/agent/fares" });
     } catch (e2) {
       setErr(cleanAuthErrorMessage(e2, "Verification error. Please try again."));
