@@ -44,8 +44,9 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   }
 
   const overviewHeaders = [
-    "Agent Code",
-    "Agency Name",
+    "Party Code",
+    "Account / Party Name",
+    "Type",
     "Contact Person",
     "Contact Phone",
     "Opening Balance (PKR)",
@@ -58,8 +59,8 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   const overviewValues: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS"],
     ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-    ["AGENT LEDGER ACCOUNTS - BALANCES OVERVIEW"],
-    [`Official Live Record • ${data.length} registered agencies • Generated ${new Date().toISOString().slice(0, 10)}`],
+    ["PARTY LEDGER ACCOUNTS - BALANCES OVERVIEW"],
+    [`Official Live Record • ${data.length} registered accounts • Generated ${new Date().toISOString().slice(0, 10)}`],
     overviewHeaders,
   ];
 
@@ -82,6 +83,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     overviewValues.push([
       String(a.user_code || "—").trim(),
       String(a.agency_name || "").trim(),
+      String(a.party_type || "Agent").trim(),
       String(a.contact_person || "").trim(),
       String(a.contact || "").trim(),
       opening,
@@ -95,7 +97,8 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   // Grand Totals Row
   overviewValues.push([
     "TOTALS",
-    `Grand Total (${data.length} Agencies)`,
+    `Grand Total (${data.length} Accounts)`,
+    "—",
     "—",
     "—",
     sumOpening,
@@ -212,9 +215,12 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     }
   }
 
-  // 3. Update individual agent tabs
+  // 3. Update individual party tabs
   for (const agent of data) {
-    const tabName = agent.agency_name.slice(0, 30);
+    const tabName = (agent.agency_name || "Account")
+      .replace(/[\[\]\*\?:\/\\]/g, "_")
+      .slice(0, 30)
+      .trim();
     let tabSheetId = existingSheets.get(tabName) ?? null;
     if (tabSheetId === null) {
       tabSheetId = await addSheet(spreadsheetId, tabName);
@@ -225,7 +231,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     const agentValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-      [`AGENT STATEMENT - ${agent.agency_name.toUpperCase()}`],
+      [`PARTY STATEMENT - ${agent.agency_name.toUpperCase()}${agent.party_type ? ` (${agent.party_type.toUpperCase()})` : ""}`],
       [`Current Outstanding Balance: Rs ${Number(agent.balance || 0).toLocaleString()}  •  ${(agent.ledger || []).length} entries`],
       ledgerHeaders,
     ];
@@ -289,7 +295,13 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     "_DATA",
   ]);
   const activeAgentTabNames = new Set(
-    data.map((a: any) => String(a.agency_name || "").slice(0, 30).trim().toLowerCase())
+    data.map((a: any) =>
+      (a.agency_name || "Account")
+        .replace(/[\[\]\*\?:\/\\]/g, "_")
+        .slice(0, 30)
+        .trim()
+        .toLowerCase()
+    )
   );
 
   for (const [sheetTitle, sheetId] of existingSheets.entries()) {

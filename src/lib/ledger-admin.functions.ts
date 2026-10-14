@@ -28,138 +28,292 @@ async function requireUnlocked() {
 }
 
 /**
- * Calculates live balances and ledger entries for all registered agents,
- * and updates Google Sheets (Balances Overview, Agent_Transactions, and individual agent tabs).
+ * Builds the unified party ledgers (combining agents, suppliers, and dual-role partners)
+ * into a single unified Debit/Credit accounting model.
+ */
+export async function getUnifiedPartyLedgers(supabaseAdmin: any): Promise<{
+  masterData: any[];
+  allTransactions: any[];
+}> {
+  // 1. Fetch registered agents (excluding rejected)
+  const { data: agents, error: agentsError } = await supabaseAdmin
+    .from("agents")
+    .select("user_id, agency_name, contact_person, cell_number, country_code, user_code, created_at, status")
+    .neq("status", "rejected")
+    .order("agency_name", { ascending: true });
+
+  if (agentsError) throw new Error(agentsError.message);
+
+  // 2. Fetch registered vendors/suppliers
+  const { data: vendors } = await supabaseAdmin
+    .from("vendors")
+    .select("id, vendor_code, name, category, contact_person, phone, email, city, opening_balance, current_balance, is_active")
+    .order("name", { ascending: true });
+
+  // 3. Batch load bookings, agent manual entries, and vendor ledger entries
+  const { data: allBookings } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("id, agent_user_id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
+    .eq("status", "confirmed")
+    .order("created_at", { ascending: true });
+
+  const { data: allManualEntries } = await supabaseAdmin
+    .from("ledger_manual_entries")
+    .select("*")
+    .order("date", { ascending: true });
+
+  const { data: allVendorLedger } = await supabaseAdmin
+    .from("vendor_ledger")
+    .select("*")
+    .order("transaction_date", { ascending: true });
+
+  // Index maps
+  const bookingsByAgent = new Map<string, any[]>();
+  for (const b of allBookings ?? []) {
+    if (!b.agent_user_id) continue;
+    const list = bookingsByAgent.get(b.agent_user_id) || [];
+    list.push(b);
+    bookingsByAgent.set(b.agent_user_id, list);
+  }
+
+  const manualByAgent = new Map<string, any[]>();
+  for (const m of allManualEntries ?? []) {
+    if (!m.agent_user_id) continue;
+    const list = manualByAgent.get(m.agent_user_id) || [];
+    list.push(m);
+    manualByAgent.set(m.agent_user_id, list);
+  }
+
+  const vendorTxByVendorId = new Map<string, any[]>();
+  for (const vtx of allVendorLedger ?? []) {
+    if (!vtx.vendor_id) continue;
+    const list = vendorTxByVendorId.get(vtx.vendor_id) || [];
+    list.push(vtx);
+    vendorTxByVendorId.set(vtx.vendor_id, list);
+  }
+
+  const masterData: any[] = [];
+  const allTransactions: any[] = [];
+  const processedVendorIds = new Set<string>();
+
+  // Process Agents (and link any matching vendor account into the single ledger)
+  for (const agent of agents ?? []) {
+    const bookings = bookingsByAgent.get(agent.user_id) || [];
+    const manualEntries = manualByAgent.get(agent.user_id) || [];
+
+    // Check if an existing vendor matches this agent by name or phone
+    const matchedVendor = (vendors ?? []).find((v: any) => {
+      const vName = (v.name || "").toLowerCase().trim();
+      const aName = (agent.agency_name || "").toLowerCase().trim();
+      return vName && aName && (vName === aName || (v.phone && agent.cell_number && v.phone.replace(/\D/g, "") === agent.cell_number.replace(/\D/g, "")));
+    });
+
+    let vendorTxs: any[] = [];
+    if (matchedVendor) {
+      processedVendorIds.add(matchedVendor.id);
+      vendorTxs = vendorTxByVendorId.get(matchedVendor.id) || [];
+    }
+
+    // Determine opening balance
+    let openingBalance = Number((agent as any).opening_balance) || 0;
+    if (openingBalance === 0 && matchedVendor) {
+      openingBalance = Number(matchedVendor.opening_balance) || 0;
+    }
+
+    const regularManualEntries: any[] = [];
+    for (const m of manualEntries) {
+      const isOp = (m.details || "").toLowerCase().trim().startsWith("opening balance") || (m.details || "").toLowerCase().trim() === "opening";
+      if (isOp && openingBalance === 0) {
+        openingBalance = (Number(m.debit) || 0) - (Number(m.credit) || 0);
+      } else {
+        regularManualEntries.push(m);
+      }
+    }
+
+    let balance = openingBalance;
+    let totalDebits = openingBalance > 0 ? openingBalance : 0;
+    let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
+    const ledgerRows: any[] = [];
+
+    if (openingBalance !== 0) {
+      ledgerRows.push({
+        id: `opening-${agent.user_id}`,
+        date: agent.created_at || new Date().toISOString(),
+        details: "Opening Balance",
+        debit: openingBalance > 0 ? openingBalance : 0,
+        credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+        balance: openingBalance,
+        isManual: false,
+        isOpening: true,
+      });
+    }
+
+    const combined = [
+      ...bookings.map((b: any) => ({ type: "booking" as const, ...b })),
+      ...regularManualEntries.map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
+      ...vendorTxs.map((v: any) => ({
+        type: "vendor" as const,
+        id: v.id,
+        created_at: v.transaction_date || v.created_at,
+        date: v.transaction_date || v.created_at,
+        details: v.description || v.reference_no || "Purchase / Service",
+        debit: Number(v.debit) || 0,
+        credit: Number(v.credit) || 0,
+      })),
+    ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    for (const item of combined) {
+      let debit = 0;
+      let credit = 0;
+      let details = "";
+      let id = item.id;
+      let date = item.created_at;
+
+      if (item.type === "booking") {
+        const b = item;
+        const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
+        debit = unit * (b.seats ?? 0);
+        credit = 0;
+        details = bookingLedgerEntry(b);
+      } else {
+        debit = Number(item.debit) || 0;
+        credit = Number(item.credit) || 0;
+        details = item.details;
+        date = item.date || item.created_at;
+      }
+
+      balance += debit - credit;
+      totalDebits += debit;
+      totalCredits += credit;
+
+      ledgerRows.push({
+        id,
+        date,
+        details,
+        debit,
+        credit,
+        balance,
+        isManual: item.type !== "booking",
+      });
+
+      allTransactions.push({
+        tx_id: id,
+        date,
+        agent_name: agent.agency_name,
+        details,
+        debit,
+        credit,
+        balance,
+      });
+    }
+
+    masterData.push({
+      ...agent,
+      opening_balance: openingBalance,
+      total_debits: totalDebits,
+      total_credits: totalCredits,
+      balance,
+      contact: `${agent.country_code || ""} ${agent.cell_number || ""}`.trim(),
+      party_type: matchedVendor ? "Agent & Supplier (Dual Role)" : "Agent",
+      ledger: ledgerRows,
+    });
+  }
+
+  // Process standalone Vendors/Suppliers that do not have an agent account
+  for (const vendor of vendors ?? []) {
+    if (processedVendorIds.has(vendor.id)) continue;
+
+    const vendorTxs = vendorTxByVendorId.get(vendor.id) || [];
+    let openingBalance = Number(vendor.opening_balance) || 0;
+    let balance = openingBalance;
+    let totalDebits = openingBalance > 0 ? openingBalance : 0;
+    let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
+    const ledgerRows: any[] = [];
+
+    if (openingBalance !== 0) {
+      ledgerRows.push({
+        id: `opening-vnd-${vendor.id}`,
+        date: vendor.created_at || new Date().toISOString(),
+        details: "Opening Balance",
+        debit: openingBalance > 0 ? openingBalance : 0,
+        credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+        balance: openingBalance,
+        isManual: false,
+        isOpening: true,
+      });
+    }
+
+    const sortedTxs = [...vendorTxs].sort(
+      (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+    );
+
+    for (const v of sortedTxs) {
+      const debit = Number(v.debit) || 0;
+      const credit = Number(v.credit) || 0;
+      balance += debit - credit;
+      totalDebits += debit;
+      totalCredits += credit;
+
+      ledgerRows.push({
+        id: v.id,
+        date: v.transaction_date,
+        details: v.description || v.reference_no || "Purchase / Service",
+        debit,
+        credit,
+        balance,
+        isManual: true,
+      });
+
+      allTransactions.push({
+        tx_id: v.id,
+        date: v.transaction_date,
+        agent_name: vendor.name,
+        details: v.description || v.reference_no || "Purchase / Service",
+        debit,
+        credit,
+        balance,
+      });
+    }
+
+    masterData.push({
+      user_id: vendor.id,
+      agency_name: vendor.name,
+      contact_person: vendor.contact_person || vendor.name,
+      cell_number: vendor.phone || "",
+      country_code: "",
+      user_code: vendor.vendor_code || "VND",
+      created_at: vendor.created_at,
+      opening_balance: openingBalance,
+      total_debits: totalDebits,
+      total_credits: totalCredits,
+      balance,
+      contact: vendor.phone || "—",
+      party_type: "Supplier / Vendor",
+      ledger: ledgerRows,
+    });
+  }
+
+  // Sort masterData alphabetically by agency/company name
+  masterData.sort((a, b) => (a.agency_name || "").localeCompare(b.agency_name || ""));
+
+  return { masterData, allTransactions };
+}
+
+/**
+ * Calculates live balances and ledger entries for all registered parties,
+ * and updates Google Sheets (Balances Overview, Agent_Transactions, and individual party tabs).
  */
 export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success" | "failed"; count: number; error?: string }> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Include all registered agents (excluding only explicitly rejected ones)
-    const { data: agents, error: agentsError } = await supabaseAdmin
-      .from("agents")
-      .select("user_id, agency_name, contact_person, cell_number, country_code, user_code, status")
-      .neq("status", "rejected");
+    const { masterData, allTransactions } = await getUnifiedPartyLedgers(supabaseAdmin);
+    if (masterData.length === 0) return { status: "success", count: 0 };
 
-    if (agentsError) throw new Error(agentsError.message);
-    if (!agents || agents.length === 0) return { status: "success", count: 0 };
+    const { syncMasterLedger } = await import("./backup/ledger-sync.server");
+    await syncMasterLedger(masterData, allTransactions);
 
-    const masterSyncData: any[] = [];
-    const allTransactions: any[] = [];
-
-    for (const agent of agents) {
-      const { data: bookings } = await supabaseAdmin
-        .from("agent_bookings")
-        .select("id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
-        .eq("agent_user_id", agent.user_id)
-        .eq("status", "confirmed")
-        .order("created_at", { ascending: true });
-
-      const { data: manualEntries } = await supabaseAdmin
-        .from("ledger_manual_entries")
-        .select("*")
-        .eq("agent_user_id", agent.user_id)
-        .order("date", { ascending: true });
-
-      // Check for opening balance
-      let openingBalance = Number((agent as any).opening_balance) || 0;
-      const regularManualEntries: any[] = [];
-      for (const m of manualEntries ?? []) {
-        const isOp = (m.details || "").toLowerCase().trim().startsWith("opening balance") || (m.details || "").toLowerCase().trim() === "opening";
-        if (isOp && openingBalance === 0) {
-          openingBalance = (Number(m.debit) || 0) - (Number(m.credit) || 0);
-        } else {
-          regularManualEntries.push(m);
-        }
-      }
-
-      let balance = openingBalance;
-      let totalDebits = openingBalance > 0 ? openingBalance : 0;
-      let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
-      const ledgerRows: any[] = [];
-
-      if (openingBalance !== 0) {
-        ledgerRows.push({
-          id: `opening-${agent.user_id}`,
-          date: agent.created_at || new Date().toISOString(),
-          details: "Opening Balance",
-          debit: openingBalance > 0 ? openingBalance : 0,
-          credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-          balance: openingBalance,
-          isManual: false,
-          isOpening: true,
-        });
-      }
-
-      const combined = [
-        ...(bookings ?? []).map((b: any) => ({ type: "booking" as const, ...b })),
-        ...regularManualEntries.map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
-      ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-      for (const item of combined) {
-        let debit = 0;
-        let credit = 0;
-        let details = "";
-        let id = item.id;
-        let date = item.created_at;
-
-        if (item.type === "booking") {
-          const b = item;
-          const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
-          debit = unit * (b.seats ?? 0);
-          credit = 0;
-          details = bookingLedgerEntry(b);
-        } else {
-          const m = item;
-          debit = Number(m.debit) || 0;
-          credit = Number(m.credit) || 0;
-          details = m.details;
-          date = m.date;
-        }
-
-        balance += debit - credit;
-        totalDebits += debit;
-        totalCredits += credit;
-
-        ledgerRows.push({
-          id,
-          date,
-          details,
-          debit,
-          credit,
-          balance,
-          isManual: item.type === "manual",
-        });
-
-        allTransactions.push({
-          tx_id: id,
-          date,
-          agent_name: agent.agency_name,
-          details,
-          debit,
-          credit,
-          balance,
-        });
-      }
-
-      const agentData = {
-        ...agent,
-        opening_balance: openingBalance,
-        total_debits: totalDebits,
-        total_credits: totalCredits,
-        balance,
-        contact: `${agent.country_code || ""} ${agent.cell_number || ""}`.trim(),
-        ledger: ledgerRows,
-      };
-      masterSyncData.push(agentData);
-    }
-
-    if (masterSyncData.length > 0) {
-      const { syncMasterLedger } = await import("./backup/ledger-sync.server");
-      await syncMasterLedger(masterSyncData, allTransactions);
-    }
-
-    return { status: "success", count: masterSyncData.length };
+    return { status: "success", count: masterData.length };
   } catch (err: any) {
     console.error("[agent-ledger] syncAgentLedgersLiveInternal error:", err);
     return { status: "failed", count: 0, error: err?.message || String(err) };
@@ -186,7 +340,6 @@ export async function linkAgentLedgerEntry(entry: {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Fetch all registered agents to match safely in memory without brittle PostgREST query syntax errors
     const { data: allAgents, error: agentsError } = await supabaseAdmin
       .from("agents")
       .select("user_id, agency_name, contact_person, cell_number, country_code, user_code");
@@ -222,7 +375,6 @@ export async function linkAgentLedgerEntry(entry: {
     const details = `${entry.category} - ${entry.paxName || "Booking"}${entry.country ? ` • ${entry.country}` : ""}${entry.vendor ? ` • Vendor: ${entry.vendor}` : ""} • Ref: ${entry.source_id}`;
     const date = entry.entryDate ? new Date(entry.entryDate).toISOString() : new Date().toISOString();
 
-    // Check if an existing entry is already recorded for this sale source_id
     const { data: existing } = await supabaseAdmin
       .from("ledger_manual_entries")
       .select("id, agent_user_id, debit, details")
@@ -269,7 +421,6 @@ export async function linkAgentLedgerEntry(entry: {
       entryId = inserted?.id;
     }
 
-    // Instant live sync to Google Sheets (Agent Ledger Accounts)
     try {
       await syncAgentLedgersLiveInternal();
     } catch (syncErr) {
@@ -319,7 +470,6 @@ export async function syncAirlineTransactionsToAgentLedgers(
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Fetch all registered agents
     const { data: allAgents, error: agentsError } = await supabaseAdmin
       .from("agents")
       .select("user_id, agency_name, contact_person, cell_number, country_code, user_code");
@@ -329,13 +479,11 @@ export async function syncAirlineTransactionsToAgentLedgers(
       return { processed: 0, linked: 0 };
     }
 
-    // Map airlines by ID
     const airlineMap = new Map<string, string>();
     for (const a of airlines) {
       if (a.id) airlineMap.set(a.id, a.name || a.code || "Airline");
     }
 
-    // 2. Fetch existing manual entries linked to airline transactions
     const { data: existingAirlineEntries } = await supabaseAdmin
       .from("ledger_manual_entries")
       .select("id, details, debit, credit, date, agent_user_id")
@@ -352,7 +500,6 @@ export async function syncAirlineTransactionsToAgentLedgers(
     let linkedCount = 0;
     const currentTxIdsWithAgent = new Set<string>();
 
-    // 3. Process each transaction
     for (const tx of transactions) {
       const rawAgent = String(tx.agent_name || "").trim();
       const ticketSales = Number(tx.ticket_sales) || 0;
@@ -364,7 +511,6 @@ export async function syncAirlineTransactionsToAgentLedgers(
       if (!txId) continue;
       currentTxIdsWithAgent.add(txId);
 
-      // Match agent safely in memory
       const q = rawAgent.toLowerCase();
       const matchedAgent = allAgents.find((a: any) => {
         const agency = (a.agency_name || "").toLowerCase().trim();
@@ -409,7 +555,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
             })
             .eq("id", existing.id);
         }
-        existingByTxId.delete(txId); // Mark as active/retained
+        existingByTxId.delete(txId);
       } else {
         await supabaseAdmin.from("ledger_manual_entries").insert({
           agent_user_id: matchedAgent.user_id,
@@ -422,14 +568,12 @@ export async function syncAirlineTransactionsToAgentLedgers(
       linkedCount++;
     }
 
-    // 4. Clean up any orphaned airline ledger entries whose transaction was deleted or agent removed
     for (const [orphanedTxId, orphanedEntry] of existingByTxId.entries()) {
       if (!currentTxIdsWithAgent.has(orphanedTxId)) {
         await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", orphanedEntry.id);
       }
     }
 
-    // 5. Trigger live Google Sheets sync to Agent Ledger
     try {
       await syncAgentLedgersLiveInternal();
     } catch (syncErr) {
@@ -446,138 +590,10 @@ export async function syncAirlineTransactionsToAgentLedgers(
 export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  
-  const { data: agents, error: agentsError } = await supabaseAdmin
-    .from("agents")
-    .select("user_id, agency_name, contact_person, cell_number, country_code, user_code, created_at")
-    .neq("status", "rejected")
-    .order("agency_name", { ascending: true });
-  
-  if (agentsError) throw new Error(agentsError.message);
-  
-  // Fast batch queries instead of N separate queries
-  const { data: allBookings } = await supabaseAdmin
-    .from("agent_bookings")
-    .select("id, agent_user_id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
-    .eq("status", "confirmed")
-    .order("created_at", { ascending: true });
-
-  const { data: allManualEntries } = await supabaseAdmin
-    .from("ledger_manual_entries")
-    .select("*")
-    .order("date", { ascending: true });
-
-  const bookingsByAgent = new Map<string, any[]>();
-  for (const b of allBookings ?? []) {
-    if (!b.agent_user_id) continue;
-    const list = bookingsByAgent.get(b.agent_user_id) || [];
-    list.push(b);
-    bookingsByAgent.set(b.agent_user_id, list);
-  }
-
-  const manualByAgent = new Map<string, any[]>();
-  for (const m of allManualEntries ?? []) {
-    if (!m.agent_user_id) continue;
-    const list = manualByAgent.get(m.agent_user_id) || [];
-    list.push(m);
-    manualByAgent.set(m.agent_user_id, list);
-  }
-
-  const results = [];
-
-  for (const agent of agents ?? []) {
-    const bookings = bookingsByAgent.get(agent.user_id) || [];
-    const manualEntries = manualByAgent.get(agent.user_id) || [];
-
-    // Check for opening balance
-    let openingBalance = Number((agent as any).opening_balance) || 0;
-    const regularManualEntries: any[] = [];
-    for (const m of manualEntries) {
-      const isOp = (m.details || "").toLowerCase().trim().startsWith("opening balance") || (m.details || "").toLowerCase().trim() === "opening";
-      if (isOp && openingBalance === 0) {
-        openingBalance = (Number(m.debit) || 0) - (Number(m.credit) || 0);
-      } else {
-        regularManualEntries.push(m);
-      }
-    }
-
-    let balance = openingBalance;
-    let totalDebits = openingBalance > 0 ? openingBalance : 0;
-    let totalCredits = openingBalance < 0 ? Math.abs(openingBalance) : 0;
-    const ledgerRows: any[] = [];
-
-    // Prepend opening balance row
-    if (openingBalance !== 0) {
-      ledgerRows.push({
-        id: `opening-${agent.user_id}`,
-        date: agent.created_at || new Date().toISOString(),
-        details: "Opening Balance",
-        debit: openingBalance > 0 ? openingBalance : 0,
-        credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-        balance: openingBalance,
-        isManual: false,
-        isOpening: true,
-      });
-    }
-
-    const combined = [
-      ...bookings.map((b: any) => ({ type: "booking" as const, ...b })),
-      ...regularManualEntries.map((m: any) => ({ type: "manual" as const, ...m, created_at: m.date })),
-    ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    for (const item of combined) {
-      let debit = 0;
-      let credit = 0;
-      let details = "";
-      let id = item.id;
-      let date = item.created_at;
-
-      if (item.type === "booking") {
-        const b = item;
-        const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
-        debit = unit * (b.seats ?? 0);
-        credit = 0;
-        details = bookingLedgerEntry(b);
-      } else {
-        const m = item;
-        debit = Number(m.debit) || 0;
-        credit = Number(m.credit) || 0;
-        details = m.details;
-        date = m.date;
-      }
-
-      balance += (debit - credit);
-      totalDebits += debit;
-      totalCredits += credit;
-
-      ledgerRows.push({
-        id,
-        date,
-        details,
-        debit,
-        credit,
-        balance,
-        isManual: item.type === "manual",
-      });
-    }
-    
-    results.push({
-      ...agent,
-      opening_balance: openingBalance,
-      total_debits: totalDebits,
-      total_credits: totalCredits,
-      balance,
-      contact: `${agent.country_code || ""} ${agent.cell_number || ""}`.trim(),
-      ledger: ledgerRows,
-    });
-  }
-  
-  return results;
+  const { masterData } = await getUnifiedPartyLedgers(supabaseAdmin);
+  return masterData;
 });
 
-/**
- * Explicit server action to trigger instant live Google Sheet sync for Agent Ledgers.
- */
 export const syncAgentLedgersLiveAdmin = createServerFn({ method: "POST" }).handler(async () => {
   await requireUnlocked();
   return await syncAgentLedgersLiveInternal();
@@ -594,13 +610,38 @@ export const addManualLedgerEntry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    
-    const { error } = await supabaseAdmin.from("ledger_manual_entries").insert({
-      ...data,
-    });
-    
-    if (error) throw new Error(error.message);
-    // Instant live sync to Agent Ledger Accounts
+
+    // Check if this ID belongs to an agent or a vendor
+    const { data: agent } = await supabaseAdmin
+      .from("agents")
+      .select("user_id")
+      .eq("user_id", data.agent_user_id)
+      .maybeSingle();
+
+    if (agent) {
+      const { error } = await supabaseAdmin.from("ledger_manual_entries").insert({
+        agent_user_id: data.agent_user_id,
+        date: data.date,
+        details: data.details,
+        debit: data.debit,
+        credit: data.credit,
+      });
+      if (error) throw new Error(error.message);
+    } else {
+      // It's a vendor account
+      const { error } = await supabaseAdmin.from("vendor_ledger").insert({
+        vendor_id: data.agent_user_id,
+        transaction_date: data.date.slice(0, 10),
+        reference_no: "MANUAL",
+        description: data.details,
+        debit: data.debit,
+        credit: data.credit,
+        balance: 0,
+      });
+      if (error) throw new Error(error.message);
+    }
+
+    // Instant live sync to designated Agent Ledger workbook
     try {
       await syncAgentLedgersLiveInternal();
     } catch (err) {
@@ -614,9 +655,20 @@ export const deleteManualLedgerEntry = createServerFn({ method: "POST" })
   .handler(async ({ data: id }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-    // Instant live sync to Agent Ledger Accounts
+
+    // Try deleting from ledger_manual_entries first
+    const { data: delAgent } = await supabaseAdmin
+      .from("ledger_manual_entries")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    if (!delAgent || delAgent.length === 0) {
+      // If not in agent entries, delete from vendor_ledger
+      await supabaseAdmin.from("vendor_ledger").delete().eq("id", id);
+    }
+
+    // Instant live sync to designated Agent Ledger workbook
     try {
       await syncAgentLedgersLiveInternal();
     } catch (err) {
