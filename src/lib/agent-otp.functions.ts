@@ -24,14 +24,21 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     const { createClient } = await import("@supabase/supabase-js");
     const KNOWN_SUPABASE_URL = "https://zxcenmkxxshnlawnwans.supabase.co";
     const KNOWN_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit";
-    const key =
-      (typeof process !== "undefined"
-        ? (process.env.ROHI_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
-        : undefined) || KNOWN_SUPABASE_PUBLISHABLE_KEY;
-    const url =
-      (typeof process !== "undefined"
-        ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
-        : undefined) || KNOWN_SUPABASE_URL;
+    // Keep server-side credential verification aligned with the browser client.
+    // If the server and browser use different Supabase projects/keys, the browser
+    // receives an access token whose JWT signing-key ID is unknown to its API.
+    const env = typeof process !== "undefined" ? process.env : undefined;
+    const rawKey =
+      env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      env?.VITE_SUPABASE_ANON_KEY ||
+      env?.SUPABASE_PUBLISHABLE_KEY ||
+      env?.SUPABASE_ANON_KEY ||
+      KNOWN_SUPABASE_PUBLISHABLE_KEY;
+    const key = rawKey.split(".").length === 3 || rawKey.startsWith("sb_publishable_")
+      ? rawKey
+      : KNOWN_SUPABASE_PUBLISHABLE_KEY;
+    const rawUrl = env?.VITE_SUPABASE_URL || env?.SUPABASE_URL || KNOWN_SUPABASE_URL;
+    const url = rawUrl.includes("jqanltwhgdmckrlltdnh") ? KNOWN_SUPABASE_URL : rawUrl;
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
