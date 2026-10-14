@@ -164,3 +164,5 @@ export function formatSaleDisplaySummary(
   const tooltip = metaParts.length > 0 ? metaParts.join(" • ") : displayTitle;
   return { title: displayTitle, tooltip };
 }
+
+export const parseSaleDescription = parseSaleDetails;

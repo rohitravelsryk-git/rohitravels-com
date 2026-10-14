@@ -52,6 +52,19 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      if (env && typeof env === "object") {
+        const globalProc = (globalThis as any).process;
+        if (!globalProc) {
+          (globalThis as any).process = { env: { ...env } };
+        } else {
+          if (!globalProc.env) globalProc.env = {};
+          for (const [k, v] of Object.entries(env)) {
+            if (typeof v === "string" && !globalProc.env[k]) {
+              globalProc.env[k] = v;
+            }
+          }
+        }
+      }
       const target = resolveLegacyRedirect(new URL(request.url).pathname);
       if (target) return legacyRedirect(request, target);
 

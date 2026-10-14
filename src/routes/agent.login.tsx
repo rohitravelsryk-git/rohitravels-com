@@ -22,6 +22,7 @@ import {
   requestAgentLoginCode,
   resendAgentLoginCode,
   verifyAgentLoginCode,
+  syncAgentProfile,
 } from "@/lib/agent-otp.functions";
 import { cleanAuthErrorMessage } from "@/lib/auth-error-cleanup";
 
@@ -65,6 +66,7 @@ function LoginPage() {
   const requestCode = useServerFn(requestAgentLoginCode);
   const verifyCode = useServerFn(verifyAgentLoginCode);
   const resendCode = useServerFn(resendAgentLoginCode);
+  const syncProfile = useServerFn(syncAgentProfile);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -90,45 +92,79 @@ function LoginPage() {
     setNote(null);
     try {
       const trimmedEmail = email.trim().toLowerCase();
-      const res = await requestCode({ data: { email: trimmedEmail, password } });
-      if (!res.ok) {
-        return setErr(cleanAuthErrorMessage(res.error, "Invalid email or password."));
+
+      // 1. Direct browser authentication via Supabase Auth
+      // Authenticates directly in the browser session, avoiding server-side token round-trips
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+
+      if (authError || !authData?.user) {
+        return setErr(
+          cleanAuthErrorMessage(authError, "Invalid email or password. Please check your credentials.")
+        );
       }
 
-      if ((res as any).skipMfa) {
-        const session = (res as any).session;
-        if (session?.access_token && session?.refresh_token) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          });
-          if (!sessionError) {
-            await router.invalidate();
-            navigate({ to: "/agent/fares" });
-            return;
-          }
-        }
+      const uid = authData.user.id;
+      const isMasterAdmin =
+        trimmedEmail === "rohitravelsryk@gmail.com" ||
+        trimmedEmail === "arsiteslogin@gmail.com";
 
-        const { error } = await supabase.auth.signInWithPassword({
-          email: trimmedEmail,
-          password,
-        });
-        if (error) {
-          return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
+      // 2. Lookup agency record
+      let { data: agent } = await supabase
+        .from("agents")
+        .select("user_id, agency_name, email, status, mfa_enabled")
+        .eq("user_id", uid)
+        .maybeSingle();
+
+      if (!agent) {
+        try {
+          const syncRes = await syncProfile({ data: { email: trimmedEmail, userId: uid } });
+          if (syncRes?.agent) {
+            agent = syncRes.agent as any;
+          }
+        } catch {
+          const { data: byEmail } = await supabase
+            .from("agents")
+            .select("user_id, agency_name, email, status, mfa_enabled")
+            .eq("email", trimmedEmail)
+            .maybeSingle();
+          if (byEmail) agent = byEmail;
         }
-        await router.invalidate();
-        navigate({ to: "/agent/fares" });
+      }
+
+      // Check account approval
+      if (agent && agent.status !== "approved" && !isMasterAdmin) {
+        await supabase.auth.signOut();
+        return setErr(
+          agent.status === "rejected"
+            ? "Your agency application was not approved. Contact priority desk at +92 305 6622988."
+            : "Your agency account is awaiting admin approval. You will receive an email once approved."
+        );
+      }
+
+      // 3. Two-Factor Authentication if enabled
+      if (agent?.mfa_enabled === true) {
+        await supabase.auth.signOut();
+        const res = await requestCode({ data: { email: trimmedEmail, password } });
+        if (!res.ok) {
+          return setErr(cleanAuthErrorMessage(res.error, "Could not start two-step verification."));
+        }
+        setChallenge((res as any).challenge || "");
+        setMaskedEmail((res as any).maskedEmail || "");
+        setStep("code");
+        setNote(
+          (res as any).sent
+            ? `Verification code sent to ${(res as any).maskedEmail}.`
+            : "Code created, but the email could not be delivered. Contact priority desk."
+        );
         return;
       }
 
-      setChallenge((res as any).challenge || "");
-      setMaskedEmail((res as any).maskedEmail || "");
-      setStep("code");
-      setNote(
-        (res as any).sent
-          ? `Verification code sent to ${(res as any).maskedEmail}.`
-          : "Code created, but the email could not be delivered. Contact priority desk."
-      );
+      // 4. Session established successfully
+      await router.invalidate();
+      navigate({ to: "/agent/fares" });
     } catch (e2) {
       setErr(cleanAuthErrorMessage(e2, "Unable to sign in. Please verify your connection and try again."));
     } finally {
@@ -170,7 +206,7 @@ function LoginPage() {
         password,
       });
       if (error) {
-        return setErr(cleanAuthErrorMessage(error, "Sign-in failed. Please check your credentials."));
+        return setErr(cleanAuthErrorMessage(error, "Verification successful, but sign-in failed. Please check your password."));
       }
       await router.invalidate();
       navigate({ to: "/agent/fares" });

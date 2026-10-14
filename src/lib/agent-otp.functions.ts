@@ -190,3 +190,42 @@ export const verifyBookingMfa = createServerFn({ method: "POST" })
     if (!res.ok) return { ok: false as const, error: res.error };
     return { ok: true as const };
   });
+
+export const syncAgentProfile = createServerFn({ method: "POST" })
+  .validator((d: { email: string; userId: string }) =>
+    z.object({ email: z.string().email(), userId: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const email = data.email.trim().toLowerCase();
+      let { data: agent } = await supabaseAdmin
+        .from("agents")
+        .select("user_id, agency_name, email, status, mfa_enabled")
+        .eq("user_id", data.userId)
+        .maybeSingle();
+
+      if (!agent) {
+        const { data: byEmail } = await supabaseAdmin
+          .from("agents")
+          .select("user_id, agency_name, email, status, mfa_enabled")
+          .ilike("email", email)
+          .maybeSingle();
+
+        if (byEmail) {
+          agent = byEmail;
+          if (byEmail.user_id !== data.userId) {
+            await supabaseAdmin
+              .from("agents")
+              .update({ user_id: data.userId })
+              .eq("email", byEmail.email);
+            agent.user_id = data.userId;
+          }
+        }
+      }
+
+      return { ok: true as const, agent };
+    } catch {
+      return { ok: false as const, agent: null };
+    }
+  });
