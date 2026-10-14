@@ -3191,7 +3191,7 @@ function Modals(props: {
   const initialTo = banks.find((b) => b.id !== initialFrom)?.id ?? accounts.find((a) => a.id !== initialFrom)?.id ?? accounts[0]?.id ?? "";
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
-  const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("expense");
+  const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("sale");
 
   const buildTransferDescription = (fromId: string, toId: string) => {
     const fromName = accounts.find((a) => a.id === fromId)?.name;
@@ -3459,10 +3459,10 @@ function Modals(props: {
       legs.push({ where: "Daily Cash Book (Master Journal)", what: `Consolidated entry under ${recvName} (${isRecvCash ? (dir === "in" ? "Physical Cash In" : "Physical Cash Out") : "Bank/Online — cash drawer untouched"})` });
     }
     const types: [typeof txType, string][] = [
-      ["expense", "Expense"],
       ["sale", "Sale"],
-      ["transfer", "Self Transfer"],
       ["entry", "Cash Receipts & Payments"],
+      ["transfer", "Self Transfer"],
+      ["expense", "Expense"],
     ];
 
     const totalBatchSale = salesRows.reduce((sum, r) => sum + (Number(r.sale_amount) || 0), 0);
