@@ -75,6 +75,32 @@ function LoginPage() {
     }
   }, []);
 
+  async function sendPasswordReset() {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setErr("Enter your agent email first, then choose Forgot password.");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    setNote(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+        redirectTo: `${window.location.origin}/agent/reset-password`,
+      });
+      if (error) {
+        setErr(cleanAuthErrorMessage(error, "Unable to send a password reset email. Please try again."));
+        return;
+      }
+      setNote("If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.");
+      setShowForgotNote(false);
+    } catch (resetError) {
+      setErr(cleanAuthErrorMessage(resetError, "Unable to send a password reset email. Please try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -374,7 +400,7 @@ function LoginPage() {
                         </label>
                         <button
                           type="button"
-                          onClick={() => setShowForgotNote((v) => !v)}
+                          onClick={() => { setShowForgotNote((v) => !v); setErr(null); setNote(null); }}
                           className="text-xs font-semibold text-[#B85C40] underline-offset-4 hover:underline"
                         >
                           Forgot password?
@@ -382,12 +408,11 @@ function LoginPage() {
                       </div>
 
                       {showForgotNote && (
-                        <div className="mb-3 rounded-xl border border-[#E7DED5] bg-[#F4EFEA] p-3 text-xs leading-5 text-[#655A51]">
-                          For immediate credential recovery, contact priority partner desk at{" "}
-                          <a href="tel:+923056622988" className="font-bold text-[#B85C40] underline">
-                            +92 305 6622988
-                          </a>{" "}
-                          or WhatsApp support.
+                        <div className="mb-3 space-y-3 rounded-xl border border-[#E7DED5] bg-[#F4EFEA] p-3">
+                          <p className="text-xs leading-5 text-[#655A51]">We’ll email a secure password reset link to the agent email above.</p>
+                          <button type="button" onClick={sendPasswordReset} disabled={busy} className="w-full rounded-lg bg-[#141413] px-4 py-3 text-xs font-bold text-white disabled:opacity-60">
+                            {busy ? "Sending reset link…" : "Send password reset link"}
+                          </button>
                         </div>
                       )}
 
@@ -426,6 +451,10 @@ function LoginPage() {
                         <span>Remember me</span>
                       </label>
                     </div>
+
+                    {note && (
+                      <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-sm leading-5 text-emerald-800">{note}</div>
+                    )}
 
                     {err && (
                       <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-sm leading-5 text-red-800">
