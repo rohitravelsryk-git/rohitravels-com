@@ -645,32 +645,9 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       received_via_account_id: receivedViaAccountId,
     };
 
-    let { error: upsertErr } = await supabaseAdmin
+    const { error: upsertErr } = await supabaseAdmin
       .from("airline_ledger_transactions")
       .upsert(recordToUpsert, { onConflict: "id" });
-
-    // Defensive fallback if schema cache is refreshing or missing extended columns
-    if (upsertErr && /Could not find the '([^']+)' column/i.test(upsertErr.message)) {
-      console.warn(`[airline-atomic] Schema cache missing column: ${upsertErr.message}. Retrying with base columns.`);
-      const coreRecord: any = {
-        id: rowId,
-        airline_id: airlineId,
-        date,
-        agent_name: agentName,
-        pax_name: paxName,
-        sector: sector || null,
-        pnr,
-        ticket_sales: ticketSales,
-        debit_in_id: debitInId,
-        credit_from_id: creditFromId,
-        pax_contact: paxContact,
-        void_charges: voidCharges,
-      };
-      const fallbackRes = await supabaseAdmin
-        .from("airline_ledger_transactions")
-        .upsert(coreRecord, { onConflict: "id" });
-      upsertErr = fallbackRes.error;
-    }
 
     if (upsertErr) {
       throw new Error(`Failed to save airline transaction: ${upsertErr.message}`);
