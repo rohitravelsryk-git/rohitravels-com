@@ -613,7 +613,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
     .filter(([title]) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
     .map(([, sId]) => ({
       updateSheetProperties: {
-        properties: { sheetId: sId, gridProperties: { columnCount: 16 } },
+        properties: { sheetId: sId, gridProperties: { columnCount: 12 } },
         fields: "gridProperties.columnCount",
       },
     }));
@@ -689,8 +689,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", "", ""],
       [airlineTitle, "", "", "", "", "", "", "", "", "", "", ""],
       ["", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "FX Movement", "Running Balance (FX)", "Currency", "ROE (PKR / FX)", "Remarks"],
-      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", 0, 0, op, "", isForeign ? opForeign : "", isForeign ? curr : "", isForeign ? roeVal : "", "OPENING BALANCE"],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"],
+      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", 0, 0, op, "OPENING BALANCE"],
     ];
 
     for (const r of rows) {
@@ -726,7 +726,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
       specific.push([
         formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
         displayedSales, displayedDebit, displayedCredit, voids, profit, running,
-        isForeign ? txForeignCr : "", isForeign ? runningForeign : "", isForeign ? curr : "", isForeign ? txRoe : "", remarks,
+        remarks,
       ]);
     }
 
@@ -743,15 +743,15 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
 
     valuesPayload.push({
-      range: `${quoteSheet(tabName)}!A1:P${Math.max(20, specific.length)}`,
+      range: `${quoteSheet(tabName)}!A1:L${Math.max(20, specific.length)}`,
       values: specific,
     });
     formatTasks.push({
       sheetId,
       title: tabName,
-      columnCount: 16,
+      columnCount: 12,
       dataEndRow: specific.length,
-      numericColumnIndexes: [5, 6, 7, 8, 9, 10, 11, 12, 14],
+      numericColumnIndexes: [5, 6, 7, 8, 9, 10],
       dateColumnIndexes: [0],
       isServiceOnly: false,
     });
