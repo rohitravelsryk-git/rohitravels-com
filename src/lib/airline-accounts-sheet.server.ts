@@ -31,6 +31,27 @@ async function gw(path: string, init?: RequestInit) {
   return res.json();
 }
 
+function parseCleanNumber(val: unknown): number {
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+  if (val === null || val === undefined || val === "") return 0;
+  const cleaned = String(val).replace(/,/g, "").trim();
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function classifyAirlineRow(r: any): { isIncrease: boolean; isTopUp: boolean; isRefund: boolean; resolvedType: string } {
+  const txType = String(r.transaction_type || "").trim().toLowerCase();
+  const sector = String(r.sector || "").trim().toLowerCase();
+  const pax = String(r.pax_name || "").trim().toLowerCase();
+
+  const isTopUp = txType === "top up" || /top\s*up/i.test(txType) || /top\s*up/i.test(sector) || /top\s*up/i.test(pax);
+  const isRefund = txType === "cancel/refund" || txType === "refund" || /refund|cancel/i.test(txType) || /refund|cancel/i.test(sector) || /refund|cancel/i.test(pax);
+  const isIncrease = isTopUp || isRefund;
+  const resolvedType = isTopUp ? "Top Up" : isRefund ? "Cancel/Refund" : (r.transaction_type || "Add Transaction");
+
+  return { isIncrease, isTopUp, isRefund, resolvedType };
+}
+
 const n = (v: unknown) => {
   const x = Number(v);
   return v === null || v === undefined || v === "" || Number.isNaN(x) ? 0 : x;
@@ -465,18 +486,26 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
-      const credit = n(r.credit_from_id);
-      // Use persisted transaction type; refund debit and credit values may differ.
-      const txType = String(r.transaction_type || "").trim().toLowerCase();
-      const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
-      const debitAmount = Number(r.debit_in_id);
-      const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
-      running += isBalanceIncrease ? balanceDelta : -credit;
-      const txRoe = n(r.roe) || roeVal;
-      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== ""
-        ? n(r.foreign_amount)
-        : (isForeign ? (balanceDelta / txRoe) : 0);
-      runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
+      const { isIncrease } = classifyAirlineRow(r);
+      const credit = parseCleanNumber(r.credit_from_id);
+      const debitAmount = parseCleanNumber(r.debit_in_id);
+      const salesAmount = parseCleanNumber(r.ticket_sales);
+      const foreignAmount = parseCleanNumber(r.foreign_amount);
+      const txRoe = parseCleanNumber(r.roe) || roeVal;
+
+      let balanceDelta = 0;
+      if (isIncrease) {
+        if (debitAmount > 0) balanceDelta = debitAmount;
+        else if (credit > 0) balanceDelta = credit;
+        else if (salesAmount > 0) balanceDelta = salesAmount;
+        else if (foreignAmount > 0 && isForeign) balanceDelta = Math.round(foreignAmount * txRoe);
+      } else {
+        balanceDelta = credit;
+      }
+
+      running += isIncrease ? balanceDelta : -balanceDelta;
+      const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
+      runningForeign += isIncrease ? txForeignCr : -txForeignCr;
     }
 
     const logoPng = isServiceOnly ? "" : airlineSheetLogoUrl(air.code, air.name);
@@ -501,7 +530,10 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const data: unknown[][] = [
     ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER", "TRANSACTION_TYPE"],
     ...(airlines as any[]).map((x) => ["airline", x.id, "", x.name, x.code, n(x.opening_balance), s(x.opening_balance_date), "", "", "", "", "", "", x.sort_order]),
-    ...(txs as any[]).map((r) => ["transaction", r.id, r.airline_id, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), s(r.ticket_sales), s(r.debit_in_id), s(r.credit_from_id), s(r.pax_contact), s(r.void_charges), r.sort_order, s(r.transaction_type)]),
+    ...(txs as any[]).map((r) => {
+      const { resolvedType } = classifyAirlineRow(r);
+      return ["transaction", r.id, r.airline_id, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), s(r.ticket_sales), s(r.debit_in_id), s(r.credit_from_id), s(r.pax_contact), s(r.void_charges), r.sort_order, resolvedType];
+    }),
     [],
     ["META", `revision ${revision}`, syncedAt],
   ];
@@ -634,32 +666,46 @@ export async function syncAirlineAccountsSheet(revision: number) {
     ];
 
     for (const r of rows) {
-      const credit = n(r.credit_from_id);
-      // Use persisted transaction type; refund debit and credit values may differ.
-      const txType = String(r.transaction_type || "").trim().toLowerCase();
-      const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
-      const debitAmount = Number(r.debit_in_id);
-      const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
-      running += isBalanceIncrease ? balanceDelta : -credit;
-      const txRoe = n(r.roe) || roeVal;
-      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== ""
-        ? n(r.foreign_amount)
-        : (isForeign ? (balanceDelta / txRoe) : 0);
-      runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
-      const sales = isBalanceIncrease ? 0 : n(r.ticket_sales);
-      const voids = n(r.void_charges);
+      const { isIncrease, isTopUp, isRefund } = classifyAirlineRow(r);
+      const credit = parseCleanNumber(r.credit_from_id);
+      const debitAmount = parseCleanNumber(r.debit_in_id);
+      const salesAmount = parseCleanNumber(r.ticket_sales);
+      const foreignAmount = parseCleanNumber(r.foreign_amount);
+      const txRoe = parseCleanNumber(r.roe) || roeVal;
+
+      let balanceDelta = 0;
+      if (isIncrease) {
+        if (debitAmount > 0) balanceDelta = debitAmount;
+        else if (credit > 0) balanceDelta = credit;
+        else if (salesAmount > 0) balanceDelta = salesAmount;
+        else if (foreignAmount > 0 && isForeign) balanceDelta = Math.round(foreignAmount * txRoe);
+      } else {
+        balanceDelta = credit;
+      }
+
+      running += isIncrease ? balanceDelta : -balanceDelta;
+      const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
+      runningForeign += isIncrease ? txForeignCr : -txForeignCr;
+
+      const displayedSales = isIncrease ? 0 : salesAmount;
+      const displayedCredit = isIncrease ? balanceDelta : credit;
+      const voids = parseCleanNumber(r.void_charges);
+      const profit = isIncrease ? 0 : displayedSales - displayedCredit;
+      const tag = isRefund ? "REFUND" : isTopUp ? "TOP UP" : "";
+      const remarks = [tag, r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - ");
+
       specific.push([
         formatSheetDate(r.date),
         s(r.agent_name),
         s(r.pax_name),
         s(r.sector),
         s(r.pnr),
-        sales,
-        credit,
+        displayedSales,
+        displayedCredit,
         voids,
-        isBalanceIncrease ? 0 : sales - credit,
+        profit,
         running,
-        [isBalanceIncrease ? "TOP UP / REFUND" : "", r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
+        remarks,
       ]);
     }
 

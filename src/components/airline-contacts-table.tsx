@@ -321,16 +321,7 @@ export function AirlineContactDetailsTable({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={handleLiveSync}
-            disabled={syncing || parentSyncStatus === "syncing"}
-            style={syncBtnStyle}
-            title="Sync with Google Sheet 'Airline Contact Details'"
-          >
-            <RefreshCw size={14} className={syncing || parentSyncStatus === "syncing" ? "animate-spin" : ""} />
-            <span>{syncing || parentSyncStatus === "syncing" ? "Syncing..." : "Sync Sheet"}</span>
-          </button>
+
           <button
             type="button"
             onClick={handleExportCSV}

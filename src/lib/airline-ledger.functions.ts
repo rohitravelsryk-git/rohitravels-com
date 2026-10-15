@@ -100,7 +100,8 @@ const dataSchema = z.object({
 
 const num = (v: unknown) => {
   if (v === "" || v === null || v === undefined) return null;
-  const n = Number(v);
+  const cleaned = typeof v === "string" ? v.replace(/,/g, "").trim() : v;
+  const n = Number(cleaned);
   return Number.isNaN(n) ? null : n;
 };
 const str = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
@@ -237,13 +238,20 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           id: r.id,
           airline_id: airlineId,
           date: str(r.date),
-          transaction_type: str(r.transactionType) || "Add Transaction",
+          transaction_type: (() => {
+            const rawType = str(r.transactionType) || "Add Transaction";
+            const sector = str(r.sector) || "";
+            const pax = str(r.paxName) || "";
+            if (rawType.toLowerCase() === "top up" || /top\s*up/i.test(sector) || /top\s*up/i.test(pax)) return "Top Up";
+            if (["cancel/refund", "refund"].includes(rawType.toLowerCase()) || /refund|cancel/i.test(rawType) || /refund|cancel/i.test(sector) || /refund|cancel/i.test(pax)) return "Cancel/Refund";
+            return rawType;
+          })(),
           agent_name: str(r.agentName),
           pax_name: str(r.paxName),
           sector: str(r.sector),
           pnr: str(r.pnr),
           ticket_sales: num(r.ticketSales),
-          debit_in_id: str(r.debitInId),
+          debit_in_id: str(r.debitInId) ? String(r.debitInId).replace(/,/g, "").trim() : null,
           credit_from_id: num(r.creditFromId),
           pax_contact: str(r.paxContact),
           void_charges: num(r.voidCharges),

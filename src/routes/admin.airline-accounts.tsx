@@ -1507,36 +1507,47 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       setError("Date and Pax Name are required.");
       return;
     }
-    const activeRoe = Number(form.roe || airline?.roe) || 1;
-    const transactionType = form.transactionType || "Add Transaction";
-    const isBalanceIncrease = transactionType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(transactionType.toLowerCase());
-    const enteredForeignAmount = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
-      ? Number(form.foreignAmount)
+    const { isIncrease, isTopUp, isRefund, resolvedType } = classifyTxRow(form);
+    const activeRoe = parseCleanNum(form.roe || airline?.roe) || 1;
+    const debitVal = parseCleanNum(form.debitInId);
+    const creditVal = parseCleanNum(form.creditFromId);
+    const salesVal = parseCleanNum(form.ticketSales);
+    const foreignVal = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
+      ? parseCleanNum(form.foreignAmount)
       : null;
-    const debitIdAmount = Number(form.debitInId);
-    // For Top Up and Cancel/Refund, the Debit In ID field accepts the PKR amount
-    // requested by the ledger workflow. Foreign-currency amount remains converted
-    // using the transaction's locked ROE when supplied.
-    const finalCredit = isBalanceIncrease && isForeignAirline && enteredForeignAmount !== null
-      ? Math.round(enteredForeignAmount * activeRoe)
-      : (isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined && Number.isFinite(debitIdAmount)
-          ? debitIdAmount
-          : (Number(form.creditFromId) || 0));
-    const foreignCredit = enteredForeignAmount !== null
-      ? enteredForeignAmount
+
+    let finalCredit = 0;
+    if (isIncrease) {
+      if (foreignVal !== null && isForeignAirline) {
+        finalCredit = Math.round(foreignVal * activeRoe);
+      } else if (debitVal > 0) {
+        finalCredit = debitVal;
+      } else if (creditVal > 0) {
+        finalCredit = creditVal;
+      } else if (salesVal > 0) {
+        finalCredit = salesVal;
+      }
+    } else {
+      finalCredit = creditVal;
+    }
+
+    const foreignCredit = foreignVal !== null
+      ? foreignVal
       : (isForeignAirline ? (finalCredit / activeRoe) : null);
 
     onSave(modal.airlineId, {
       ...form,
+      transactionType: resolvedType,
+      ticketSales: form.ticketSales === "" ? null : parseCleanNum(form.ticketSales),
       creditFromId: finalCredit,
-      debitInId: isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined
-        ? String(form.debitInId)
-        : (form.debitInId || ""),
+      debitInId: isIncrease
+        ? (finalCredit > 0 ? String(finalCredit) : (debitVal > 0 ? String(debitVal) : null))
+        : (form.debitInId ? String(form.debitInId).replace(/,/g, "").trim() : null),
       currency: airline?.currency || "PKR",
       roe: isForeignAirline ? activeRoe : 1,
       foreignAmount: isForeignAirline ? foreignCredit : null,
-      receivedVia: transactionType === "Top Up" ? null : (form.receivedVia || null),
-      receivedViaAccountId: transactionType === "Top Up" ? null : (form.receivedViaAccountId || null),
+      receivedVia: isTopUp ? null : (form.receivedVia || null),
+      receivedViaAccountId: isTopUp ? null : (form.receivedViaAccountId || null),
     });
   };
 
