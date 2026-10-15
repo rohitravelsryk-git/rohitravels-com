@@ -497,12 +497,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const code = (isG9 && (!air.code || air.code === "--")) ? "G9" : air.code;
     const isXY = code === "XY" || /flynas/i.test(air.name);
     const isF3 = code === "F3" || /flyadeal/i.test(air.name);
-    const isFZ = code === "FZ" || /flydubai/i.test(air.name);
-    const isOV = code === "OV" || /salam\s*air/i.test(air.name);
-    const isJ9 = code === "J9" || /jazeera/i.test(air.name);
-    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
-    const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
-    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
+    const isCarrierForeign = isG9 || isXY || isF3;
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
     const rawCurr = (air.currency && air.currency.trim()) || "";
     // If currency is blank or defaulted to PKR on a known foreign carrier, use carrier foreign currency
     const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
@@ -646,12 +643,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const isG9 = code === "G9" || /air\s*arabia/i.test(air.name);
     const isXY = code === "XY" || /flynas/i.test(air.name);
     const isF3 = code === "F3" || /flyadeal/i.test(air.name);
-    const isFZ = code === "FZ" || /flydubai/i.test(air.name);
-    const isOV = code === "OV" || /salam\s*air/i.test(air.name);
-    const isJ9 = code === "J9" || /jazeera/i.test(air.name);
-    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
-    const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
-    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
+    const isCarrierForeign = isG9 || isXY || isF3;
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
     const rawCurr = (air.currency && air.currency.trim()) || "";
     const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
     const rawRoe = n(air.roe);

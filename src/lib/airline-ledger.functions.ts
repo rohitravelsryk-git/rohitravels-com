@@ -153,17 +153,11 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     const isXY = code === "XY" || /flynas/i.test(name);
     const isF3 = code === "F3" || /flyadeal/i.test(name);
 
-    const isFZ = code === "FZ" || /flydubai/i.test(name);
-    const isOV = code === "OV" || /salam\s*air/i.test(name);
-    const isJ9 = code === "J9" || /jazeera/i.test(name);
-
-    // A saved account currency always wins. For older airline rows with no currency
-    // set, use the carrier defaults already used by the portal's foreign top-up flow.
-    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
-    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD"
-      : isFZ ? "AED" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
-    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00
-      : isOV ? 72.00 : isJ9 ? 900.00 : 1.0;
+    // Only Air Arabia (G9 - AED), Flynas (XY - SAR), and Flyadeal (F3 - USD) trade in foreign currency.
+    // All other airlines are domestic / PKR.
+    const isCarrierForeign = isG9 || isXY || isF3;
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1.0;
 
     const rawCurr = (a.currency && String(a.currency).trim()) || "";
     const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");

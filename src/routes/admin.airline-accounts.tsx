@@ -96,13 +96,10 @@ function resolveCarrierCurrency(code?: string, name?: string, savedCurrency?: st
   const isG9 = cd === "G9" || /air\s*arabia/i.test(nm);
   const isXY = cd === "XY" || /flynas/i.test(nm);
   const isF3 = cd === "F3" || /flyadeal/i.test(nm);
-  const isFZ = cd === "FZ" || /flydubai/i.test(nm);
-  const isOV = cd === "OV" || /salam\s*air/i.test(nm);
-  const isJ9 = cd === "J9" || /jazeera/i.test(nm);
-  const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
+  const isCarrierForeign = isG9 || isXY || isF3;
 
-  const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
-  const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
+  const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+  const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
 
   const rawCurr = (savedCurrency && String(savedCurrency).trim()) || "";
   const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
