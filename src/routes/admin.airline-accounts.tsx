@@ -1081,13 +1081,6 @@ function AirlineLedgerApp() {
     setActiveTab(id);
   };
 
-  const updateAirlineRoe = (airlineId: string, newRoe: number) => {
-    if (!Number.isFinite(newRoe) || newRoe <= 0) return;
-    setAirlines((prev) => prev.map((a) => a.id === airlineId ? { ...a, roe: newRoe } : a));
-    setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 2000);
-  };
-
   const removeAirline = (id: string) => {
     const transactionCount = (transactions[id] || []).length;
     if (transactionCount > 0) {
@@ -1261,7 +1254,6 @@ function AirlineLedgerApp() {
                 sheetSyncStatus={sheetSyncStatus}
                 sheetSyncError={sheetSyncError}
                 onEditAirline={setActiveTab}
-                onUpdateRoe={updateAirlineRoe}
                 onOpenCurrencySettings={(airlineId: string) => {
                   const airline = perAirlineSummary.find((a: any) => a.id === airlineId);
                   if (airline) setCurrencySettingsAirline(airline);
@@ -2328,7 +2320,7 @@ function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
   syncError, sheetSyncStatus, sheetSyncError,
-  onEditAirline, onRemoveAirline, saving, onUpdateRoe, onOpenCurrencySettings,
+  onEditAirline, onRemoveAirline, saving, onOpenCurrencySettings,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
@@ -2416,29 +2408,6 @@ function Dashboard({
           ))}
         </div>
       </section>
-
-      {perAirlineSummary.some((a: any) => a.isForeign) && (
-        <section style={{ ...styles.section, background: "rgba(217, 119, 87, 0.04)", border: "1px solid var(--accent-clay, #d97757)", borderRadius: 12, padding: "16px 20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-            <div>
-              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--foreground)" }}>
-                Foreign Currency ROE Helper &amp; Defaults
-              </h4>
-              <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 2 }}>
-                Current rate of exchange used as default for future transactions. Historical transactions retain their locked ROE.
-              </div>
-            </div>
-            <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", color: "var(--accent-clay, #d97757)", fontWeight: 600 }}>
-              Future Transactions Only
-            </span>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-            {perAirlineSummary.filter((a: any) => a.isForeign).map((a: any) => (
-              <RoeEditor key={a.id} airline={a} onUpdateRoe={onUpdateRoe} />
-            ))}
-          </div>
-        </section>
-      )}
 
       <section style={styles.section}>
         <h3 style={styles.sectionTitle}>Account Balances By Airline</h3>
@@ -2556,53 +2525,6 @@ function Dashboard({
           onConfirm={() => { onRemoveAirline(removeConfirm.id); setRemoveConfirm(null); }}
         />
       )}
-    </div>
-  );
-}
-
-function RoeEditor({ airline, onUpdateRoe }: any) {
-  const [roeVal, setRoeVal] = useState(String(airline.roe || 1));
-  const [dirty, setDirty] = useState(false);
-
-  useEffect(() => {
-    setRoeVal(String(airline.roe || 1));
-    setDirty(false);
-  }, [airline.roe]);
-
-  const handleSave = () => {
-    const num = Number(roeVal);
-    if (Number.isFinite(num) && num > 0) {
-      onUpdateRoe(airline.id, num);
-      setDirty(false);
-    }
-  };
-
-  return (
-    <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--card)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <strong style={{ fontSize: 13, color: "var(--foreground)" }}>{airline.name}</strong>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>{airline.currency}</span>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ROE:</span>
-        <input
-          type="number"
-          step="0.01"
-          value={roeVal}
-          onChange={(e) => {
-            setRoeVal(e.target.value);
-            setDirty(true);
-          }}
-          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
-          style={{ ...styles.input, width: 80, padding: "4px 6px", fontSize: 12, textAlign: "right" }}
-        />
-        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>PKR</span>
-        {dirty && (
-          <button style={{ ...styles.primaryBtn, padding: "4px 8px", fontSize: 11 }} onClick={handleSave}>
-            Save
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -2754,11 +2676,16 @@ function AirlineCurrencySettingsModal({ airline, onClose, onSave }: any) {
       return;
     }
     const foreignBalance = openingForeign === "" ? null : Number(openingForeign);
+    // Only re-price the opening balance when the opening amount or the currency
+    // itself was changed. Editing just the ROE is a "future transactions only"
+    // default and must never rewrite existing balances.
+    const openingEdited = foreignBalance !== (airline.openingBalanceForeign == null ? null : Number(airline.openingBalanceForeign))
+      || finalCurrency !== airline.currency;
     onSave({
       currency: finalCurrency,
       roe: rate,
       openingBalanceForeign: foreignBalance,
-      openingBalance: foreignBalance == null ? (Number(airline.openingBalance) || 0) : Math.round(foreignBalance * rate),
+      openingBalance: foreignBalance == null || !openingEdited ? (Number(airline.openingBalance) || 0) : Math.round(foreignBalance * rate),
     });
   };
 
@@ -2784,7 +2711,7 @@ function AirlineCurrencySettingsModal({ airline, onClose, onSave }: any) {
               <div style={styles.field}><label style={styles.label}>Active ROE (PKR per {currency === "OTHER" ? customCurrency || "FX" : currency})</label><input type="number" step="0.01" min="0.01" style={styles.input} value={roe} onChange={(e) => setRoe(e.target.value)} /></div>
               <div style={styles.field}><label style={styles.label}>Opening balance ({currency === "OTHER" ? customCurrency || "FX" : currency})</label><input type="number" step="0.01" style={styles.input} value={openingForeign} onChange={(e) => setOpeningForeign(e.target.value)} placeholder="Optional" /></div>
             </div>
-            <small style={{ color: "var(--muted-foreground)" }}>Changing the currency doesn't rewrite historical transactions; their saved rates remain unchanged.</small>
+            <small style={{ color: "var(--muted-foreground)" }}>The Active ROE is the default rate for future transactions only. Historical transactions keep their locked ROE; changing the rate or currency never rewrites them.</small>
           </div>
         )}
         <div style={styles.modalFooter}>
