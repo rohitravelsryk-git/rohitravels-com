@@ -178,19 +178,34 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
   const transactions: Record<string, AirlineLedgerRow[]> = {};
   for (const t of (txRes.data ?? []) as any[]) {
     const list = transactions[t.airline_id] ?? (transactions[t.airline_id] = []);
+    const rawType = (t.transaction_type ?? "").trim();
+    const sector = (t.sector ?? "").trim();
+    const pax = (t.pax_name ?? "").trim();
+    let resolvedType = rawType || "Add Transaction";
+    if (rawType.toLowerCase() === "top up" || /top\s*up/i.test(sector) || /top\s*up/i.test(pax)) {
+      resolvedType = "Top Up";
+    } else if (
+      ["cancel/refund", "refund"].includes(rawType.toLowerCase()) ||
+      /refund|cancel/i.test(rawType) ||
+      /refund|cancel/i.test(sector) ||
+      /refund|cancel/i.test(pax)
+    ) {
+      resolvedType = "Cancel/Refund";
+    }
+
     list.push({
       id: t.id,
       date: t.date ?? "",
-      transactionType: t.transaction_type ?? "Add Transaction",
+      transactionType: resolvedType,
       agentName: t.agent_name ?? "",
       paxName: t.pax_name ?? "",
       sector: t.sector ?? "",
       pnr: t.pnr ?? "",
-      ticketSales: t.ticket_sales ?? "",
-      debitInId: t.debit_in_id ?? "",
-      creditFromId: t.credit_from_id ?? "",
+      ticketSales: t.ticket_sales !== null && t.ticket_sales !== undefined ? t.ticket_sales : "",
+      debitInId: t.debit_in_id ? String(t.debit_in_id).replace(/,/g, "").trim() : "",
+      creditFromId: t.credit_from_id !== null && t.credit_from_id !== undefined ? t.credit_from_id : "",
       paxContact: t.pax_contact ?? "",
-      voidCharges: t.void_charges ?? "",
+      voidCharges: t.void_charges !== null && t.void_charges !== undefined ? t.void_charges : "",
       currency: t.currency ?? null,
       roe: t.roe ?? null,
       foreignAmount: t.foreign_amount ?? null,
@@ -528,3 +543,271 @@ export const listActivePaymentAccounts = createServerFn({ method: "GET" }).handl
     return a.name.localeCompare(b.name);
   });
 });
+
+
+
+export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    airlineId: z.string().min(1),
+    row: z.object({
+      id: z.string().optional().nullable(),
+      date: z.string().optional().nullable(),
+      transactionType: z.string().optional().nullable(),
+      agentName: z.string().optional().nullable(),
+      paxName: z.string().optional().nullable(),
+      sector: z.string().optional().nullable(),
+      pnr: z.string().optional().nullable(),
+      ticketSales: z.union([z.number(), z.string(), z.null()]).optional(),
+      debitInId: z.union([z.number(), z.string(), z.null()]).optional(),
+      creditFromId: z.union([z.number(), z.string(), z.null()]).optional(),
+      paxContact: z.string().optional().nullable(),
+      voidCharges: z.union([z.number(), z.string(), z.null()]).optional(),
+      currency: z.string().optional().nullable(),
+      roe: z.union([z.number(), z.string(), z.null()]).optional(),
+      foreignAmount: z.union([z.number(), z.string(), z.null()]).optional(),
+      receivedVia: z.string().optional().nullable(),
+      receivedViaAccountId: z.string().optional().nullable(),
+    }),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const airlineId = data.airlineId;
+    const r = data.row;
+
+    const cleanNum = (v: unknown): number | null => {
+      if (v === "" || v === null || v === undefined) return null;
+      const cleaned = typeof v === "string" ? v.replace(/,/g, "").trim() : v;
+      const n = Number(cleaned);
+      return Number.isNaN(n) ? null : n;
+    };
+
+    const cleanStr = (v: unknown): string | null => {
+      if (v === null || v === undefined) return null;
+      const s = String(v).trim();
+      return s ? s : null;
+    };
+
+    const rawType = cleanStr(r.transactionType) || "Add Transaction";
+    const sector = cleanStr(r.sector) || "";
+    const pax = cleanStr(r.paxName) || "";
+
+    let resolvedType = rawType;
+    if (rawType.toLowerCase() === "top up" || /top\s*up/i.test(sector) || /top\s*up/i.test(pax)) {
+      resolvedType = "Top Up";
+    } else if (
+      ["cancel/refund", "refund"].includes(rawType.toLowerCase()) ||
+      /refund|cancel/i.test(rawType) ||
+      /refund|cancel/i.test(sector) ||
+      /refund|cancel/i.test(pax)
+    ) {
+      resolvedType = "Cancel/Refund";
+    }
+
+    const isTopUp = resolvedType === "Top Up";
+    const isRefund = resolvedType === "Cancel/Refund";
+
+    const rowId = cleanStr(r.id) || (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
+    const date = cleanStr(r.date) || new Date().toISOString().slice(0, 10);
+    const paxName = cleanStr(r.paxName) || (isTopUp ? "Top Up Portal" : isRefund ? "Refund Record" : "Pax");
+    const agentName = cleanStr(r.agentName);
+    const pnr = cleanStr(r.pnr);
+    const ticketSales = cleanNum(r.ticketSales);
+    const creditFromId = cleanNum(r.creditFromId);
+    const debitInId = cleanStr(r.debitInId) ? String(r.debitInId).replace(/,/g, "").trim() : null;
+    const paxContact = cleanStr(r.paxContact);
+    const voidCharges = cleanNum(r.voidCharges);
+    const currency = cleanStr(r.currency) || "PKR";
+    const roe = cleanNum(r.roe) || 1;
+    const foreignAmount = cleanNum(r.foreignAmount);
+    const receivedVia = isTopUp ? null : cleanStr(r.receivedVia);
+    const receivedViaAccountId = isTopUp ? null : cleanStr(r.receivedViaAccountId);
+
+    const recordToUpsert: any = {
+      id: rowId,
+      airline_id: airlineId,
+      date,
+      agent_name: agentName,
+      pax_name: paxName,
+      sector: sector || null,
+      pnr,
+      ticket_sales: ticketSales,
+      debit_in_id: debitInId,
+      credit_from_id: creditFromId,
+      pax_contact: paxContact,
+      void_charges: voidCharges,
+      currency,
+      roe,
+      foreign_amount: foreignAmount,
+      transaction_type: resolvedType,
+      received_via: receivedVia,
+      received_via_account_id: receivedViaAccountId,
+    };
+
+    const { error: upsertErr } = await supabaseAdmin
+      .from("airline_ledger_transactions")
+      .upsert(recordToUpsert, { onConflict: "id" });
+
+    if (upsertErr) {
+      throw new Error(`Failed to save airline transaction: ${upsertErr.message}`);
+    }
+
+    const { data: meta } = await supabaseAdmin
+      .from("airline_ledger_meta")
+      .select("revision")
+      .eq("id", 1)
+      .maybeSingle();
+
+    const newRevision = Number(meta?.revision ?? 1);
+
+    // Asynchronously update downstream ledgers and mirrors without double counting
+    (async () => {
+      try {
+        const [airlinesRes, txRes] = await Promise.all([
+          supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+          supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        ]);
+
+        const allAirlines = airlinesRes.data || [];
+        const allTransactions = txRes.data || [];
+
+        try {
+          const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+          await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+        } catch (e) {
+          console.warn("[airline-atomic] Agent ledger sync:", e);
+        }
+
+        try {
+          const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+          await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+        } catch (e) {
+          console.warn("[airline-atomic] Accounts book sync:", e);
+        }
+
+        try {
+          const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+          const [accounts, accountTransactions, services] = await Promise.all([
+            supabaseAdmin.from("accounts_book_accounts").select("*"),
+            supabaseAdmin.from("accounts_book_transactions").select("*"),
+            supabaseAdmin.from("accounts_book_services").select("*"),
+          ]);
+          await syncRohiFinancialBackup({
+            airlines: allAirlines,
+            airlineTransactions: allTransactions,
+            accounts: accounts.data || [],
+            accountTransactions: accountTransactions.data || [],
+            services: services.data || [],
+          });
+        } catch (e) {
+          console.warn("[airline-atomic] Google sheets sync:", e);
+        }
+      } catch (bgErr) {
+        console.warn("[airline-atomic] Background sync error:", bgErr);
+      }
+    })();
+
+    return {
+      success: true,
+      revision: newRevision,
+      row: {
+        id: rowId,
+        date,
+        transactionType: resolvedType,
+        agentName: agentName || "",
+        paxName,
+        sector: sector || "",
+        pnr: pnr || "",
+        ticketSales: ticketSales !== null ? ticketSales : "",
+        debitInId: debitInId ?? "",
+        creditFromId: creditFromId !== null ? creditFromId : "",
+        paxContact: paxContact ?? "",
+        voidCharges: voidCharges !== null ? voidCharges : "",
+        currency,
+        roe,
+        foreignAmount,
+        receivedVia,
+        receivedViaAccountId,
+      },
+    };
+  });
+
+export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    airlineId: z.string().min(1),
+    transactionId: z.string().min(1),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: delErr } = await supabaseAdmin
+      .from("airline_ledger_transactions")
+      .delete()
+      .eq("id", data.transactionId);
+
+    if (delErr) {
+      throw new Error(`Failed to delete airline transaction: ${delErr.message}`);
+    }
+
+    const { data: meta } = await supabaseAdmin
+      .from("airline_ledger_meta")
+      .select("revision")
+      .eq("id", 1)
+      .maybeSingle();
+
+    const newRevision = Number(meta?.revision ?? 1);
+
+    // Asynchronously trigger downstream reversal in linked ledgers & sheets
+    (async () => {
+      try {
+        const [airlinesRes, txRes] = await Promise.all([
+          supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+          supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        ]);
+
+        const allAirlines = airlinesRes.data || [];
+        const allTransactions = txRes.data || [];
+
+        try {
+          const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+          await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+        } catch (e) {
+          console.warn("[airline-atomic-delete] Agent ledger sync:", e);
+        }
+
+        try {
+          const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+          await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+        } catch (e) {
+          console.warn("[airline-atomic-delete] Accounts book sync:", e);
+        }
+
+        try {
+          const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+          const [accounts, accountTransactions, services] = await Promise.all([
+            supabaseAdmin.from("accounts_book_accounts").select("*"),
+            supabaseAdmin.from("accounts_book_transactions").select("*"),
+            supabaseAdmin.from("accounts_book_services").select("*"),
+          ]);
+          await syncRohiFinancialBackup({
+            airlines: allAirlines,
+            airlineTransactions: allTransactions,
+            accounts: accounts.data || [],
+            accountTransactions: accountTransactions.data || [],
+            services: services.data || [],
+          });
+        } catch (e) {
+          console.warn("[airline-atomic-delete] Google sheets sync:", e);
+        }
+      } catch (bgErr) {
+        console.warn("[airline-atomic-delete] Background sync error:", bgErr);
+      }
+    })();
+
+    return {
+      success: true,
+      revision: newRevision,
+    };
+  });

@@ -9,7 +9,6 @@ import {
   createAirlineContact,
   updateAirlineContact,
   deleteAirlineContact,
-  syncAirlineContactsLive,
 } from "@/lib/airline-contacts.functions";
 import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 
@@ -106,29 +105,6 @@ export function AirlineContactDetailsTable({
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // Sync with Google Sheet handler
-  const handleLiveSync = async () => {
-    setSyncing(true);
-    setSyncMessage(null);
-    try {
-      if (onTriggerSheetSync) {
-        await onTriggerSheetSync();
-      } else {
-        const res = await syncAirlineContactsLive();
-        if (res.status === "success") {
-          setSyncMessage("Live Synced with Google Sheet tab 'Airline Contact Details'!");
-        } else {
-          setSyncMessage(res.error || "Sync completed with warnings");
-        }
-      }
-    } catch (err: any) {
-      setSyncMessage(err?.message || "Sync failed");
-    } finally {
-      setSyncing(false);
-      setTimeout(() => setSyncMessage(null), 4000);
-    }
   };
 
   // Add contact handler

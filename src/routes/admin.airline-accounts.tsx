@@ -1,5 +1,4 @@
 import { AirlineContactDetailsTable } from "@/components/airline-contacts-table";
-import { syncAirlineContactsLive } from "@/lib/airline-contacts.functions";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,7 +20,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
-import { getAirlineLedgerData, saveAirlineLedgerData, reorderAirlineLedger, listActivePaymentAccounts } from "@/lib/airline-ledger.functions";
+import { getAirlineLedgerData, saveAirlineLedgerData, reorderAirlineLedger, listActivePaymentAccounts, saveAirlineTransactionAtomic, deleteAirlineTransactionAtomic } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAirlineLedgerGoogleSheetOnOpen } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
@@ -90,12 +89,33 @@ function formatDisplayDate(val: any): string {
   return s;
 }
 
+function parseCleanNum(v: unknown): number {
+  if (v === null || v === undefined || v === "") return 0;
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  const cleaned = String(v).replace(/,/g, "").trim();
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function classifyTxRow(r: any): { isIncrease: boolean; isTopUp: boolean; isRefund: boolean; resolvedType: string } {
+  const txType = String(r?.transactionType || "").trim().toLowerCase();
+  const sector = String(r?.sector || "").trim().toLowerCase();
+  const pax = String(r?.paxName || "").trim().toLowerCase();
+
+  const isTopUp = txType === "top up" || /top\s*up/i.test(txType) || /top\s*up/i.test(sector) || /top\s*up/i.test(pax);
+  const isRefund = txType === "cancel/refund" || txType === "refund" || /refund|cancel/i.test(txType) || /refund|cancel/i.test(sector) || /refund|cancel/i.test(pax);
+  const isIncrease = isTopUp || isRefund;
+  const resolvedType = isTopUp ? "Top Up" : isRefund ? "Cancel/Refund" : (r?.transactionType || "Add Transaction");
+
+  return { isIncrease, isTopUp, isRefund, resolvedType };
+}
+
 function computeLedgerRows(rows: any[], airline: any) {
   const isServiceOnly = /other\s*service\s*providers/i.test(airline?.name);
   if (isServiceOnly) {
     return rows.map((r) => {
-      const credit = Number(r.creditFromId) || 0;
-      const profit = (Number(r.ticketSales) || 0) - credit;
+      const credit = parseCleanNum(r.creditFromId);
+      const profit = parseCleanNum(r.ticketSales) - credit;
       const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
         .map((v) => (v || "").toString().trim())
         .filter(Boolean)
@@ -111,29 +131,37 @@ function computeLedgerRows(rows: any[], airline: any) {
       };
     });
   }
-  let running = Number(airline?.openingBalance) || 0;
+  let running = parseCleanNum(airline?.openingBalance);
   const isForeign = airline?.currency && airline.currency !== "PKR";
-  const defaultRoe = Number(airline?.roe) || 1;
-  let runningForeign = Number(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
+  const defaultRoe = parseCleanNum(airline?.roe) || 1;
+  let runningForeign = parseCleanNum(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
 
   return rows.map((r) => {
-    const txType = r.transactionType || "Add Transaction";
-    const isBalanceIncrease = txType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(txType.toLowerCase());
-    const debitIdAmount = Number(r.debitInId);
-    const credit = (isBalanceIncrease && r.debitInId !== "" && r.debitInId !== null && r.debitInId !== undefined && Number.isFinite(debitIdAmount))
-      ? debitIdAmount
-      : (Number(r.creditFromId) || 0);
-    running = running + (isBalanceIncrease ? credit : -credit);
-    const isTopUp = txType === "Top Up";
-    const profit = isTopUp || ["cancel/refund", "refund"].includes(txType.toLowerCase()) ? 0 : (Number(r.ticketSales) || 0) - credit;
+    const { isIncrease, isTopUp, isRefund, resolvedType } = classifyTxRow(r);
+    const debitVal = parseCleanNum(r.debitInId);
+    const creditVal = parseCleanNum(r.creditFromId);
+    const salesVal = parseCleanNum(r.ticketSales);
+    const foreignVal = parseCleanNum(r.foreignAmount);
+    const txRoe = parseCleanNum(r.roe) || defaultRoe || 1;
 
-    // Transaction ROE is immutable once recorded; defaults to airline active ROE
-    const txRoe = Number(r.roe) || defaultRoe || 1;
-    const txForeignCredit = r.foreignAmount !== undefined && r.foreignAmount !== null && r.foreignAmount !== ""
-      ? Number(r.foreignAmount)
-      : (isForeign ? (credit / txRoe) : 0);
+    let delta = 0;
+    if (isIncrease) {
+      if (debitVal > 0) delta = debitVal;
+      else if (creditVal > 0) delta = creditVal;
+      else if (salesVal > 0) delta = salesVal;
+      else if (foreignVal > 0 && isForeign) delta = Math.round(foreignVal * txRoe);
+    } else {
+      delta = creditVal;
+    }
 
-    runningForeign = runningForeign + (isBalanceIncrease ? txForeignCredit : -txForeignCredit);
+    running = running + (isIncrease ? delta : -delta);
+    const profit = isIncrease ? 0 : (salesVal || 0) - delta;
+
+    const txForeignCredit = foreignVal > 0
+      ? foreignVal
+      : (isForeign ? (delta / txRoe) : 0);
+
+    runningForeign = runningForeign + (isIncrease ? txForeignCredit : -txForeignCredit);
 
     const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
       .map((v) => (v || "").toString().trim())
@@ -142,6 +170,7 @@ function computeLedgerRows(rows: any[], airline: any) {
 
     return {
       ...r,
+      transactionType: resolvedType,
       balance: running,
       foreignBalance: runningForeign,
       txRoe,
@@ -854,26 +883,96 @@ function AirlineLedgerApp() {
     }
   };
 
-  const saveRow = (airlineId: string, row: any) => {
-    setTransactions((prev) => {
-      const list = prev[airlineId] ? [...prev[airlineId]] : [];
-      if (row.id) {
-        const idx = list.findIndex((r) => r.id === row.id);
-        if (idx >= 0) list[idx] = row;
-      } else {
-        list.push({ ...row, id: uid() });
+  const saveTransactionAtomicFn = useServerFn(saveAirlineTransactionAtomic);
+  const deleteTransactionAtomicFn = useServerFn(deleteAirlineTransactionAtomic);
+
+  const saveRow = async (airlineId: string, row: any) => {
+    setSaving(true);
+    setSyncError(null);
+    try {
+      const res = await saveTransactionAtomicFn({
+        data: {
+          airlineId,
+          row,
+        },
+      });
+
+      if (res?.row) {
+        setTransactions((prev) => {
+          const list = prev[airlineId] ? [...prev[airlineId]] : [];
+          if (row.id) {
+            const idx = list.findIndex((r) => r.id === row.id);
+            if (idx >= 0) list[idx] = res.row;
+            else list.push(res.row);
+          } else {
+            list.push(res.row);
+          }
+          const next = { ...prev, [airlineId]: list };
+          if (res?.revision) revisionRef.current = res.revision;
+          lastSavedDataRef.current = {
+            airlines: airlines.map((a: any) => ({ ...a })),
+            agents: [...agents],
+            transactions: next,
+          };
+          lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
+          dirtyRef.current = false;
+          return next;
+        });
       }
-      return { ...prev, [airlineId]: list };
-    });
-    setModal(null);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 3000);
+      setModal(null);
+      return true;
+    } catch (err: any) {
+      console.error("Save airline transaction error:", err);
+      const msg = err?.message || "Failed to save airline transaction.";
+      setSyncError(msg);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteRow = (airlineId: string, id: string) => {
-    setTransactions((prev) => ({
-      ...prev,
-      [airlineId]: (prev[airlineId] || []).filter((r) => r.id !== id),
-    }));
-    setConfirmDelete(null);
+  const deleteRow = async (airlineId: string, id: string) => {
+    setSaving(true);
+    setSyncError(null);
+    try {
+      const res = await deleteTransactionAtomicFn({
+        data: {
+          airlineId,
+          transactionId: id,
+        },
+      });
+
+      setTransactions((prev) => {
+        const next = {
+          ...prev,
+          [airlineId]: (prev[airlineId] || []).filter((r) => r.id !== id),
+        };
+        if (res?.revision) revisionRef.current = res.revision;
+        lastSavedDataRef.current = {
+          airlines: airlines.map((a: any) => ({ ...a })),
+          agents: [...agents],
+          transactions: next,
+        };
+        lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
+        dirtyRef.current = false;
+        return next;
+      });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 3000);
+      setConfirmDelete(null);
+      setModal(null);
+      return true;
+    } catch (err: any) {
+      console.error("Delete airline transaction error:", err);
+      const msg = err?.message || "Failed to delete airline transaction.";
+      setSyncError(msg);
+      alert(msg);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addAirline = () => {
@@ -1081,10 +1180,6 @@ function AirlineLedgerApp() {
             ) : activeTab === "contacts" ? (
               <AirlineContactDetailsTable
                 sheetSyncStatus={sheetSyncStatus === "synced" ? "success" : sheetSyncStatus === "error" ? "error" : "idle"}
-                onTriggerSheetSync={async () => {
-                  const res = await syncAirlineContactsLive();
-                  if (res.status === "failed") throw new Error(res.error || "Sync failed");
-                }}
               />
             ) : (
               <LedgerTable
@@ -1123,6 +1218,7 @@ function AirlineLedgerApp() {
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
             onSave={saveRow}
+            onDelete={deleteRow}
             onSaveOpeningBalance={saveOpeningBalance}
           />
         )}
@@ -1414,7 +1510,7 @@ function LedgerTable({
   );
 }
 
-function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
+function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onDelete, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
   const [form, setForm] = useState<any>(() => {
     const row = modal.row || {};
@@ -1437,12 +1533,15 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
   const [recordType, setRecordType] = useState<"transaction" | "openingBalance">(modal.recordType || "transaction");
   const [error, setError] = useState("");
+  const [savingRecord, setSavingRecord] = useState(false);
+  const [deletingRecord, setDeletingRecord] = useState(false);
   const [savingOpeningBalance, setSavingOpeningBalance] = useState(false);
   const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
   const [pnrLookupMessage, setPnrLookupMessage] = useState("");
   const [pnrLookupDone, setPnrLookupDone] = useState(false);
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
+
   const fetchPnrDetails = () => {
     const requestedPnr = String(form.pnr || "").trim().toUpperCase();
     if (!requestedPnr) {
@@ -1473,6 +1572,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     setPnrLookupMessage("PNR details loaded. Review the fields and enter the refund amount before saving.");
     setPnrLookupDone(true);
   };
+
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
@@ -1482,39 +1582,95 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   };
 
   const preview = useMemo(() => {
-    const openingBalance = Number(airline?.openingBalance) || 0;
+    const openingBalance = parseCleanNum(airline?.openingBalance);
     const priorBalance = priorRows.length
       ? computeLedgerRows(priorRows, airline)[priorRows.length - 1].balance
       : openingBalance;
-    const txType = form.transactionType || "Add Transaction";
-    const isBalanceIncrease = txType.toLowerCase() === "top up" || ["cancel/refund", "refund"].includes(txType.toLowerCase());
-    const debitIdAmount = Number(form.debitInId);
-    const credit = (isBalanceIncrease && form.debitInId !== "" && form.debitInId !== null && form.debitInId !== undefined && Number.isFinite(debitIdAmount))
-      ? debitIdAmount
-      : (Number(form.creditFromId) || 0);
-    const isTopUp = txType === "Top Up";
-    const balance = priorBalance + (isBalanceIncrease ? credit : -credit);
-    const profit = isTopUp || ["cancel/refund", "refund"].includes(txType.toLowerCase()) ? 0 : (Number(form.ticketSales) || 0) - credit;
+
+    const { isIncrease, isTopUp, isRefund, resolvedType } = classifyTxRow(form);
+    const debitVal = parseCleanNum(form.debitInId);
+    const creditVal = parseCleanNum(form.creditFromId);
+    const salesVal = parseCleanNum(form.ticketSales);
+    const foreignVal = form.foreignAmount !== "" && form.foreignAmount !== null && form.foreignAmount !== undefined ? parseCleanNum(form.foreignAmount) : null;
+    const activeRoe = parseCleanNum(form.roe) || parseCleanNum(airline?.roe) || 1;
+
+    let delta = 0;
+    if (isIncrease) {
+      if (foreignVal !== null && isForeignAirline) {
+        delta = Math.round(foreignVal * activeRoe);
+      } else if (debitVal > 0) {
+        delta = debitVal;
+      } else if (creditVal > 0) {
+        delta = creditVal;
+      } else if (salesVal > 0) {
+        delta = salesVal;
+      }
+    } else {
+      delta = creditVal;
+    }
+
+    const balance = priorBalance + (isIncrease ? delta : -delta);
+    const profit = isIncrease ? 0 : (salesVal || 0) - delta;
+
     const ledgerEntry = [form.paxName, form.sector, form.pnr, airline?.code]
       .map((v: any) => (v || "").toString().trim())
       .filter(Boolean)
       .join(" - ");
-    return { balance, profit, ledgerEntry };
-  }, [form, airline, priorRows]);
 
-  const handleSave = () => {
-    if (!form.date || !String(form.paxName || "").trim()) {
-      setError("Date and Pax Name are required.");
+    return {
+      balance,
+      profit,
+      delta,
+      salesVal,
+      isIncrease,
+      isTopUp,
+      isRefund,
+      resolvedType,
+      ledgerEntry,
+      receivedVia: form.receivedVia,
+      agentName: form.agentName,
+    };
+  }, [form, airline, priorRows, isForeignAirline]);
+
+  const handleSave = async () => {
+    const rawType = form.transactionType || "Add Transaction";
+    const sector = String(form.sector || "");
+    const pax = String(form.paxName || "");
+
+    let resolvedType = rawType;
+    if (rawType.toLowerCase() === "top up" || /top\s*up/i.test(sector) || /top\s*up/i.test(pax)) {
+      resolvedType = "Top Up";
+    } else if (
+      ["cancel/refund", "refund"].includes(rawType.toLowerCase()) ||
+      /refund|cancel/i.test(rawType) ||
+      /refund|cancel/i.test(sector) ||
+      /refund|cancel/i.test(pax)
+    ) {
+      resolvedType = "Cancel/Refund";
+    }
+
+    const isTopUp = resolvedType === "Top Up";
+    const isRefund = resolvedType === "Cancel/Refund";
+    const isIncrease = isTopUp || isRefund;
+
+    if (!form.date) {
+      setError("Date is required.");
       return;
     }
-    const { isIncrease, isTopUp, isRefund, resolvedType } = classifyTxRow(form);
-    const activeRoe = parseCleanNum(form.roe || airline?.roe) || 1;
+
+    const paxOrDetails = String(form.paxName || "").trim();
+    if (!isTopUp && !paxOrDetails) {
+      setError("Pax Name is required for ticket transactions.");
+      return;
+    }
+
     const debitVal = parseCleanNum(form.debitInId);
     const creditVal = parseCleanNum(form.creditFromId);
     const salesVal = parseCleanNum(form.ticketSales);
-    const foreignVal = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
+    const foreignVal = form.foreignAmount !== "" && form.foreignAmount !== null && form.foreignAmount !== undefined
       ? parseCleanNum(form.foreignAmount)
       : null;
+    const activeRoe = parseCleanNum(form.roe) || parseCleanNum(airline?.roe) || 1;
 
     let finalCredit = 0;
     if (isIncrease) {
@@ -1535,10 +1691,10 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       ? foreignVal
       : (isForeignAirline ? (finalCredit / activeRoe) : null);
 
-    onSave(modal.airlineId, {
+    const payload = {
       ...form,
       transactionType: resolvedType,
-      ticketSales: form.ticketSales === "" ? null : parseCleanNum(form.ticketSales),
+      ticketSales: isTopUp ? null : (form.ticketSales === "" ? null : parseCleanNum(form.ticketSales)),
       creditFromId: finalCredit,
       debitInId: isIncrease
         ? (finalCredit > 0 ? String(finalCredit) : (debitVal > 0 ? String(debitVal) : null))
@@ -1548,7 +1704,35 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       foreignAmount: isForeignAirline ? foreignCredit : null,
       receivedVia: isTopUp ? null : (form.receivedVia || null),
       receivedViaAccountId: isTopUp ? null : (form.receivedViaAccountId || null),
-    });
+    };
+
+    setError("");
+    setSavingRecord(true);
+    try {
+      await onSave(modal.airlineId, payload);
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || "Failed to save transaction record.");
+    } finally {
+      setSavingRecord(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!modal.row?.id || !onDelete) return;
+    if (!confirm("Are you sure you want to delete this transaction? Any linked Accounts Book receipt and agent ledger entry will be reversed without double counting.")) {
+      return;
+    }
+    setError("");
+    setDeletingRecord(true);
+    try {
+      await onDelete(modal.airlineId, modal.row.id);
+      onClose();
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete transaction record.");
+    } finally {
+      setDeletingRecord(false);
+    }
   };
 
   const handleOpeningBalanceSave = async () => {
@@ -1581,23 +1765,22 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     : /airarabia/i.test(airline?.name || "") ? "AED"
     : /flyadeal/i.test(airline?.name || "") ? "USD"
     : (airline?.currency && airline.currency !== "PKR" ? airline.currency : null);
+
   const editableCols = isTopUp
     ? [
         COLUMNS.find((c) => c.key === "date"),
-        { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details" },
+        { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details (e.g. Bank to Air Arabia)" },
         { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Amount (PKR)", type: "number" },
         ...(topUpCurrency ? [{ key: "foreignAmount", label: `Top Up Amount (${topUpCurrency})`, type: "number", width: 150 }] : []),
       ].filter(Boolean)
     : isCancelRefund
       ? [
           COLUMNS.find((c) => c.key === "date"),
-          COLUMNS.find((c) => c.key === "agentName"),
           COLUMNS.find((c) => c.key === "paxName"),
           COLUMNS.find((c) => c.key === "sector"),
-          COLUMNS.find((c) => c.key === "debitInId") && { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Refund Amount (PKR)", type: "number" },
-          COLUMNS.find((c) => c.key === "ticketSales"),
-          COLUMNS.find((c) => c.key === "receivedVia"),
-          COLUMNS.find((c) => c.key === "creditFromId"),
+          COLUMNS.find((c) => c.key === "pnr"),
+          COLUMNS.find((c) => c.key === "agentName"),
+          { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Refund Amount (PKR)", type: "number" },
           COLUMNS.find((c) => c.key === "paxContact"),
           COLUMNS.find((c) => c.key === "voidCharges"),
         ].filter(Boolean)
@@ -1608,12 +1791,16 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       <div style={styles.modal}>
         <div style={styles.modalHeader}>
           <div>
-            <h3 style={styles.modalTitle}>Add Record</h3>
+            <h3 style={styles.modalTitle}>
+              {recordType === "openingBalance" ? "Opening Balance" : modal.mode === "add" ? "New Transaction" : "Edit Transaction"}
+            </h3>
             <div style={{ marginTop: 4, fontSize: 12, color: "var(--muted-foreground)" }}>
-              {airline?.name} · {recordType === "openingBalance" ? "Opening Balance" : modal.mode === "add" ? "Transaction" : "Edit Transaction"}
+              {recordType === "openingBalance"
+                ? `${airline?.name} · Initial Ledger Balance`
+                : "1 Single Atomic Entry (No Double Counting) — updates portal balance, links receipt to bank/cash, and syncs across ledgers automatically."}
             </div>
           </div>
-          <button style={styles.iconBtn} onClick={onClose} disabled={savingOpeningBalance}><X size={18} /></button>
+          <button style={styles.iconBtn} onClick={onClose} disabled={savingRecord || deletingRecord || savingOpeningBalance}><X size={18} /></button>
         </div>
 
         {modal.mode === "add" && !/other\s*service\s*providers/i.test(airline?.name) && (
@@ -1622,7 +1809,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
               type="button"
               style={{ ...styles.recordTypeBtn, ...(recordType === "transaction" ? styles.recordTypeBtnActive : {}) }}
               onClick={() => { setRecordType("transaction"); setError(""); }}
-              disabled={savingOpeningBalance}
+              disabled={savingRecord || deletingRecord || savingOpeningBalance}
             >
               Transaction
             </button>
@@ -1639,7 +1826,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
                 }));
               }}
-              disabled={savingOpeningBalance}
+              disabled={savingRecord || deletingRecord || savingOpeningBalance}
             >
               Opening Balance
             </button>
@@ -1665,13 +1852,14 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                       inputMode="decimal"
                       step="0.01"
                       value={form.openingBalanceForeign ?? ""}
-                      placeholder={`e.g. ${airline.currency === "AED" ? "215.77" : airline.currency === "SAR" ? "3775.52" : "120.67"}`}
                       onChange={(e) => {
-                        const foreignVal = e.target.value;
-                        const num = Number(foreignVal);
-                        const roe = Number(airline.roe) || 1;
-                        update("openingBalanceForeign", foreignVal);
-                        update("openingBalance", foreignVal !== "" && Number.isFinite(num) ? Math.round(num * roe) : "");
+                        const val = e.target.value;
+                        const num = Number(val);
+                        const roe = Number(airline?.roe || 1);
+                        update("openingBalanceForeign", val);
+                        if (val !== "" && Number.isFinite(num)) {
+                          update("openingBalance", Math.round(num * roe));
+                        }
                       }}
                       style={styles.input}
                       disabled={savingOpeningBalance}
@@ -1830,7 +2018,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
         <div style={styles.modalGrid}>
           {editableCols.map((c: any) => (
             <div key={c.key} style={styles.field}>
-              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details" : c.label}</label>
+              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : c.label}</label>
               {c.type === "select" ? (
                 <div style={{ position: "relative" }}>
                   <input
@@ -1931,17 +2119,79 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           ))}
         </div>
 
-        <div style={styles.previewBox}>
-          <div style={styles.previewItem}><span style={styles.previewLabel}>Balance <em>(auto)</em></span><span className="num" style={styles.previewValue}>{fmt(preview.balance)}</span></div>
-          <div style={styles.previewItem}><span style={styles.previewLabel}>Profit <em>(auto)</em></span><span className="num" style={{ ...styles.previewValue, color: preview.profit < 0 ? "var(--error)" : "var(--success)" }}>{fmt(preview.profit)}</span></div>
-          <div style={styles.previewItem}><span style={styles.previewLabel}>Ledger Entry <em>(auto)</em></span><span style={styles.previewValue}>{preview.ledgerEntry || "-"}</span></div>
+        {/* 1 Single Atomic Entry (No Double Counting) Posting Breakdown */}
+        <div style={{ ...styles.previewBox, flexDirection: "column", gap: 10, padding: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
+              1 Single Atomic Entry (No Double Counting)
+            </span>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+              Posts directly to DB & syncs all ledgers
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+            <div style={styles.previewItem}>
+              <span style={styles.previewLabel}>{airline?.name} Portal</span>
+              <span className="num" style={{ ...styles.previewValue, color: preview.isIncrease ? "var(--success)" : "var(--foreground)" }}>
+                {preview.isIncrease ? `+${fmt(preview.delta)}` : `-${fmt(preview.delta)}`} PKR
+                <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
+                  Portal Balance: {fmt(preview.balance)} PKR
+                </span>
+              </span>
+            </div>
+
+            <div style={styles.previewItem}>
+              <span style={styles.previewLabel}>Payment Account</span>
+              <span style={styles.previewValue}>
+                {preview.receivedVia || (preview.isTopUp ? "Outgoing Top-Up" : "On Credit / Receivable")}
+                <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
+                  {preview.receivedVia ? `Receipt +${fmt(preview.salesVal)} PKR` : preview.isTopUp ? "Direct portal deposit" : "No cash/bank posting"}
+                </span>
+              </span>
+            </div>
+
+            <div style={styles.previewItem}>
+              <span style={styles.previewLabel}>Counterparty Ledger</span>
+              <span style={styles.previewValue}>
+                {preview.agentName || (preview.isTopUp ? "Airline Portal" : "Direct / Walk-in")}
+                <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
+                  {preview.agentName ? (preview.isRefund ? `Credit (CR) +${fmt(preview.delta)} PKR` : `Debit (DR) +${fmt(preview.salesVal)} PKR`) : "Direct posting"}
+                </span>
+              </span>
+            </div>
+
+            <div style={styles.previewItem}>
+              <span style={styles.previewLabel}>Profit & Mirrors</span>
+              <span className="num" style={{ ...styles.previewValue, color: preview.profit < 0 ? "var(--error)" : "var(--success)" }}>
+                {preview.isIncrease ? "0 (Top Up / Refund)" : `${fmt(preview.profit)} PKR`}
+                <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
+                  Sheets: Auto-synced
+                </span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {error && (<div style={styles.errorNote}><AlertCircle size={14} /> {error}</div>)}
 
         <div style={styles.modalFooter}>
-          <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>
-          <button style={styles.primaryBtn} onClick={handleSave}><Save size={15} /> {modal.mode === "add" ? "Save Record" : "Save Changes"}</button>
+          {modal.mode === "edit" && onDelete && (
+            <button
+              type="button"
+              style={{ ...styles.ghostBtn, color: "var(--error)", borderColor: "rgba(220, 38, 38, 0.2)", marginRight: "auto" }}
+              onClick={handleDelete}
+              disabled={savingRecord || deletingRecord}
+            >
+              {deletingRecord ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              {deletingRecord ? "Deleting…" : "Delete Record"}
+            </button>
+          )}
+          <button style={styles.ghostBtn} onClick={onClose} disabled={savingRecord || deletingRecord}>Cancel</button>
+          <button style={styles.primaryBtn} onClick={handleSave} disabled={savingRecord || deletingRecord}>
+            {savingRecord ? <LoaderCircle size={15} className="animate-spin" /> : <Save size={15} />}
+            {savingRecord ? "Saving changes…" : modal.mode === "add" ? "Save Record" : "Save Changes"}
+          </button>
         </div>
         </>
         )}
