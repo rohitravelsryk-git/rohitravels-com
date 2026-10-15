@@ -1364,8 +1364,15 @@ function LedgerTable({
         </div>
         <div style={styles.panelActions}>
           {!/other\s*service\s*providers/i.test(airline?.name) && (
-          <div style={styles.openingBalanceBox}>
-            <span>Opening balance</span>
+          <div
+            style={{ ...styles.openingBalanceBox, cursor: "pointer" }}
+            onClick={() => setModal({ mode: "add", airlineId: activeTab, row: EMPTY_ROW(), recordType: "openingBalance" })}
+            title="Click to edit Opening Balance"
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span>Opening balance</span>
+              <Pencil size={11} color="var(--muted-foreground)" />
+            </div>
             <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
               {airline?.currency && airline.currency !== "PKR"
                 ? `${fmt(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} (PKR ${fmt(airline?.openingBalance ?? 0)})`
@@ -1432,7 +1439,16 @@ function LedgerTable({
                     ? `OPENING BALANCE (${airline.currency} @ ROE ${airline.roe || 1})`
                     : "OPENING BALANCE"}
                 </td>
-                <td style={{ ...styles.td, textAlign: "right", color: "var(--muted-foreground)", fontSize: 11 }}>Starting</td>
+                <td style={{ ...styles.td, textAlign: "right" }}>
+                  <button
+                    type="button"
+                    style={{ ...styles.iconBtn, width: 24, height: 24 }}
+                    onClick={() => setModal({ mode: "add", airlineId: activeTab, row: EMPTY_ROW(), recordType: "openingBalance" })}
+                    title="Edit opening balance"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                </td>
               </tr>
             )}
             {rows.length === 0 && (
@@ -1803,35 +1819,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           <button style={styles.iconBtn} onClick={onClose} disabled={savingRecord || deletingRecord || savingOpeningBalance}><X size={18} /></button>
         </div>
 
-        {modal.mode === "add" && !/other\s*service\s*providers/i.test(airline?.name) && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-            <button
-              type="button"
-              style={{ ...styles.recordTypeBtn, ...(recordType === "transaction" ? styles.recordTypeBtnActive : {}) }}
-              onClick={() => { setRecordType("transaction"); setError(""); }}
-              disabled={savingRecord || deletingRecord || savingOpeningBalance}
-            >
-              Transaction
-            </button>
-            <button
-              type="button"
-              style={{ ...styles.recordTypeBtn, ...(recordType === "openingBalance" ? styles.recordTypeBtnActive : {}) }}
-              onClick={() => {
-                setRecordType("openingBalance");
-                setError("");
-                setForm((f: any) => ({
-                  ...f,
-                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
-                  openingBalance: Number(airline?.openingBalance ?? 0),
-                  openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
-                }));
-              }}
-              disabled={savingRecord || deletingRecord || savingOpeningBalance}
-            >
-              Opening Balance
-            </button>
-          </div>
-        )}
+
 
         {recordType === "openingBalance" ? (
           <div>
@@ -1903,6 +1891,14 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             </div>
             {error && <div style={styles.errorNote}><AlertCircle size={15} /> {error}</div>}
             <div style={styles.modalFooter}>
+              <button
+                type="button"
+                style={{ ...styles.ghostBtn, marginRight: "auto", fontSize: 12 }}
+                onClick={() => { setRecordType("transaction"); setError(""); }}
+                disabled={savingOpeningBalance}
+              >
+                ← Back to Transaction
+              </button>
               <button style={styles.ghostBtn} onClick={onClose} disabled={savingOpeningBalance}>Cancel</button>
               <button style={styles.primaryBtn} onClick={handleOpeningBalanceSave} disabled={savingOpeningBalance}>
                 {savingOpeningBalance ? <LoaderCircle size={15} className="animate-spin" /> : <Save size={15} />}
@@ -2173,6 +2169,54 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         </div>
 
+        {!/other\s*service\s*providers/i.test(airline?.name) && modal.mode === "add" && (
+          <div style={{
+            marginTop: 14,
+            padding: "9px 13px",
+            borderRadius: 10,
+            border: "1px dashed var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "rgba(217, 119, 87, 0.04)",
+            fontSize: 12,
+            color: "var(--muted-foreground)",
+            flexWrap: "wrap",
+            gap: 8,
+          }}>
+            <span>Opening balance is configured once per airline account:</span>
+            <button
+              type="button"
+              style={{
+                border: "1px solid var(--border)",
+                background: "var(--card)",
+                borderRadius: 6,
+                color: "var(--foreground)",
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: "5px 10px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                fontSize: 12,
+              }}
+              onClick={() => {
+                setRecordType("openingBalance");
+                setError("");
+                setForm((f: any) => ({
+                  ...f,
+                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
+                  openingBalance: Number(airline?.openingBalance ?? 0),
+                  openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
+                }));
+              }}
+              disabled={savingRecord || deletingRecord || savingOpeningBalance}
+            >
+              <Building2 size={13} color="var(--accent-clay, #d97757)" /> Set Opening Balance
+            </button>
+          </div>
+        )}
+
         {error && (<div style={styles.errorNote}><AlertCircle size={14} /> {error}</div>)}
 
         <div style={styles.modalFooter}>
@@ -2185,6 +2229,36 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             >
               {deletingRecord ? <LoaderCircle size={15} className="animate-spin" /> : <Trash2 size={15} />}
               {deletingRecord ? "Deleting…" : "Delete Record"}
+            </button>
+          )}
+          {!/other\s*service\s*providers/i.test(airline?.name) && modal.mode === "add" && (
+            <button
+              type="button"
+              style={{
+                ...styles.ghostBtn,
+                marginRight: "auto",
+                fontSize: 12,
+                color: "var(--muted-foreground)",
+                borderColor: "var(--border)",
+                padding: "8px 12px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onClick={() => {
+                setRecordType("openingBalance");
+                setError("");
+                setForm((f: any) => ({
+                  ...f,
+                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
+                  openingBalance: Number(airline?.openingBalance ?? 0),
+                  openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
+                }));
+              }}
+              disabled={savingRecord || deletingRecord || savingOpeningBalance}
+              title="Set or update the starting balance for this airline"
+            >
+              <Building2 size={13} /> Opening Balance
             </button>
           )}
           <button style={styles.ghostBtn} onClick={onClose} disabled={savingRecord || deletingRecord}>Cancel</button>
@@ -2695,7 +2769,7 @@ const styles: Record<string, React.CSSProperties> = {
   searchBox: { display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 10px" },
   searchInput: { border: "none", outline: "none", fontSize: 13, width: 150, background: "transparent" },
   ghostBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, cursor: "pointer" },
-  exportMenu: { position: "absolute", top: "calc(100% + 6px)", right: 0, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, boxShadow: "0 8px 24px rgba(15,27,45,0.14)", zIndex: 50, minWidth: 190, overflow: "hidden" },
+  exportMenu: { position: "absolute", top: "calc(100% + 6px)", right: 0, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, boxShadow: "0 8px 24px rgba(15,27,45,0.14)", zIndex: 90, minWidth: 190, overflow: "hidden" },
   exportMenuItem: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 14px", border: "none", background: "transparent", color: "var(--foreground)", fontSize: 13, cursor: "pointer", textAlign: "left" },
   ghostBtnSm: { padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12, cursor: "pointer", marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 },
   primaryBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--foreground)", background: "var(--foreground)", color: "var(--text-inverse)", fontSize: 13, cursor: "pointer" },
@@ -2817,8 +2891,33 @@ const styles: Record<string, React.CSSProperties> = {
   sectionTitle: { fontFamily: 'var(--font-sans)', fontSize: 16, margin: "0 0 12px", color: "var(--foreground)" },
   select: { padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 13 },
   syncNote: { display: "flex", gap: 10, background: "var(--warning-soft)", border: "1px solid var(--warning)", borderRadius: 10, padding: "14px 16px", fontSize: 13, lineHeight: 1.55, color: "var(--warning)" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(15,27,45,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 },
-  modal: { background: "var(--card)", borderRadius: 14, padding: 22, width: "100%", maxWidth: 640, maxHeight: "88vh", overflowY: "auto" },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(20, 20, 19, 0.70)",
+    backdropFilter: "blur(4px)",
+    WebkitBackdropFilter: "blur(4px)",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    zIndex: 2000,
+    padding: "36px 16px 48px",
+    overflowY: "auto",
+  },
+  modal: {
+    background: "var(--card)",
+    borderRadius: 14,
+    padding: 22,
+    width: "100%",
+    maxWidth: 640,
+    maxHeight: "calc(100vh - 72px)",
+    overflowY: "auto",
+    boxShadow: "0 24px 60px rgba(20, 20, 19, 0.35), 0 4px 16px rgba(0, 0, 0, 0.12)",
+    border: "1px solid var(--border)",
+    position: "relative",
+    zIndex: 1,
+    margin: "0 auto",
+  },
   modalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
   modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
   modalTitle: { fontFamily: 'var(--font-sans)', fontSize: 18, margin: 0, color: "var(--foreground)" },
