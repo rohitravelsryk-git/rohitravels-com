@@ -159,13 +159,16 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
 
     // A saved account currency always wins. For older airline rows with no currency
     // set, use the carrier defaults already used by the portal's foreign top-up flow.
+    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
     const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD"
       : isFZ ? "AED" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
     const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00
       : isOV ? 72.00 : isJ9 ? 900.00 : 1.0;
 
-    const currency = a.currency || defaultCurrency;
-    const roe = Number(a.roe) || defaultRoe;
+    const rawCurr = (a.currency && String(a.currency).trim()) || "";
+    const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
+    const rawRoe = Number(a.roe);
+    const roe = (rawRoe > 1) ? rawRoe : defaultRoe;
     const openingBalance = Number(a.opening_balance) || 0;
     const openingBalanceForeign = a.opening_balance_foreign !== null && a.opening_balance_foreign !== undefined
       ? Number(a.opening_balance_foreign)

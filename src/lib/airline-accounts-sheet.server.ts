@@ -500,10 +500,14 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const isFZ = code === "FZ" || /flydubai/i.test(air.name);
     const isOV = code === "OV" || /salam\s*air/i.test(air.name);
     const isJ9 = code === "J9" || /jazeera/i.test(air.name);
+    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
     const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
     const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
-    const curr = (air.currency && air.currency.trim()) || defaultCurrency;
-    const roeVal = n(air.roe) || defaultRoe;
+    const rawCurr = (air.currency && air.currency.trim()) || "";
+    // If currency is blank or defaulted to PKR on a known foreign carrier, use carrier foreign currency
+    const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
+    const rawRoe = n(air.roe);
+    const roeVal = (rawRoe > 1) ? rawRoe : defaultRoe;
     const isForeign = curr !== "PKR";
 
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
@@ -645,11 +649,14 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const isFZ = code === "FZ" || /flydubai/i.test(air.name);
     const isOV = code === "OV" || /salam\s*air/i.test(air.name);
     const isJ9 = code === "J9" || /jazeera/i.test(air.name);
+    const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
     const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
     const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
-    const curr = air.currency || defaultCurrency;
+    const rawCurr = (air.currency && air.currency.trim()) || "";
+    const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
+    const rawRoe = n(air.roe);
+    const roeVal = (rawRoe > 1) ? rawRoe : defaultRoe;
     const isForeign = curr !== "PKR";
-    const roeVal = n(air.roe) || defaultRoe;
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     const opForeign = runningForeign;
 

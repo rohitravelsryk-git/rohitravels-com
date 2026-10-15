@@ -90,6 +90,29 @@ function formatDisplayDate(val: any): string {
   return s;
 }
 
+function resolveCarrierCurrency(code?: string, name?: string, savedCurrency?: string, savedRoe?: number) {
+  const cd = (code || "").toUpperCase();
+  const nm = name || "";
+  const isG9 = cd === "G9" || /air\s*arabia/i.test(nm);
+  const isXY = cd === "XY" || /flynas/i.test(nm);
+  const isF3 = cd === "F3" || /flyadeal/i.test(nm);
+  const isFZ = cd === "FZ" || /flydubai/i.test(nm);
+  const isOV = cd === "OV" || /salam\s*air/i.test(nm);
+  const isJ9 = cd === "J9" || /jazeera/i.test(nm);
+  const isCarrierForeign = isG9 || isXY || isF3 || isFZ || isOV || isJ9;
+
+  const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
+  const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
+
+  const rawCurr = (savedCurrency && String(savedCurrency).trim()) || "";
+  const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
+  const rawRoe = Number(savedRoe);
+  const roe = (rawRoe > 1) ? rawRoe : defaultRoe;
+  const isForeign = currency !== "PKR";
+
+  return { currency, roe, isForeign };
+}
+
 function parseCleanNum(v: unknown): number {
   if (v === null || v === undefined || v === "") return 0;
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
@@ -144,8 +167,10 @@ function computeLedgerRows(rows: any[], airline: any) {
     });
   }
   let running = parseCleanNum(airline?.openingBalance);
-  const isForeign = airline?.currency && airline.currency !== "PKR";
-  const defaultRoe = parseCleanNum(airline?.roe) || 1;
+  const resolved = resolveCarrierCurrency(airline?.code, airline?.name, airline?.currency, airline?.roe);
+  const isForeign = resolved.isForeign;
+  const defaultRoe = resolved.roe;
+  const airlineCurrency = resolved.currency;
   let runningForeign = parseCleanNum(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
 
   return sortedRows.map((r) => {
@@ -813,7 +838,17 @@ function AirlineLedgerApp() {
     );
   }
 
-  const activeAirline = airlines.find((a) => a.id === activeTab);
+  const rawActiveAirline = airlines.find((a) => a.id === activeTab);
+  const activeAirline = useMemo(() => {
+    if (!rawActiveAirline) return undefined;
+    const resolved = resolveCarrierCurrency(rawActiveAirline.code, rawActiveAirline.name, rawActiveAirline.currency, rawActiveAirline.roe);
+    return {
+      ...rawActiveAirline,
+      currency: resolved.currency,
+      roe: resolved.roe,
+      isForeign: resolved.isForeign,
+    };
+  }, [rawActiveAirline]);
   const rawRows = transactions[activeTab] || [];
   const computedRows = useMemo(
     () => computeLedgerRows(rawRows, activeAirline),
@@ -1075,14 +1110,19 @@ function AirlineLedgerApp() {
       const totalSales = list.reduce((s, r) => s + (Number(r.ticketSales) || 0), 0);
       const totalVoid = list.reduce((s, r) => s + (Number(r.voidCharges) || 0), 0);
       const currentBalance = list.length ? list[list.length - 1].balance : (Number(a.openingBalance) || 0);
-      const isForeign = a.currency && a.currency !== "PKR";
+      const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe);
+      const isForeign = resolved.isForeign;
+      const currency = resolved.currency;
+      const activeRoe = resolved.roe;
       const currentForeignBalance = isForeign
         ? (list.length
             ? list[list.length - 1].foreignBalance
-            : (Number(a.openingBalanceForeign) || (Number(a.roe) ? currentBalance / Number(a.roe) : 0)))
+            : (Number(a.openingBalanceForeign) || (activeRoe ? currentBalance / activeRoe : 0)))
         : null;
       return {
         ...a,
+        currency,
+        roe: activeRoe,
         count: list.length,
         totalProfit,
         totalSales,
@@ -1311,9 +1351,12 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
         const rows = transactions?.[a.id] ?? [];
         const computed = computeLedgerRows(rows, a);
         const currentBalance = computed.length ? computed[computed.length - 1].balance : (Number(a.openingBalance) || 0);
-        const isForeign = a.currency && a.currency !== "PKR";
+        const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe);
+        const isForeign = resolved.isForeign;
+        const currency = resolved.currency;
+        const activeRoe = resolved.roe;
         const currentForeignBalance = isForeign
-          ? (computed.length ? computed[computed.length - 1].foreignBalance : (Number(a.openingBalanceForeign) || (Number(a.roe) ? currentBalance / Number(a.roe) : 0)))
+          ? (computed.length ? computed[computed.length - 1].foreignBalance : (Number(a.openingBalanceForeign) || (activeRoe ? currentBalance / activeRoe : 0)))
           : null;
         return (
           <div
@@ -1358,7 +1401,7 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
               balance={currentBalance}
               foreignBalance={currentForeignBalance}
               isForeign={isForeign}
-              currency={a.currency}
+              currency={currency}
             />
           </div>
         );
