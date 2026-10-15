@@ -612,7 +612,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
     .filter(([title]) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
     .map(([, sId]) => ({
       updateSheetProperties: {
-        properties: { sheetId: sId, gridProperties: { columnCount: 12 } },
+        properties: { sheetId: sId, gridProperties: { columnCount: 16 } },
         fields: "gridProperties.columnCount",
       },
     }));
@@ -688,8 +688,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", "", ""],
       [airlineTitle, "", "", "", "", "", "", "", "", "", "", ""],
       ["", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", 0, 0, op, "OPENING BALANCE"],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "FX Movement", "Running Balance (FX)", "Currency", "ROE (PKR / FX)", "Remarks"],
+      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", 0, 0, op, "", isForeign ? opForeign : "", isForeign ? curr : "", isForeign ? roeVal : "", "OPENING BALANCE"],
     ];
 
     for (const r of rows) {
