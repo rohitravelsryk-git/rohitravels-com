@@ -396,59 +396,60 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       }
     })();
 
-    // Database commit is authoritative and durable. Trigger Google Sheets backup
-    // asynchronously in the background so the HTTP response returns immediately (<100ms)
-    // without stalling the user or risking data loss if the tab is closed/refreshed.
-    (async () => {
-      try {
-        const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-        const [accounts, accountTransactions, services] = await Promise.all([
-          supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
-          supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
-          supabaseAdmin.from("accounts_book_services").select("*").order("name"),
-        ]);
-        if (!accounts.error && !accountTransactions.error && !services.error) {
-          const result = await withTimeout(syncRohiFinancialBackup({
-            airlines: committedSnapshot.airlines,
-            airlineTransactions: committedSnapshot.transactions,
-            accounts: accounts.data ?? [],
-            accountTransactions: accountTransactions.data ?? [],
-            services: services.data ?? [],
-          }, savedRevision), 15000, "Financial Google backup");
-          if (result.synced) {
-            await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
-              id: 1,
-              last_source_revision: result.revision,
-              last_synced_at: result.syncedAt,
-              status: "synced",
-              error_message: null,
-              sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
-              updated_at: new Date().toISOString(),
-            });
-          }
-        }
-      } catch (backupErr) {
-        console.error("Async financial Google backup failed:", backupErr);
-      }
-
-      // Airline Sheet sync is awaited below, after the durable database save.
-    })().catch((err) => console.error("Background sync runner error:", err));
-
-    // Await Google Sheets before returning; detached promises can be terminated
-    // by serverless runtimes, leaving the sheet stale until a later transaction.
+    // Run Financial Google backup and Airline Google Sheet sync concurrently
     let syncPending = false;
     let syncError: string | null = null;
     try {
-      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-      const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 25000, "Airline ledger Google Sheet sync");
-      syncPending = !result.synced;
-      syncError = result.error ?? null;
-    } catch (error) {
-      syncPending = true;
-      syncError = String(error instanceof Error ? error.message : error);
-      console.error("Airline Sheet sync failed after database save:", syncError);
-      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
-        .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+      await Promise.allSettled([
+        (async () => {
+          try {
+            const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+            const [accounts, accountTransactions, services] = await Promise.all([
+              supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
+              supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+              supabaseAdmin.from("accounts_book_services").select("*").order("name"),
+            ]);
+            if (!accounts.error && !accountTransactions.error && !services.error) {
+              const result = await withTimeout(syncRohiFinancialBackup({
+                airlines: committedSnapshot.airlines,
+                airlineTransactions: committedSnapshot.transactions,
+                accounts: accounts.data ?? [],
+                accountTransactions: accountTransactions.data ?? [],
+                services: services.data ?? [],
+              }, savedRevision), 15000, "Financial Google backup");
+              if (result.synced) {
+                await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
+                  id: 1,
+                  last_source_revision: result.revision,
+                  last_synced_at: result.syncedAt,
+                  status: "synced",
+                  error_message: null,
+                  sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
+                  updated_at: new Date().toISOString(),
+                });
+              }
+            }
+          } catch (backupErr) {
+            console.error("Async financial Google backup failed:", backupErr);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+            const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 20000, "Airline ledger Google Sheet sync");
+            syncPending = !result.synced;
+            syncError = result.error ?? null;
+          } catch (error) {
+            syncPending = true;
+            syncError = String(error instanceof Error ? error.message : error);
+            console.error("Airline Sheet sync failed after database save:", syncError);
+            await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
+              .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+          }
+        })(),
+      ]);
+    } catch (e) {
+      console.warn("[airline-ledger] Sync runner error:", e);
     }
 
     return {
@@ -661,52 +662,64 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
     const newRevision = Number(meta?.revision ?? 1);
 
-    // Asynchronously update downstream ledgers and mirrors without double counting
-    (async () => {
-      try {
-        const [airlinesRes, txRes] = await Promise.all([
-          supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-          supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
-        ]);
+    // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
+    try {
+      const [airlinesRes, txRes] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      ]);
 
-        const allAirlines = airlinesRes.data || [];
-        const allTransactions = txRes.data || [];
+      const allAirlines = airlinesRes.data || [];
+      const allTransactions = txRes.data || [];
 
-        try {
-          const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-          await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
-        } catch (e) {
-          console.warn("[airline-atomic] Agent ledger sync:", e);
-        }
-
-        try {
-          const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-          await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
-        } catch (e) {
-          console.warn("[airline-atomic] Accounts book sync:", e);
-        }
-
-        try {
-          const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-          const [accounts, accountTransactions, services] = await Promise.all([
-            supabaseAdmin.from("accounts_book_accounts").select("*"),
-            supabaseAdmin.from("accounts_book_transactions").select("*"),
-            supabaseAdmin.from("accounts_book_services").select("*"),
-          ]);
-          await syncRohiFinancialBackup({
-            airlines: allAirlines,
-            airlineTransactions: allTransactions,
-            accounts: accounts.data || [],
-            accountTransactions: accountTransactions.data || [],
-            services: services.data || [],
-          });
-        } catch (e) {
-          console.warn("[airline-atomic] Google sheets sync:", e);
-        }
-      } catch (bgErr) {
-        console.warn("[airline-atomic] Background sync error:", bgErr);
-      }
-    })();
+      await Promise.allSettled([
+        (async () => {
+          try {
+            const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+            await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+          } catch (e) {
+            console.warn("[airline-atomic] Agent ledger sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+            await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+          } catch (e) {
+            console.warn("[airline-atomic] Accounts book sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+            await syncAirlineLedgerGoogleSheetNow(newRevision);
+          } catch (e) {
+            console.warn("[airline-atomic] Airline Google Sheet sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+            const [accounts, accountTransactions, services] = await Promise.all([
+              supabaseAdmin.from("accounts_book_accounts").select("*"),
+              supabaseAdmin.from("accounts_book_transactions").select("*"),
+              supabaseAdmin.from("accounts_book_services").select("*"),
+            ]);
+            await syncRohiFinancialBackup({
+              airlines: allAirlines,
+              airlineTransactions: allTransactions,
+              accounts: accounts.data || [],
+              accountTransactions: accountTransactions.data || [],
+              services: services.data || [],
+            });
+          } catch (e) {
+            console.warn("[airline-atomic] Financial backup sync:", e);
+          }
+        })(),
+      ]);
+    } catch (bgErr) {
+      console.warn("[airline-atomic] Downstream sync runner error:", bgErr);
+    }
 
     return {
       success: true,
@@ -759,52 +772,64 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
     const newRevision = Number(meta?.revision ?? 1);
 
-    // Asynchronously trigger downstream reversal in linked ledgers & sheets
-    (async () => {
-      try {
-        const [airlinesRes, txRes] = await Promise.all([
-          supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-          supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
-        ]);
+    // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
+    try {
+      const [airlinesRes, txRes] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      ]);
 
-        const allAirlines = airlinesRes.data || [];
-        const allTransactions = txRes.data || [];
+      const allAirlines = airlinesRes.data || [];
+      const allTransactions = txRes.data || [];
 
-        try {
-          const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-          await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
-        } catch (e) {
-          console.warn("[airline-atomic-delete] Agent ledger sync:", e);
-        }
-
-        try {
-          const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-          await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
-        } catch (e) {
-          console.warn("[airline-atomic-delete] Accounts book sync:", e);
-        }
-
-        try {
-          const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-          const [accounts, accountTransactions, services] = await Promise.all([
-            supabaseAdmin.from("accounts_book_accounts").select("*"),
-            supabaseAdmin.from("accounts_book_transactions").select("*"),
-            supabaseAdmin.from("accounts_book_services").select("*"),
-          ]);
-          await syncRohiFinancialBackup({
-            airlines: allAirlines,
-            airlineTransactions: allTransactions,
-            accounts: accounts.data || [],
-            accountTransactions: accountTransactions.data || [],
-            services: services.data || [],
-          });
-        } catch (e) {
-          console.warn("[airline-atomic-delete] Google sheets sync:", e);
-        }
-      } catch (bgErr) {
-        console.warn("[airline-atomic-delete] Background sync error:", bgErr);
-      }
-    })();
+      await Promise.allSettled([
+        (async () => {
+          try {
+            const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+            await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+          } catch (e) {
+            console.warn("[airline-atomic-delete] Agent ledger sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+            await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+          } catch (e) {
+            console.warn("[airline-atomic-delete] Accounts book sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+            await syncAirlineLedgerGoogleSheetNow(newRevision);
+          } catch (e) {
+            console.warn("[airline-atomic-delete] Airline Google Sheet sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+            const [accounts, accountTransactions, services] = await Promise.all([
+              supabaseAdmin.from("accounts_book_accounts").select("*"),
+              supabaseAdmin.from("accounts_book_transactions").select("*"),
+              supabaseAdmin.from("accounts_book_services").select("*"),
+            ]);
+            await syncRohiFinancialBackup({
+              airlines: allAirlines,
+              airlineTransactions: allTransactions,
+              accounts: accounts.data || [],
+              accountTransactions: accountTransactions.data || [],
+              services: services.data || [],
+            });
+          } catch (e) {
+            console.warn("[airline-atomic-delete] Financial backup sync:", e);
+          }
+        })(),
+      ]);
+    } catch (bgErr) {
+      console.warn("[airline-atomic-delete] Downstream sync runner error:", bgErr);
+    }
 
     return {
       success: true,

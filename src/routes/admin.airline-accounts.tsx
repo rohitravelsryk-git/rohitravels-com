@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { AirlineContactDetailsTable } from "@/components/airline-contacts-table";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
@@ -822,10 +823,11 @@ function AirlineLedgerApp() {
   const saveOpeningBalance = async (airlineId: string, openingBalanceDate: string, openingBalanceValue: number, openingBalanceForeignValue?: number | null) => {
     const amount = Number(openingBalanceValue);
     if (!openingBalanceDate || !Number.isFinite(amount)) {
-      setSyncError("Opening balance date and a valid amount are required.");
+      toast.error("Opening balance date and a valid amount are required.");
       return false;
     }
 
+    const previousAirlines = airlines;
     const nextAirlines = airlines.map((a: any) =>
       a.id === airlineId ? {
         ...a,
@@ -836,8 +838,9 @@ function AirlineLedgerApp() {
     );
     const nextSnapshot = { airlines: nextAirlines, agents, transactions };
 
+    setAirlines(nextAirlines);
+    const toastId = toast.loading("Saving opening balance & syncing Google Sheets…");
     setSaving(true);
-    setSavedFlash(true);
     setSyncError(null);
     savePendingRef.current += 1;
 
@@ -865,16 +868,17 @@ function AirlineLedgerApp() {
       lastSavedFingerprintRef.current = JSON.stringify(nextSnapshot);
       dirtyRef.current = false;
       conflictRef.current = false;
-      setAirlines(nextAirlines);
       setSyncError(null);
       setSheetSyncStatus(result?.syncPending ? "pending" : "synced");
       setSheetSyncError(result?.syncError ?? null);
-      setSavedFlash(false);
+      toast.success("Opening balance saved & Google Sheets synced", { id: toastId });
       return true;
     } catch (e) {
       const message = String(e instanceof Error ? e.message : e);
       console.error("Opening balance save failed", e);
+      setAirlines(previousAirlines);
       setSyncError(`Opening balance not saved: ${message}`);
+      toast.error(`Save failed: ${message}`, { id: toastId });
       dirtyRef.current = true;
       return false;
     } finally {
@@ -887,8 +891,33 @@ function AirlineLedgerApp() {
   const deleteTransactionAtomicFn = useServerFn(deleteAirlineTransactionAtomic);
 
   const saveRow = async (airlineId: string, row: any) => {
+    const tempId = row.id || `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const optimisticRow = {
+      ...row,
+      id: tempId,
+      airlineId,
+      date: row.date || new Date().toISOString().slice(0, 10),
+      createdAt: row.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const previousTransactions = transactions;
+    setTransactions((prev) => {
+      const list = prev[airlineId] ? [...prev[airlineId]] : [];
+      if (row.id) {
+        const idx = list.findIndex((r) => r.id === row.id);
+        if (idx >= 0) list[idx] = { ...list[idx], ...row };
+        else list.push(optimisticRow);
+      } else {
+        list.push(optimisticRow);
+      }
+      return { ...prev, [airlineId]: list };
+    });
+
+    const toastId = toast.loading("Saving to Supabase & syncing Google Sheets…");
     setSaving(true);
     setSyncError(null);
+
     try {
       const res = await saveTransactionAtomicFn({
         data: {
@@ -900,13 +929,9 @@ function AirlineLedgerApp() {
       if (res?.row) {
         setTransactions((prev) => {
           const list = prev[airlineId] ? [...prev[airlineId]] : [];
-          if (row.id) {
-            const idx = list.findIndex((r) => r.id === row.id);
-            if (idx >= 0) list[idx] = res.row;
-            else list.push(res.row);
-          } else {
-            list.push(res.row);
-          }
+          const idx = list.findIndex((r) => r.id === (row.id || tempId) || r.id === res.row.id);
+          if (idx >= 0) list[idx] = res.row;
+          else list.push(res.row);
           const next = { ...prev, [airlineId]: list };
           if (res?.revision) revisionRef.current = res.revision;
           lastSavedDataRef.current = {
@@ -919,14 +944,16 @@ function AirlineLedgerApp() {
           return next;
         });
       }
+      toast.success("Transaction saved & Google Sheets synced", { id: toastId });
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 3000);
-      setModal(null);
       return true;
     } catch (err: any) {
       console.error("Save airline transaction error:", err);
+      setTransactions(previousTransactions);
       const msg = err?.message || "Failed to save airline transaction.";
       setSyncError(msg);
+      toast.error(`Save failed: ${msg}`, { id: toastId });
       throw err;
     } finally {
       setSaving(false);
@@ -934,8 +961,17 @@ function AirlineLedgerApp() {
   };
 
   const deleteRow = async (airlineId: string, id: string) => {
+    const previousTransactions = transactions;
+    setTransactions((prev) => ({
+      ...prev,
+      [airlineId]: (prev[airlineId] || []).filter((r) => r.id !== id),
+    }));
+
+    const toastId = toast.loading("Deleting from Supabase & syncing Google Sheets…");
     setSaving(true);
     setSyncError(null);
+    setConfirmDelete(null);
+
     try {
       const res = await deleteTransactionAtomicFn({
         data: {
@@ -944,31 +980,23 @@ function AirlineLedgerApp() {
         },
       });
 
-      setTransactions((prev) => {
-        const next = {
-          ...prev,
-          [airlineId]: (prev[airlineId] || []).filter((r) => r.id !== id),
-        };
-        if (res?.revision) revisionRef.current = res.revision;
-        lastSavedDataRef.current = {
-          airlines: airlines.map((a: any) => ({ ...a })),
-          agents: [...agents],
-          transactions: next,
-        };
-        lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
-        dirtyRef.current = false;
-        return next;
-      });
+      if (res?.revision) revisionRef.current = res.revision;
+      lastSavedDataRef.current = {
+        airlines: airlines.map((a: any) => ({ ...a })),
+        agents: [...agents],
+        transactions: transactions,
+      };
+      dirtyRef.current = false;
+      toast.success("Transaction deleted & Google Sheets synced", { id: toastId });
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 3000);
-      setConfirmDelete(null);
-      setModal(null);
       return true;
     } catch (err: any) {
       console.error("Delete airline transaction error:", err);
+      setTransactions(previousTransactions);
       const msg = err?.message || "Failed to delete airline transaction.";
       setSyncError(msg);
-      alert(msg);
+      toast.error(`Delete failed: ${msg}`, { id: toastId });
       return false;
     } finally {
       setSaving(false);
@@ -1723,15 +1751,8 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     };
 
     setError("");
-    setSavingRecord(true);
-    try {
-      await onSave(modal.airlineId, payload);
-      onClose();
-    } catch (e: any) {
-      setError(e?.message || "Failed to save transaction record.");
-    } finally {
-      setSavingRecord(false);
-    }
+    onClose();
+    void onSave(modal.airlineId, payload);
   };
 
   const handleDelete = async () => {
@@ -1740,15 +1761,8 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       return;
     }
     setError("");
-    setDeletingRecord(true);
-    try {
-      await onDelete(modal.airlineId, modal.row.id);
-      onClose();
-    } catch (e: any) {
-      setError(e?.message || "Failed to delete transaction record.");
-    } finally {
-      setDeletingRecord(false);
-    }
+    onClose();
+    void onDelete(modal.airlineId, modal.row.id);
   };
 
   const handleOpeningBalanceSave = async () => {
@@ -1766,12 +1780,9 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     }
 
     setError("");
-    setSavingOpeningBalance(true);
-    try {
-      const saved = await onSaveOpeningBalance(modal.airlineId, date, amount, foreignAmount);
-      if (saved) onClose();
-    } finally {
-      setSavingOpeningBalance(false);
+    onClose();
+    if (onSaveOpeningBalance) {
+      void onSaveOpeningBalance(modal.airlineId, date, amount, foreignAmount);
     }
   };
 
@@ -2244,49 +2255,6 @@ function Dashboard({
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              minHeight: 34,
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1px solid var(--border)",
-              background: "var(--card)",
-              fontSize: 11,
-              color: sheetSyncStatus === "error" ? "var(--destructive)" : "var(--muted-foreground)",
-              whiteSpace: "nowrap",
-            }}
-            title={sheetSyncError || "Supabase is the source of truth. Google Sheet is an automatic read-only backup."}
-          >
-            {saving ? (
-              <>
-                <LoaderCircle size={14} className="animate-spin" />
-                Saving securely…
-              </>
-            ) : sheetSyncStatus === "pending" ? (
-              <>
-                <LoaderCircle size={14} className="animate-spin" />
-                Updating Sheet…
-              </>
-            ) : sheetSyncStatus === "error" ? (
-              <>
-                <AlertCircle size={14} />
-                Sheet backup retrying automatically
-              </>
-            ) : sheetSyncStatus === "not_configured" ? (
-              <>
-                <FileSpreadsheet size={14} />
-                Sheet backup not configured
-              </>
-            ) : (
-              <>
-                <FileSpreadsheet size={14} />
-                Auto-synced to Google Sheet
-              </>
-            )}
-          </div>
           <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
         </div>
         {syncError && (
