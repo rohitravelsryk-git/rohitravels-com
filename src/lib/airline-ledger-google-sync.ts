@@ -130,7 +130,7 @@ async function ensureAirlineTabs(token: string, airlines: Array<{ name: string }
   const needed = Array.from(new Set(airlines.map((a) => clean(a.name)))).filter((name) => !existing.has(name));
   if (!needed.length) return;
   await sheetsBatchUpdate(token, needed.map((title) => ({
-    addSheet: { properties: { title, gridProperties: { rowCount: 2000, columnCount: 11, frozenRowCount: 5 } } },
+    addSheet: { properties: { title, gridProperties: { rowCount: 2000, columnCount: 12, frozenRowCount: 5 } } },
   })));
 }
 
@@ -175,8 +175,8 @@ async function replaceAirlineTabs(
       [air.name, air.code || ""],
       ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date, "Entries", rows.length, "Current Balance", running],
       [],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In / Credit From", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      [air.opening_balance_date, "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
+      [air.opening_balance_date, "", "", "", "", 0, "", "", 0, 0, running, "OPENING BALANCE"],
     ];
     for (const r of rows as any[]) {
       const credit = Number(r.credit_from_id) || 0;
@@ -184,9 +184,11 @@ async function replaceAirlineTabs(
       const debitAmount = Number(r.debit_in_id);
       const isBalanceIncrease = txType === "top up" || txType === "cancel/refund" || txType === "refund";
       const balanceDelta = isBalanceIncrease && Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : credit;
-      const ledgerAmount = isBalanceIncrease ? balanceDelta : credit;
+      const displayedDebit = isBalanceIncrease ? balanceDelta : (Number.isFinite(debitAmount) && debitAmount > 0 ? debitAmount : "");
+      const displayedCredit = isBalanceIncrease ? "" : credit;
       const sales = isBalanceIncrease ? 0 : (Number(r.ticket_sales) || 0);
       const voids = Number(r.void_charges) || 0;
+      const profit = isBalanceIncrease ? 0 : sales - (credit > 0 ? credit : 0);
       running += isBalanceIncrease ? balanceDelta : -credit;
       const txRoe = Number(r.roe) || roeVal;
       const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
@@ -196,7 +198,7 @@ async function replaceAirlineTabs(
 
       values.push([
         r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-        sales, ledgerAmount, voids, sales - ledgerAmount, running,
+        sales, displayedDebit, displayedCredit, voids, profit, running,
         [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
       ]);
     }
