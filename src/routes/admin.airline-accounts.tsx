@@ -112,9 +112,20 @@ function classifyTxRow(r: any): { isIncrease: boolean; isTopUp: boolean; isRefun
 }
 
 function computeLedgerRows(rows: any[], airline: any) {
+  // Sort ledger transactions chronologically by date, breaking ties with sort_order
+  const sortedRows = [...(rows || [])].sort((a, b) => {
+    const da = String(a?.date || "").trim();
+    const db = String(b?.date || "").trim();
+    const dateComp = da.localeCompare(db);
+    if (dateComp !== 0) return dateComp;
+    const soA = typeof a?.sort_order === "number" ? a.sort_order : 0;
+    const soB = typeof b?.sort_order === "number" ? b.sort_order : 0;
+    return soA - soB;
+  });
+
   const isServiceOnly = /other\s*service\s*providers/i.test(airline?.name);
   if (isServiceOnly) {
-    return rows.map((r) => {
+    return sortedRows.map((r) => {
       const credit = parseCleanNum(r.creditFromId);
       const profit = parseCleanNum(r.ticketSales) - credit;
       const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
@@ -137,7 +148,7 @@ function computeLedgerRows(rows: any[], airline: any) {
   const defaultRoe = parseCleanNum(airline?.roe) || 1;
   let runningForeign = parseCleanNum(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
 
-  return rows.map((r) => {
+  return sortedRows.map((r) => {
     const { isIncrease, isTopUp, isRefund, resolvedType } = classifyTxRow(r);
     const debitVal = parseCleanNum(r.debitInId);
     const creditVal = parseCleanNum(r.creditFromId);

@@ -133,7 +133,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     [airlinesRes, agentsRes, txRes, revisionRes] = await Promise.all([
       supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
       supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
-      supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
       supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
     ]);
     if (before.error || revisionRes.error) break; // surfaced by the error check below
@@ -153,8 +153,16 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     const isXY = code === "XY" || /flynas/i.test(name);
     const isF3 = code === "F3" || /flyadeal/i.test(name);
 
-    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
-    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1.0;
+    const isFZ = code === "FZ" || /flydubai/i.test(name);
+    const isOV = code === "OV" || /salam\s*air/i.test(name);
+    const isJ9 = code === "J9" || /jazeera/i.test(name);
+
+    // A saved account currency always wins. For older airline rows with no currency
+    // set, use the carrier defaults already used by the portal's foreign top-up flow.
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD"
+      : isFZ ? "AED" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
+    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00
+      : isOV ? 72.00 : isJ9 ? 900.00 : 1.0;
 
     const currency = a.currency || defaultCurrency;
     const roe = Number(a.roe) || defaultRoe;
@@ -300,7 +308,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       const [checkAirlines, checkAgents, checkTransactions, checkMeta] = await Promise.all([
         supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
         supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order", { ascending: true }),
-        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
         supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
       ]);
 
@@ -354,7 +362,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     const [airlinesRes, agentsRes, txRes] = await Promise.all([
       supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
       supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order", { ascending: true }),
-      supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
     ]);
     if (airlinesRes.error || agentsRes.error || txRes.error) {
       const message =
@@ -666,7 +674,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
     try {
       const [airlinesRes, txRes] = await Promise.all([
         supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
       ]);
 
       const allAirlines = airlinesRes.data || [];
@@ -776,7 +784,7 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
     try {
       const [airlinesRes, txRes] = await Promise.all([
         supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
       ]);
 
       const allAirlines = airlinesRes.data || [];

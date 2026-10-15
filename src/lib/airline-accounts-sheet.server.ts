@@ -3,7 +3,7 @@ import { airlineIataCode, airlineLogoUrl, airlineSheetLogoUrl } from "@/lib/airl
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), per-airline statement tabs, and
-// "_DATA" (hidden raw records for recovery). No SNAP tabs are ever created.
+// "_DATA" (hidden raw records for recovery and FX audit). No SNAP tabs are ever created.
 // One-way: database -> sheet. The database stays the source of truth.
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
@@ -102,12 +102,22 @@ async function ensureSpreadsheet(): Promise<string> {
   // styling to the two visible tabs. Idempotent — safe to run on every sync.
   const freshMeta = missing.length ? await gw(`/spreadsheets/${id}?fields=sheets.properties`) : meta;
   const sheetIds = (freshMeta.sheets ?? []).map((x: any) => x.properties);
+  const visibilityRequests = sheetIds
+    .filter((p: any) => p.title === "_DATA" && !p.hidden)
+    .map((p: any) => ({
+      updateSheetProperties: {
+        properties: { sheetId: p.sheetId, hidden: true },
+        fields: "hidden",
+      },
+    }));
   await gw(`/spreadsheets/${id}:batchUpdate`, {
     method: "POST",
     body: JSON.stringify({
-      requests: sheetIds
-        .filter((p: any) => p.title !== "_DATA")
-        .flatMap((p: any) => [
+      requests: [
+        ...visibilityRequests,
+        ...sheetIds
+          .filter((p: any) => p.title !== "_DATA")
+          .flatMap((p: any) => [
           {
             repeatCell: {
               range: { sheetId: p.sheetId, startRowIndex: 0, endRowIndex: 1 },
@@ -122,7 +132,8 @@ async function ensureSpreadsheet(): Promise<string> {
               fields: "userEnteredFormat(backgroundColor,textFormat)",
             },
           },
-        ]),
+          ]),
+      ],
     }),
   });
   return id;
@@ -435,6 +446,14 @@ async function oldFormatAirlineBalanceSheetUnused(id: string, sheetId: number, a
   await gw(`/spreadsheets/${id}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests }) });
 }
 
+function sortTransactionsByDate<T extends { date?: unknown; sort_order?: unknown }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
+    const dateOrder = s(a.date).localeCompare(s(b.date));
+    if (dateOrder) return dateOrder;
+    return n(a.sort_order) - n(b.sort_order);
+  });
+}
+
 function formatSheetDate(val: unknown): string {
   if (!val) return "";
   const s = String(val).trim();
@@ -452,7 +471,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const db = await getAdmin();
   const [a, t] = await Promise.all([
     db.from("airline_ledger_airlines").select("*").order("sort_order"),
-    db.from("airline_ledger_transactions").select("*").order("sort_order"),
+    db.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
   ]);
   if (a.error || t.error) throw new Error(a.error?.message || t.error?.message);
   const airlines = a.data ?? [];
@@ -471,15 +490,18 @@ export async function syncAirlineAccountsSheet(revision: number) {
   for (let idx = 0; idx < (airlines as any[]).length; idx++) {
     const air = (airlines as any[])[idx];
     const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
-    const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
+    const rows = sortTransactionsByDate((txs as any[]).filter((r) => r.airline_id === air.id));
     let running = n(air.opening_balance);
 
     const isG9 = air.code === "G9" || /air\s*arabia/i.test(air.name);
     const code = (isG9 && (!air.code || air.code === "--")) ? "G9" : air.code;
-    const isXY = air.code === "XY" || /flynas/i.test(air.name);
-    const isF3 = air.code === "F3" || /flyadeal/i.test(air.name);
-    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
-    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
+    const isXY = code === "XY" || /flynas/i.test(air.name);
+    const isF3 = code === "F3" || /flyadeal/i.test(air.name);
+    const isFZ = code === "FZ" || /flydubai/i.test(air.name);
+    const isOV = code === "OV" || /salam\s*air/i.test(air.name);
+    const isJ9 = code === "J9" || /jazeera/i.test(air.name);
+    const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
+    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
     const curr = (air.currency && air.currency.trim()) || defaultCurrency;
     const roeVal = n(air.roe) || defaultRoe;
     const isForeign = curr !== "PKR";
@@ -528,11 +550,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
   balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastNonServiceRow})`]);
 
   const data: unknown[][] = [
-    ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER", "TRANSACTION_TYPE"],
-    ...(airlines as any[]).map((x) => ["airline", x.id, "", x.name, x.code, n(x.opening_balance), s(x.opening_balance_date), "", "", "", "", "", "", x.sort_order]),
+    ["TYPE", "ID", "AIRLINE_ID", "DATE/NAME", "AGENT/CODE", "PAX/OPENING_BALANCE_PKR", "SECTOR/OPENING_DATE", "PNR", "TICKET_SALES_PKR", "DEBIT_IN_ID_PKR", "CREDIT_FROM_ID_PKR", "PAX_CONTACT", "VOID_CHARGES_PKR", "SORT_ORDER", "TRANSACTION_TYPE", "CURRENCY", "ROE_PKR_PER_FX", "FOREIGN_AMOUNT", "OPENING_BALANCE_FX", "RECEIVED_VIA", "RECEIVED_VIA_ACCOUNT_ID"],
+    ...(airlines as any[]).map((x) => ["airline", x.id, "", x.name, x.code, n(x.opening_balance), s(x.opening_balance_date), "", "", "", "", "", "", x.sort_order, "", x.currency ?? "", x.roe ?? "", "", x.opening_balance_foreign ?? "", "", ""]),
     ...(txs as any[]).map((r) => {
       const { resolvedType } = classifyAirlineRow(r);
-      return ["transaction", r.id, r.airline_id, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), s(r.ticket_sales), s(r.debit_in_id), s(r.credit_from_id), s(r.pax_contact), s(r.void_charges), r.sort_order, resolvedType];
+      return ["transaction", r.id, r.airline_id, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), s(r.ticket_sales), s(r.debit_in_id), s(r.credit_from_id), s(r.pax_contact), s(r.void_charges), r.sort_order, resolvedType, r.currency ?? "", r.roe ?? "", r.foreign_amount ?? "", "", r.received_via ?? "", r.received_via_account_id ?? ""];
     }),
     [],
     ["META", `revision ${revision}`, syncedAt],
@@ -613,12 +635,21 @@ export async function syncAirlineAccountsSheet(revision: number) {
       usedNames.add(tabName);
     }
 
-    const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
+    const rows = sortTransactionsByDate((txs as any[]).filter((r) => r.airline_id === air.id));
     const op = n(air.opening_balance);
     let running = op;
-    const isForeign = air.currency && air.currency !== "PKR";
-    const curr = air.currency || "PKR";
-    const roeVal = n(air.roe) || 1;
+    const code = air.code || "";
+    const isG9 = code === "G9" || /air\s*arabia/i.test(air.name);
+    const isXY = code === "XY" || /flynas/i.test(air.name);
+    const isF3 = code === "F3" || /flyadeal/i.test(air.name);
+    const isFZ = code === "FZ" || /flydubai/i.test(air.name);
+    const isOV = code === "OV" || /salam\s*air/i.test(air.name);
+    const isJ9 = code === "J9" || /jazeera/i.test(air.name);
+    const defaultCurrency = isG9 || isFZ ? "AED" : isXY ? "SAR" : isF3 ? "USD" : isOV ? "OMR" : isJ9 ? "KWD" : "PKR";
+    const defaultRoe = isG9 || isFZ ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : isOV ? 72.00 : isJ9 ? 900.00 : 1;
+    const curr = air.currency || defaultCurrency;
+    const isForeign = curr !== "PKR";
+    const roeVal = n(air.roe) || defaultRoe;
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     const opForeign = runningForeign;
 
@@ -693,7 +724,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
       specific.push([
         formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-        displayedSales, displayedDebit, displayedCredit, voids, profit, running, remarks,
+        displayedSales, displayedDebit, displayedCredit, voids, profit, running,
+        isForeign ? txForeignCr : "", isForeign ? runningForeign : "", isForeign ? curr : "", isForeign ? txRoe : "", remarks,
       ]);
     }
 
@@ -710,15 +742,15 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
 
     valuesPayload.push({
-      range: `${quoteSheet(tabName)}!A1:L${Math.max(20, specific.length)}`,
+      range: `${quoteSheet(tabName)}!A1:P${Math.max(20, specific.length)}`,
       values: specific,
     });
     formatTasks.push({
       sheetId,
       title: tabName,
-      columnCount: 12,
+      columnCount: 16,
       dataEndRow: specific.length,
-      numericColumnIndexes: [5, 6, 7, 8, 9, 10],
+      numericColumnIndexes: [5, 6, 7, 8, 9, 10, 11, 12, 14],
       dateColumnIndexes: [0],
       isServiceOnly: false,
     });
