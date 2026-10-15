@@ -2169,53 +2169,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         </div>
 
-        {!/other\s*service\s*providers/i.test(airline?.name) && modal.mode === "add" && (
-          <div style={{
-            marginTop: 14,
-            padding: "9px 13px",
-            borderRadius: 10,
-            border: "1px dashed var(--border)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: "rgba(217, 119, 87, 0.04)",
-            fontSize: 12,
-            color: "var(--muted-foreground)",
-            flexWrap: "wrap",
-            gap: 8,
-          }}>
-            <span>Opening balance is configured once per airline account:</span>
-            <button
-              type="button"
-              style={{
-                border: "1px solid var(--border)",
-                background: "var(--card)",
-                borderRadius: 6,
-                color: "var(--foreground)",
-                fontWeight: 600,
-                cursor: "pointer",
-                padding: "5px 10px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                fontSize: 12,
-              }}
-              onClick={() => {
-                setRecordType("openingBalance");
-                setError("");
-                setForm((f: any) => ({
-                  ...f,
-                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
-                  openingBalance: Number(airline?.openingBalance ?? 0),
-                  openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
-                }));
-              }}
-              disabled={savingRecord || deletingRecord || savingOpeningBalance}
-            >
-              <Building2 size={13} color="var(--accent-clay, #d97757)" /> Set Opening Balance
-            </button>
-          </div>
-        )}
+        
 
         {error && (<div style={styles.errorNote}><AlertCircle size={14} /> {error}</div>)}
 

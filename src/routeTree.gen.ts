@@ -59,6 +59,7 @@ import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
+import { Route as AgentResetPasswordRouteImport } from './routes/agent.reset-password'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
 import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
 import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
@@ -348,6 +349,11 @@ const AgentRegisterRoute = AgentRegisterRouteImport.update({
   path: '/agent/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentResetPasswordRoute = AgentResetPasswordRouteImport.update({
+  id: '/agent/reset-password',
+  path: '/agent/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreviewIndexRoute = PreviewIndexRouteImport.update({
   id: '/preview/',
   path: '/preview/',
@@ -594,6 +600,7 @@ export interface FileRoutesByFullPath {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/agent/reset-password': typeof AgentResetPasswordRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -681,6 +688,7 @@ export interface FileRoutesByTo {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/agent/reset-password': typeof AgentResetPasswordRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -771,6 +779,7 @@ export interface FileRoutesById {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/agent/reset-password': typeof AgentResetPasswordRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -861,6 +870,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/agent/reset-password'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/agent/reset-password'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -1037,6 +1048,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/agent/reset-password'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -1101,6 +1113,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
+  AgentResetPasswordRoute: typeof AgentResetPasswordRoute
   PreviewAuroraRoute: typeof PreviewAuroraRoute
   PreviewBentoRoute: typeof PreviewBentoRoute
   PreviewBookingsConceptsRoute: typeof PreviewBookingsConceptsRoute
@@ -1477,6 +1490,13 @@ declare module '@tanstack/react-router' {
       path: '/agent/register'
       fullPath: '/agent/register'
       preLoaderRoute: typeof AgentRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent/reset-password': {
+      id: '/agent/reset-password'
+      path: '/agent/reset-password'
+      fullPath: '/agent/reset-password'
+      preLoaderRoute: typeof AgentResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/': {
@@ -1874,6 +1894,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
+  AgentResetPasswordRoute: AgentResetPasswordRoute,
   PreviewAuroraRoute: PreviewAuroraRoute,
   PreviewBentoRoute: PreviewBentoRoute,
   PreviewBookingsConceptsRoute: PreviewBookingsConceptsRoute,
