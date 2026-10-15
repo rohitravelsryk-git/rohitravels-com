@@ -1282,6 +1282,7 @@ function AirlineLedgerApp() {
                 setSearch={setSearch}
                 agents={agents}
                 onAdd={() => openAdd(activeTab)}
+                onEditOpeningBalance={() => setModal({ mode: "add", airlineId: activeTab, row: EMPTY_ROW(), recordType: "openingBalance" })}
                 onEdit={(row: any) => openEdit(activeTab, row)}
                 onDelete={(id: string) => setConfirmDelete({ airlineId: activeTab, id })}
                 onExportCSV={() => downloadCSV(`${activeAirline?.code || "airline"}-ledger.csv`, rowsToCSV(filteredRows))}
@@ -1459,7 +1460,7 @@ function TabStub({ active, onClick, code, label, balance, foreignBalance, isFore
 }
 
 function LedgerTable({
-  airline, rows, rawCount, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
+  airline, rows, rawCount, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onEditOpeningBalance,
 }: any) {
   const [ledgerPage, setLedgerPage] = useState(1);
   useEffect(() => {
@@ -1478,7 +1479,7 @@ function LedgerTable({
           {!/other\s*service\s*providers/i.test(airline?.name) && (
           <div
             style={{ ...styles.openingBalanceBox, cursor: "pointer" }}
-            onClick={() => setModal({ mode: "add", airlineId: activeTab, row: EMPTY_ROW(), recordType: "openingBalance" })}
+            onClick={() => onEditOpeningBalance?.()}
             title="Click to edit Opening Balance"
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1555,7 +1556,7 @@ function LedgerTable({
                   <button
                     type="button"
                     style={{ ...styles.iconBtn, width: 24, height: 24 }}
-                    onClick={() => setModal({ mode: "add", airlineId: activeTab, row: EMPTY_ROW(), recordType: "openingBalance" })}
+                    onClick={() => onEditOpeningBalance?.()}
                     title="Edit opening balance"
                   >
                     <Pencil size={12} />
@@ -2327,7 +2328,7 @@ function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
   syncError, sheetSyncStatus, sheetSyncError,
-  onEditAirline, onRemoveAirline, saving, onUpdateRoe,
+  onEditAirline, onRemoveAirline, saving, onUpdateRoe, onOpenCurrencySettings,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
