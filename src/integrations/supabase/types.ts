@@ -430,6 +430,9 @@ export type Database = {
           opening_balance: number
           opening_balance_date: string
           sort_order: number
+          currency?: string | null
+          roe?: number | null
+          opening_balance_foreign?: number | null
         }
         Insert: {
           code?: string
@@ -439,6 +442,9 @@ export type Database = {
           opening_balance?: number
           opening_balance_date?: string
           sort_order?: number
+          currency?: string | null
+          roe?: number | null
+          opening_balance_foreign?: number | null
         }
         Update: {
           code?: string
@@ -448,6 +454,9 @@ export type Database = {
           opening_balance?: number
           opening_balance_date?: string
           sort_order?: number
+          currency?: string | null
+          roe?: number | null
+          opening_balance_foreign?: number | null
         }
         Relationships: []
       }
@@ -509,6 +518,12 @@ export type Database = {
           sort_order: number
           ticket_sales: number | null
           void_charges: number | null
+          currency?: string | null
+          roe?: number | null
+          foreign_amount?: number | null
+          transaction_type?: string | null
+          received_via?: string | null
+          received_via_account_id?: string | null
         }
         Insert: {
           agent_name?: string | null
@@ -525,6 +540,12 @@ export type Database = {
           sort_order?: number
           ticket_sales?: number | null
           void_charges?: number | null
+          currency?: string | null
+          roe?: number | null
+          foreign_amount?: number | null
+          transaction_type?: string | null
+          received_via?: string | null
+          received_via_account_id?: string | null
         }
         Update: {
           agent_name?: string | null
@@ -541,6 +562,12 @@ export type Database = {
           sort_order?: number
           ticket_sales?: number | null
           void_charges?: number | null
+          currency?: string | null
+          roe?: number | null
+          foreign_amount?: number | null
+          transaction_type?: string | null
+          received_via?: string | null
+          received_via_account_id?: string | null
         }
         Relationships: []
       }
