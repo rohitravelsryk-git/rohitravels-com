@@ -153,20 +153,38 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     const isXY = code === "XY" || /flynas/i.test(name);
     const isF3 = code === "F3" || /flyadeal/i.test(name);
 
-    // Only Air Arabia (G9 - AED), Flynas (XY - SAR), and Flyadeal (F3 - USD) trade in foreign currency.
-    // All other airlines are domestic / PKR.
+    // Carrier foreign currency defaults apply only when an account has not been explicitly configured
     const isCarrierForeign = isG9 || isXY || isF3;
     const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
     const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1.0;
 
     const rawCurr = (a.currency && String(a.currency).trim()) || "";
-    const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
     const rawRoe = Number(a.roe);
-    const roe = (rawRoe > 1) ? rawRoe : defaultRoe;
+    const hasOpeningForeign = a.opening_balance_foreign !== null && a.opening_balance_foreign !== undefined;
+    const openingForeignVal = hasOpeningForeign ? Number(a.opening_balance_foreign) : null;
+
+    let currency = "PKR";
+    let roe = 1;
+    let isForeign = false;
+
+    if (rawCurr && rawCurr !== "PKR") {
+      currency = rawCurr;
+      roe = rawRoe > 0 ? rawRoe : defaultRoe;
+      isForeign = true;
+    } else if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
+      currency = "PKR";
+      roe = 1;
+      isForeign = false;
+    } else if (isCarrierForeign) {
+      currency = defaultCurrency;
+      roe = rawRoe > 1 ? rawRoe : defaultRoe;
+      isForeign = true;
+    }
+
     const openingBalance = Number(a.opening_balance) || 0;
-    const openingBalanceForeign = a.opening_balance_foreign !== null && a.opening_balance_foreign !== undefined
-      ? Number(a.opening_balance_foreign)
-      : (currency !== "PKR" ? (openingBalance ? openingBalance / roe : (isG9 ? 215.77 : isXY ? 3775.52 : isF3 ? 120.67 : 0)) : null);
+    const openingBalanceForeign = isForeign
+      ? (openingForeignVal !== null && openingForeignVal !== 0 ? openingForeignVal : (openingBalance ? openingBalance / roe : (isG9 ? 215.77 : isXY ? 3775.52 : isF3 ? 120.67 : 0)))
+      : (openingForeignVal === 0 ? 0 : null);
 
     return {
       id: a.id,

@@ -501,11 +501,26 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
     const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
     const rawCurr = (air.currency && air.currency.trim()) || "";
-    // If currency is blank or defaulted to PKR on a known foreign carrier, use carrier foreign currency
-    const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
     const rawRoe = n(air.roe);
-    const roeVal = (rawRoe > 1) ? rawRoe : defaultRoe;
-    const isForeign = curr !== "PKR";
+    const openingForeignVal = air.opening_balance_foreign !== null && air.opening_balance_foreign !== undefined ? n(air.opening_balance_foreign) : null;
+
+    let curr = "PKR";
+    let roeVal = 1;
+    let isForeign = false;
+
+    if (rawCurr && rawCurr !== "PKR") {
+      curr = rawCurr;
+      roeVal = rawRoe > 0 ? rawRoe : defaultRoe;
+      isForeign = true;
+    } else if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
+      curr = "PKR";
+      roeVal = 1;
+      isForeign = false;
+    } else if (isCarrierForeign) {
+      curr = defaultCurrency;
+      roeVal = rawRoe > 1 ? rawRoe : defaultRoe;
+      isForeign = true;
+    }
 
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
@@ -647,10 +662,26 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
     const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
     const rawCurr = (air.currency && air.currency.trim()) || "";
-    const curr = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
     const rawRoe = n(air.roe);
-    const roeVal = (rawRoe > 1) ? rawRoe : defaultRoe;
-    const isForeign = curr !== "PKR";
+    const openingForeignVal = air.opening_balance_foreign !== null && air.opening_balance_foreign !== undefined ? n(air.opening_balance_foreign) : null;
+
+    let curr = "PKR";
+    let roeVal = 1;
+    let isForeign = false;
+
+    if (rawCurr && rawCurr !== "PKR") {
+      curr = rawCurr;
+      roeVal = rawRoe > 0 ? rawRoe : defaultRoe;
+      isForeign = true;
+    } else if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
+      curr = "PKR";
+      roeVal = 1;
+      isForeign = false;
+    } else if (isCarrierForeign) {
+      curr = defaultCurrency;
+      roeVal = rawRoe > 1 ? rawRoe : defaultRoe;
+      isForeign = true;
+    }
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     const opForeign = runningForeign;
 

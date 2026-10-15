@@ -5,7 +5,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Home, Phone,
+  Home, Phone, Settings,
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
   AlertCircle, FileSpreadsheet, LoaderCircle, Save, FileText, Table, ChevronDown, LogOut,
@@ -90,7 +90,7 @@ function formatDisplayDate(val: any): string {
   return s;
 }
 
-function resolveCarrierCurrency(code?: string, name?: string, savedCurrency?: string, savedRoe?: number) {
+function resolveCarrierCurrency(code?: string, name?: string, savedCurrency?: string, savedRoe?: number, openingBalanceForeign?: number | null) {
   const cd = (code || "").toUpperCase();
   const nm = name || "";
   const isG9 = cd === "G9" || /air\s*arabia/i.test(nm);
@@ -100,14 +100,19 @@ function resolveCarrierCurrency(code?: string, name?: string, savedCurrency?: st
 
   const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
   const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
-
   const rawCurr = (savedCurrency && String(savedCurrency).trim()) || "";
-  const currency = (rawCurr && rawCurr !== "PKR") ? rawCurr : (isCarrierForeign ? defaultCurrency : "PKR");
   const rawRoe = Number(savedRoe);
-  const roe = (rawRoe > 1) ? rawRoe : defaultRoe;
-  const isForeign = currency !== "PKR";
 
-  return { currency, roe, isForeign };
+  if (rawCurr && rawCurr !== "PKR") {
+    return { currency: rawCurr, roe: rawRoe > 0 ? rawRoe : defaultRoe, isForeign: true };
+  }
+  if (rawCurr === "PKR" && (!isCarrierForeign || openingBalanceForeign === 0 || rawRoe === 1)) {
+    return { currency: "PKR", roe: 1, isForeign: false };
+  }
+  if (isCarrierForeign) {
+    return { currency: defaultCurrency, roe: rawRoe > 1 ? rawRoe : defaultRoe, isForeign: true };
+  }
+  return { currency: "PKR", roe: 1, isForeign: false };
 }
 
 function parseCleanNum(v: unknown): number {
@@ -164,7 +169,7 @@ function computeLedgerRows(rows: any[], airline: any) {
     });
   }
   let running = parseCleanNum(airline?.openingBalance);
-  const resolved = resolveCarrierCurrency(airline?.code, airline?.name, airline?.currency, airline?.roe);
+  const resolved = resolveCarrierCurrency(airline?.code, airline?.name, airline?.currency, airline?.roe, airline?.openingBalanceForeign);
   const isForeign = resolved.isForeign;
   const defaultRoe = resolved.roe;
   const airlineCurrency = resolved.currency;
@@ -500,6 +505,7 @@ function AirlineLedgerApp() {
   const [modal, setModal] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [addAirlineOpen, setAddAirlineOpen] = useState(false);
+  const [currencySettingsAirline, setCurrencySettingsAirline] = useState<any>(null);
   const [newAirline, setNewAirline] = useState<any>({ name: "", code: "", currency: "PKR", roe: 1, openingBalance: 0, openingBalanceForeign: "" });
   const [search, setSearch] = useState("");
   const [dashboardScope, setDashboardScope] = useState("all");
@@ -656,6 +662,9 @@ function AirlineLedgerApp() {
         code: a.code,
         openingBalance: Number(a.openingBalance) || 0,
         openingBalanceDate: a.openingBalanceDate ?? "",
+        currency: a.currency ?? "PKR",
+        roe: Number(a.roe) || 1,
+        openingBalanceForeign: a.openingBalanceForeign ?? null,
       }))
       .sort((a: any, b: any) => a.id.localeCompare(b.id));
     const previousAirlineShape = (previous.airlines ?? [])
@@ -665,6 +674,9 @@ function AirlineLedgerApp() {
         code: a.code,
         openingBalance: Number(a.openingBalance) || 0,
         openingBalanceDate: a.openingBalanceDate ?? "",
+        currency: a.currency ?? "PKR",
+        roe: Number(a.roe) || 1,
+        openingBalanceForeign: a.openingBalanceForeign ?? null,
       }))
       .sort((a: any, b: any) => a.id.localeCompare(b.id));
     const orderOnlyChange =
@@ -838,7 +850,7 @@ function AirlineLedgerApp() {
   const rawActiveAirline = airlines.find((a) => a.id === activeTab);
   const activeAirline = useMemo(() => {
     if (!rawActiveAirline) return undefined;
-    const resolved = resolveCarrierCurrency(rawActiveAirline.code, rawActiveAirline.name, rawActiveAirline.currency, rawActiveAirline.roe);
+    const resolved = resolveCarrierCurrency(rawActiveAirline.code, rawActiveAirline.name, rawActiveAirline.currency, rawActiveAirline.roe, rawActiveAirline.openingBalanceForeign);
     return {
       ...rawActiveAirline,
       currency: resolved.currency,
@@ -1107,7 +1119,7 @@ function AirlineLedgerApp() {
       const totalSales = list.reduce((s, r) => s + (Number(r.ticketSales) || 0), 0);
       const totalVoid = list.reduce((s, r) => s + (Number(r.voidCharges) || 0), 0);
       const currentBalance = list.length ? list[list.length - 1].balance : (Number(a.openingBalance) || 0);
-      const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe);
+      const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe, a.openingBalanceForeign);
       const isForeign = resolved.isForeign;
       const currency = resolved.currency;
       const activeRoe = resolved.roe;
@@ -1250,6 +1262,10 @@ function AirlineLedgerApp() {
                 sheetSyncError={sheetSyncError}
                 onEditAirline={setActiveTab}
                 onUpdateRoe={updateAirlineRoe}
+                onOpenCurrencySettings={(airlineId: string) => {
+                  const airline = perAirlineSummary.find((a: any) => a.id === airlineId);
+                  if (airline) setCurrencySettingsAirline(airline);
+                }}
                 onRemoveAirline={removeAirline}
                 saving={saving}
               />
@@ -1310,6 +1326,23 @@ function AirlineLedgerApp() {
         {addAirlineOpen && (
           <AddAirlineModal value={newAirline} setValue={setNewAirline} onClose={() => setAddAirlineOpen(false)} onSave={addAirline} />
         )}
+        {currencySettingsAirline && (
+          <AirlineCurrencySettingsModal
+            airline={currencySettingsAirline}
+            onClose={() => setCurrencySettingsAirline(null)}
+            onSave={(settings: any) => {
+              setAirlines((prev) => prev.map((a) => a.id === currencySettingsAirline.id ? {
+                ...a,
+                currency: settings.currency,
+                roe: settings.roe,
+                openingBalanceForeign: settings.openingBalanceForeign,
+                openingBalance: settings.openingBalance,
+              } : a));
+              setCurrencySettingsAirline(null);
+              toast.success("Airline currency settings saved");
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -1348,7 +1381,7 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
         const rows = transactions?.[a.id] ?? [];
         const computed = computeLedgerRows(rows, a);
         const currentBalance = computed.length ? computed[computed.length - 1].balance : (Number(a.openingBalance) || 0);
-        const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe);
+        const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe, a.openingBalanceForeign);
         const isForeign = resolved.isForeign;
         const currency = resolved.currency;
         const activeRoe = resolved.roe;
@@ -2448,6 +2481,7 @@ function Dashboard({
                   </td>
                   <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                     <button style={styles.ghostBtnSm} onClick={() => onEditAirline(a.id)}>Open ledger</button>
+                    <button style={styles.iconBtn} onClick={() => onOpenCurrencySettings(a.id)} title="Currency & ROE settings" aria-label={`Currency and ROE settings for ${a.name}`}><Settings size={14} /></button>
                     <button style={{ ...styles.iconBtn, color: a.count > 0 ? "var(--muted-foreground)" : "var(--error)", opacity: a.count > 0 ? 0.45 : 1, cursor: a.count > 0 ? "not-allowed" : "pointer" }} onClick={() => a.count === 0 && setRemoveConfirm(a)} disabled={a.count > 0} title={a.count > 0 ? "Cannot delete an account with financial transactions" : "Remove empty airline account"}><Trash2 size={14} /></button>
                   </td>
                 </tr>
@@ -2646,6 +2680,15 @@ function AddAirlineModal({ value, setValue, onClose, onSave }: any) {
                     </button>
                   ))}
                 </div>
+                {value.currency === "OTHER" && (
+                  <input
+                    style={{ ...styles.input, marginTop: 8 }}
+                    placeholder="Currency code (e.g. KWD)"
+                    maxLength={8}
+                    value={value.customCurrency || ""}
+                    onChange={(e) => setValue((v: any) => ({ ...v, customCurrency: e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) }))}
+                  />
+                )}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -2685,6 +2728,67 @@ function AddAirlineModal({ value, setValue, onClose, onSave }: any) {
         <div style={styles.modalFooter}>
           <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>
           <button style={styles.primaryBtn} onClick={onSave}><Plus size={15} /> Add airline</button>
+        </div>
+      </div>
+    </Overlay>
+  );
+}
+
+function AirlineCurrencySettingsModal({ airline, onClose, onSave }: any) {
+  const [currencyMode, setCurrencyMode] = useState(airline.isForeign ? "foreign" : "pkr");
+  const [currency, setCurrency] = useState(airline.isForeign ? (["AED", "SAR", "USD"].includes(airline.currency) ? airline.currency : "OTHER") : "AED");
+  const [roe, setRoe] = useState(String(airline.roe || 1));
+  const [openingForeign, setOpeningForeign] = useState(airline.openingBalanceForeign == null ? "" : String(airline.openingBalanceForeign));
+  const [customCurrency, setCustomCurrency] = useState(airline.currency && !["AED", "SAR", "USD", "PKR"].includes(airline.currency) ? airline.currency : "");
+
+  const save = () => {
+    if (currencyMode === "pkr") {
+      onSave({ currency: "PKR", roe: 1, openingBalanceForeign: 0, openingBalance: Number(airline.openingBalance) || 0 });
+      return;
+    }
+    const finalCurrency = currency === "OTHER" ? customCurrency.trim().toUpperCase() : currency;
+    const rate = Number(roe);
+    if (!finalCurrency || finalCurrency === "OTHER" || !Number.isFinite(rate) || rate <= 0) {
+      toast.error("Enter a currency code and a positive ROE");
+      return;
+    }
+    const foreignBalance = openingForeign === "" ? null : Number(openingForeign);
+    onSave({
+      currency: finalCurrency,
+      roe: rate,
+      openingBalanceForeign: foreignBalance,
+      openingBalance: foreignBalance == null ? (Number(airline.openingBalance) || 0) : Math.round(foreignBalance * rate),
+    });
+  };
+
+  return (
+    <Overlay onClose={onClose}>
+      <div style={{ ...styles.modal, maxWidth: 460 }}>
+        <div style={styles.modalHeader}>
+          <h3 style={styles.modalTitle}>Currency &amp; ROE Settings</h3>
+          <button style={styles.iconBtn} onClick={onClose}><X size={18} /></button>
+        </div>
+        <p style={{ margin: "0 0 14px", color: "var(--muted-foreground)", fontSize: 13 }}>{airline.name}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+          <button type="button" style={{ ...styles.recordTypeBtn, ...(currencyMode === "pkr" ? styles.recordTypeBtnActive : {}) }} onClick={() => setCurrencyMode("pkr")}>PKR (Standard)</button>
+          <button type="button" style={{ ...styles.recordTypeBtn, ...(currencyMode === "foreign" ? styles.recordTypeBtnActive : {}) }} onClick={() => setCurrencyMode("foreign")}>Foreign Currency</button>
+        </div>
+        {currencyMode === "foreign" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: 12, borderRadius: 8, background: "rgba(217, 119, 87, 0.06)", border: "1px solid var(--accent-clay, #d97757)" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {["AED", "SAR", "USD", "OTHER"].map((code) => <button key={code} type="button" style={{ ...styles.recordTypeBtn, ...(currency === code ? styles.recordTypeBtnActive : {}), padding: "6px 10px" }} onClick={() => { setCurrency(code); if (["AED", "SAR", "USD"].includes(code)) setRoe(String(code === "AED" ? 77.30 : code === "SAR" ? 75.50 : 284)); }}>{code}</button>)}
+            </div>
+            {currency === "OTHER" && <div style={styles.field}><label style={styles.label}>Currency code</label><input style={styles.input} maxLength={8} placeholder="e.g. KWD" value={customCurrency} onChange={(e) => setCustomCurrency(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8))} /></div>}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={styles.field}><label style={styles.label}>Active ROE (PKR per {currency === "OTHER" ? customCurrency || "FX" : currency})</label><input type="number" step="0.01" min="0.01" style={styles.input} value={roe} onChange={(e) => setRoe(e.target.value)} /></div>
+              <div style={styles.field}><label style={styles.label}>Opening balance ({currency === "OTHER" ? customCurrency || "FX" : currency})</label><input type="number" step="0.01" style={styles.input} value={openingForeign} onChange={(e) => setOpeningForeign(e.target.value)} placeholder="Optional" /></div>
+            </div>
+            <small style={{ color: "var(--muted-foreground)" }}>Changing the currency doesn't rewrite historical transactions; their saved rates remain unchanged.</small>
+          </div>
+        )}
+        <div style={styles.modalFooter}>
+          <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>
+          <button style={styles.primaryBtn} onClick={save}><Save size={14} /> Save settings</button>
         </div>
       </div>
     </Overlay>
