@@ -2,14 +2,14 @@ import { addSheet, applyRohiExportFormatting, batchClear, batchUpdateSpreadsheet
 import { airlineIataCode, airlineLogoUrl, airlineSheetLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
-// Tabs: "Airline Balance" (summary), per-airline statement tabs, and
-// "_DATA" (hidden raw records for recovery and FX audit). No SNAP tabs are ever created.
+// Tabs: "Airline Balance" (summary) plus one statement tab per airline. Transactions
+// are written directly into each airline's own tab. No SNAP tabs are ever created.
 // One-way: database -> sheet. The database stays the source of truth.
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
 const SETTING_KEY = "airline_accounts_sheet_id";
 const TITLE = "Airline Accounts";
-const TABS = ["Airline Balance", "Airline Contact Details", "_DATA"] as const;
+const TABS = ["Airline Balance", "Airline Contact Details"] as const;
 
 function headers() {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -93,7 +93,7 @@ async function ensureSpreadsheet(): Promise<string> {
     await gw(`/spreadsheets/${id}:batchUpdate`, {
       method: "POST",
       body: JSON.stringify({
-        requests: missing.map((title) => ({ addSheet: { properties: { title, hidden: title === "_DATA", gridProperties: { frozenRowCount: title === "_DATA" ? 1 : 2 } } } })),
+        requests: missing.map((title) => ({ addSheet: { properties: { title, gridProperties: { frozenRowCount: 2 } } } })),
       }),
     });
   }
@@ -102,21 +102,11 @@ async function ensureSpreadsheet(): Promise<string> {
   // styling to the two visible tabs. Idempotent — safe to run on every sync.
   const freshMeta = missing.length ? await gw(`/spreadsheets/${id}?fields=sheets.properties`) : meta;
   const sheetIds = (freshMeta.sheets ?? []).map((x: any) => x.properties);
-  const visibilityRequests = sheetIds
-    .filter((p: any) => p.title === "_DATA" && !p.hidden)
-    .map((p: any) => ({
-      updateSheetProperties: {
-        properties: { sheetId: p.sheetId, hidden: true },
-        fields: "hidden",
-      },
-    }));
   await gw(`/spreadsheets/${id}:batchUpdate`, {
     method: "POST",
     body: JSON.stringify({
       requests: [
-        ...visibilityRequests,
         ...sheetIds
-          .filter((p: any) => p.title !== "_DATA")
           .flatMap((p: any) => [
           {
             repeatCell: {
@@ -565,23 +555,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
   // Sum formula excludes Other Service Providers if it is at the end or sums actual range
   balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastNonServiceRow})`]);
 
-  const data: unknown[][] = [
-    ["TYPE", "ID", "AIRLINE_ID", "DATE/NAME", "AGENT/CODE", "PAX/OPENING_BALANCE_PKR", "SECTOR/OPENING_DATE", "PNR", "TICKET_SALES_PKR", "DEBIT_IN_ID_PKR", "CREDIT_FROM_ID_PKR", "PAX_CONTACT", "VOID_CHARGES_PKR", "SORT_ORDER", "TRANSACTION_TYPE", "CURRENCY", "ROE_PKR_PER_FX", "FOREIGN_AMOUNT", "OPENING_BALANCE_FX", "RECEIVED_VIA", "RECEIVED_VIA_ACCOUNT_ID"],
-    ...(airlines as any[]).map((x) => ["airline", x.id, "", x.name, x.code, n(x.opening_balance), s(x.opening_balance_date), "", "", "", "", "", "", x.sort_order, "", x.currency ?? "", x.roe ?? "", "", x.opening_balance_foreign ?? "", "", ""]),
-    ...(txs as any[]).map((r) => {
-      const { resolvedType } = classifyAirlineRow(r);
-      return ["transaction", r.id, r.airline_id, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), s(r.ticket_sales), s(r.debit_in_id), s(r.credit_from_id), s(r.pax_contact), s(r.void_charges), r.sort_order, resolvedType, r.currency ?? "", r.roe ?? "", r.foreign_amount ?? "", "", r.received_via ?? "", r.received_via_account_id ?? ""];
-    }),
-    [],
-    ["META", `revision ${revision}`, syncedAt],
-  ];
-
-  // The summary tabs are no longer written here. Every range (Airline Balance,
-  // _DATA and every airline statement tab) is written in ONE atomic batched
-  // call further below. Writing the summary first and the statement tabs later
-  // in separate calls is what produced torn syncs: a quota error or timeout
-  // between the two calls left the balance updated while airline statement
-  // tabs stayed stale.
+  // Every range (Airline Balance and every airline statement tab) is written in
+  // ONE atomic batched call further below. Writing the summary first and the
+  // statement tabs later in separate calls is what produced torn syncs: a quota
+  // error or timeout between the two calls left the balance updated while
+  // airline statement tabs stayed stale.
 
   // Create/refresh one dedicated tab for every airline.
   // Single metadata read: reused for the stale-tab sweep, the new-tab ids, the
@@ -599,7 +577,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const tabsToClear = [
     ...TABS.map((tab) => `'${tab}'`),
     ...Array.from(sheetMap.keys())
-      .filter((title) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
+      .filter((title) => title !== "Airline Balance" && title !== "Airline Contact Details")
       .map((title) => quoteSheet(title)),
   ];
   await batchClear(id, tabsToClear);
@@ -610,7 +588,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   };
 
   const currentAirlineTabNames = new Set((airlines as any[]).map((air) => safeAirlineTabName(air.name)));
-  const systemTabs = new Set(["Airline Balance", "_DATA", "Airline Contact Details"]);
+  const systemTabs = new Set(["Airline Balance", "Airline Contact Details"]);
   for (const [title, sheetId] of Array.from(sheetMap.entries())) {
     if (!systemTabs.has(title) && !currentAirlineTabNames.has(title)) {
       await deleteSheet(id, sheetId);
@@ -635,7 +613,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
     tabWidths.set(tabName, rawCurr && rawCurr !== "PKR" ? 16 : 13);
   }
   const expandGridRequests = Array.from(sheetMap.entries())
-    .filter(([title]) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
+    .filter(([title]) => title !== "Airline Balance" && title !== "Airline Contact Details")
     .map(([title, sId]) => ({
       updateSheetProperties: {
         properties: { sheetId: sId, gridProperties: { columnCount: tabWidths.get(title) ?? 13 } },
@@ -825,12 +803,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
     });
   }
 
-  // 1. Write ALL sheet data (summary, raw data and every airline statement tab)
-  // in one atomic batched call. Either the whole mirror matches the database or
+  // 1. Write ALL sheet data (summary and every airline statement tab) in one
+  // atomic batched call. Either the whole mirror matches the database or
   // the sync fails and is retried — a torn state is no longer possible.
   const allDataPayload = [
     { range: `'Airline Balance'!A1`, values: balance },
-    { range: `'_DATA'!A1`, values: data },
     ...valuesPayload,
   ];
   await batchWrite(id, allDataPayload, "USER_ENTERED");
