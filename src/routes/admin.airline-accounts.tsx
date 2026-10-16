@@ -1055,6 +1055,11 @@ function AirlineLedgerApp() {
   };
 
   const deleteRow = async (airlineId: string, id: string) => {
+    // One mutation at a time. While this is set, the full-snapshot autosave
+    // effect skips, so it can never race the atomic delete with a whole-ledger
+    // save (that race used to end in a revision conflict or a resurrection).
+    if (savingTxRef.current) return false;
+    savingTxRef.current = true;
     const previousTransactions = transactions;
     const nextTransactions = {
       ...transactions,
@@ -1067,6 +1072,15 @@ function AirlineLedgerApp() {
     setSyncError(null);
     setConfirmDelete(null);
 
+    const keepOptimistic = () => {
+      lastSavedDataRef.current = {
+        airlines: airlines.map((a: any) => ({ ...a })),
+        agents: [...agents],
+        transactions: nextTransactions,
+      };
+      lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
+    };
+
     try {
       const res = await deleteTransactionAtomicFn({
         data: {
@@ -1076,14 +1090,42 @@ function AirlineLedgerApp() {
       });
 
       if (res?.revision) revisionRef.current = res.revision;
-      lastSavedDataRef.current = {
-        airlines: airlines.map((a: any) => ({ ...a })),
-        agents: [...agents],
-        transactions: nextTransactions,
-      };
-      lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
+
+      // Replace the screen with the authoritative database state after every
+      // delete. Optimistic-only removal used to hide rows the database still
+      // had, and the next Google Sheet rebuild then wrote them straight back.
+      try {
+        const remote: any = await load();
+        const remoteRevision = Number(remote?.revision ?? 0);
+        const resRevision = Number(res?.revision ?? 0);
+        if (remote && remoteRevision >= resRevision) {
+          setAirlines(remote.airlines ?? []);
+          setAgents(remote.agents ?? []);
+          setTransactions(remote.transactions ?? {});
+          revisionRef.current = remoteRevision || resRevision || revisionRef.current;
+          lastSavedDataRef.current = {
+            airlines: remote.airlines ?? [],
+            agents: [...(remote.agents ?? [])],
+            transactions: remote.transactions ?? {},
+          };
+          lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
+        } else {
+          keepOptimistic();
+        }
+      } catch (reloadErr) {
+        console.warn("Post-delete reload failed; keeping optimistic state", reloadErr);
+        keepOptimistic();
+      }
       dirtyRef.current = false;
-      toast.success("Transaction deleted & Google Sheets synced", { id: toastId });
+      conflictRef.current = false;
+
+      if (res?.sheetSynced === false) {
+        const detail = res?.sheetSyncError ? ` — ${String(res.sheetSyncError).slice(0, 160)}` : "";
+        setSyncError(`Deleted from the database, but the Google Sheet sync did not confirm${detail}. It retries automatically.`);
+        toast.error("Deleted from database — Google Sheet sync will retry", { id: toastId });
+      } else {
+        toast.success("Transaction deleted & Google Sheets synced", { id: toastId });
+      }
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 3000);
       return true;
@@ -1095,6 +1137,7 @@ function AirlineLedgerApp() {
       toast.error(`Delete failed: ${msg}`, { id: toastId });
       return false;
     } finally {
+      savingTxRef.current = false;
       setSaving(false);
     }
   };

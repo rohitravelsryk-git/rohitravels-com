@@ -789,13 +789,22 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { error: delErr } = await supabaseAdmin
+    const { data: deletedRows, error: delErr } = await supabaseAdmin
       .from("airline_ledger_transactions")
       .delete()
-      .eq("id", data.transactionId);
+      .eq("id", data.transactionId)
+      .select("id");
 
     if (delErr) {
       throw new Error(`Failed to delete airline transaction: ${delErr.message}`);
+    }
+    if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+      // A delete that matches zero rows must never look successful: the screen
+      // would hide the row while the database (and every mirror, including the
+      // Google Sheet tabs) still has it, and the next rebuild writes it back.
+      throw new Error(
+        "This transaction was not found in the database (it may already be deleted, or this screen is showing stale data). Refresh the Airline Accounts page and try again."
+      );
     }
 
     const { data: meta } = await supabaseAdmin
@@ -820,7 +829,7 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       // pattern). A detached background promise can be killed by the serverless
       // runtime once the response is sent, which silently skipped the Google
       // Sheet write after deletes. Individual timeouts keep the wait bounded.
-      await Promise.allSettled([
+      const settledDelete = await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
@@ -840,9 +849,11 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-            await syncAirlineLedgerGoogleSheetNow(newRevision);
+            const sheetRes = await syncAirlineLedgerGoogleSheetNow(newRevision);
+            return { sheetSynced: sheetRes.synced === true, sheetSyncError: sheetRes.error ?? null };
           } catch (e) {
             console.warn("[airline-atomic-delete] Airline Google Sheet sync:", e);
+            return { sheetSynced: false, sheetSyncError: String(e instanceof Error ? e.message : e) };
           }
         })(),
         (async () => {
@@ -869,8 +880,13 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       console.warn("[airline-atomic-delete] Downstream sync runner error:", bgErr);
     }
 
+    const sheetsOutcome: any =
+      settledDelete[2] && settledDelete[2].status === "fulfilled" ? (settledDelete[2] as any).value : null;
+
     return {
       success: true,
       revision: newRevision,
+      sheetSynced: sheetsOutcome ? sheetsOutcome.sheetSynced === true : false,
+      sheetSyncError: sheetsOutcome?.sheetSyncError ?? null,
     };
   });
