@@ -655,13 +655,18 @@ function AirlineLedgerApp() {
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
-      if (!dirtyRef.current && savePendingRef.current === 0 && !saving) return;
+      // The server commits the ledger as soon as the save request arrives;
+      // everything after that (Google Sheets mirror, backups, agent ledgers) is
+      // downstream work the server finishes on its own, so a refresh during it
+      // cannot lose an entry. Warn only when there are edits on screen that the
+      // server has not received yet.
+      if (!dirtyRef.current && savePendingRef.current === 0) return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [saving]);
+  }, []);
 
   useEffect(() => {
     if (!loaded || conflictRef.current) return;
