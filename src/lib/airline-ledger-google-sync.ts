@@ -347,7 +347,39 @@ export async function syncAirlineLedgerToGoogleSheet(
   return { configured: true, synced: true, spreadsheetId: sheetId() };
 }
 
-export async function syncAirlineLedgerGoogleSheetNow(revision: number) {
+type AirlineSheetSyncResult = { synced: boolean; revision: number; error: string | null };
+
+// Only one full Google Sheet rebuild may run at a time. Concurrent callers (a save
+// while the page-open sync is still running) are coalesced: the active run finishes,
+// then drains the latest queued revision. Without this, two interleaved rebuilds can
+// write the summary tabs from a new snapshot and the statement tabs from an old one,
+// which is exactly how stale airline statement tabs appeared.
+let activeAirlineSheetSync: Promise<AirlineSheetSyncResult> | null = null;
+let queuedAirlineSheetRevision: number | null = null;
+
+export async function syncAirlineLedgerGoogleSheetNow(revision: number): Promise<AirlineSheetSyncResult> {
+  if (activeAirlineSheetSync) {
+    queuedAirlineSheetRevision = Math.max(queuedAirlineSheetRevision ?? 0, revision);
+    return activeAirlineSheetSync;
+  }
+  const run = (async (): Promise<AirSheetSyncInner> => {
+    let result = await runAirlineLedgerGoogleSheetSync(revision);
+    while (queuedAirlineSheetRevision !== null) {
+      const next = queuedAirlineSheetRevision;
+      queuedAirlineSheetRevision = null;
+      result = await runAirlineLedgerGoogleSheetSync(next);
+    }
+    return result;
+  })().finally(() => {
+    activeAirlineSheetSync = null;
+  });
+  activeAirlineSheetSync = run;
+  return run;
+}
+
+type AirSheetSyncInner = AirlineSheetSyncResult;
+
+async function runAirlineLedgerGoogleSheetSync(revision: number): Promise<AirlineSheetSyncResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
   const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
@@ -375,6 +407,7 @@ export async function syncAirlineLedgerGoogleSheetNow(revision: number) {
 
   await mark("pending", null, previousSyncedRevision);
   let lastError: string | null = null;
+  const startedAt = Date.now();
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       await syncAirlineAccountsSheet(revision);
@@ -382,7 +415,9 @@ export async function syncAirlineLedgerGoogleSheetNow(revision: number) {
       return { synced: true, revision, error: null };
     } catch (error) {
       lastError = String(error instanceof Error ? error.message : error);
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      // A full rebuild is slow; do not stack retries past the caller's patience.
+      if (attempt >= 3 || Date.now() - startedAt > 25_000) break;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
   }
 
