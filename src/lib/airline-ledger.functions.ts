@@ -751,17 +751,18 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
 
-      // Fire-and-forget: the database row is committed, so the response must not
-      // wait for the Google Sheet rebuilds (up to ~45s each). Each sync marks its
-      // own status row, and the admin page's status poller + on-open sync heal
-      // any run that fails. Blocking the response here made every save appear to
-      // hang for ~45s and triggered the browser "changes will not be saved"
-      // warning when the user refreshed during the wait.
-      void Promise.allSettled([
+      // The financial postings (Agent Ledger, Accounts Book receipts, Counter
+      // Sales) are AWAITED: a detached background promise can be killed by the
+      // serverless runtime as soon as the response is sent, which silently
+      // skipped the ledger and receipt writes. Individual timeouts keep the
+      // wait bounded. The heavy Google Sheet rebuilds (airline workbook,
+      // financial backup) stay detached — each marks its own status row and
+      // the queue/trigger + on-open sync heal any run that fails.
+      await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-            await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+            await withTimeout(syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines), 20000, "Agent ledger sync");
           } catch (e) {
             console.warn("[airline-atomic] Agent ledger sync:", e);
           }
@@ -769,11 +770,28 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-            await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+            await withTimeout(syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines), 30000, "Accounts Book receipt sync");
           } catch (e) {
             console.warn("[airline-atomic] Accounts book sync:", e);
           }
         })(),
+        (async () => {
+          try {
+            const { syncAirlineCounterSalesToSalesAccounts } = await import("@/lib/airline-ledger-counter-sales.server");
+            await withTimeout(syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines), 30000, "Counter sales sync");
+          } catch (e) {
+            console.warn("[airline-atomic] Counter sales sync:", e);
+          }
+        })(),
+      ]);
+
+      // Fire-and-forget mirror rebuilds: the database rows (including every
+      // ledger posting above) are already committed. Each sync marks its own
+      // status row, and the admin page's status poller + on-open sync heal any
+      // run that fails. Blocking the response here made every save appear to
+      // hang for ~45s and triggered the browser "changes will not be saved"
+      // warning when the user refreshed during the wait.
+      void Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
@@ -802,6 +820,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
           }
         })(),
       ]);
+
     } catch (bgErr) {
       console.warn("[airline-atomic] Downstream sync runner error:", bgErr);
     }

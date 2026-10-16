@@ -530,7 +530,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
       currentTxIdsWithAgent.add(txId);
 
       const q = rawAgent.toLowerCase();
-      const matchedAgent = allAgents.find((a: any) => {
+      let matchedAgent = allAgents.find((a: any) => {
         const agency = (a.agency_name || "").toLowerCase().trim();
         const contact = (a.contact_person || "").toLowerCase().trim();
         const code = (a.user_code || "").toLowerCase().trim();
@@ -540,6 +540,15 @@ export async function syncAirlineTransactionsToAgentLedgers(
         const contact = (a.contact_person || "").toLowerCase().trim();
         return agency.includes(q) || q.includes(agency) || (contact && (contact.includes(q) || q.includes(contact)));
       });
+
+      // Self counter sales: agent "Abdul Razzaq" books tickets at his own
+      // counter, so he may not exist as a separately registered B2B agent.
+      // Post those sales to the Rohi office agent account (the same fallback
+      // the Pax Contact field uses) so the entry still lands in Ledger
+      // Accounts instead of being silently dropped.
+      if (!matchedAgent && q === "abdul razzaq") {
+        matchedAgent = allAgents.find((a: any) => /rohi/i.test(String(a.agency_name ?? "")));
+      }
 
       if (!matchedAgent) {
         console.info(`[airline-to-agent-ledger] Agent "${rawAgent}" not found in registered agents for airline tx ${txId}`);
