@@ -969,7 +969,13 @@ function AirlineLedgerApp() {
   const saveTransactionAtomicFn = useServerFn(saveAirlineTransactionAtomic);
   const deleteTransactionAtomicFn = useServerFn(deleteAirlineTransactionAtomic);
 
+  const savingTxRef = useRef(false);
+
   const saveRow = async (airlineId: string, row: any) => {
+    // One save at a time: a double click on Save used to create two rows with
+    // different temp ids, which showed up as duplicate ledger entries.
+    if (savingTxRef.current) return false;
+    savingTxRef.current = true;
     const tempId = row.id || `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimisticRow = {
       ...row,
@@ -1035,6 +1041,7 @@ function AirlineLedgerApp() {
       toast.error(`Save failed: ${msg}`, { id: toastId });
       throw err;
     } finally {
+      savingTxRef.current = false;
       setSaving(false);
     }
   };
