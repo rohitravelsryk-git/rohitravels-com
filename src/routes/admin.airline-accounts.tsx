@@ -71,7 +71,7 @@ const EMPTY_ROW = (): any => ({
   date: new Date().toISOString().slice(0, 10),
   transactionType: "Add Transaction",
   agentName: "", paxName: "", sector: "", pnr: "",
-  ticketSales: "", receivedVia: "", receivedViaAccountId: "",
+  ticketSales: "", agentReceived: "", receivedVia: "", receivedViaAccountId: "",
   debitInId: "", creditFromId: "",
   paxContact: "", voidCharges: "",
   currency: "PKR", roe: 1, foreignAmount: "",
@@ -909,6 +909,34 @@ function AirlineLedgerApp() {
     );
   }, [computedRows, search]);
 
+  // Passenger recovery list: agent/counter sales where money is still owed.
+  // Only entries with an explicitly saved Received amount are treated as known,
+  // so legacy rows (saved before the Received field existed) stay silent here.
+  const recoveryEntries = useMemo(() => {
+    return computedRows
+      .filter((r: any) =>
+        String(r.agentName || "").trim() !== "" &&
+        !classifyTxRow(r).isIncrease &&
+        r.agentReceived !== "" && r.agentReceived !== null && r.agentReceived !== undefined)
+      .map((r: any) => {
+        const totalSales = parseCleanNum(r.ticketSales) || 0;
+        const received = parseCleanNum(r.agentReceived) || 0;
+        return {
+          id: r.id,
+          date: r.date,
+          agentName: r.agentName,
+          paxName: r.paxName,
+          paxContact: r.paxContact,
+          totalSales,
+          received,
+          remaining: totalSales - received,
+        };
+      })
+      .filter((e: any) => e.remaining > 0)
+      .sort((a: any, b: any) => String(b.date || "").localeCompare(String(a.date || "")));
+  }, [computedRows]);
+  const recoveryTotal = recoveryEntries.reduce((sum: number, e: any) => sum + e.remaining, 0);
+
   const openAdd = (airlineId: string) => setModal({ mode: "add", airlineId, row: EMPTY_ROW(), recordType: "transaction" });
   const openEdit = (airlineId: string, row: any) => setModal({ mode: "edit", airlineId, row: { ...row }, recordType: "transaction" });
 
@@ -1359,6 +1387,8 @@ function AirlineLedgerApp() {
                 airline={activeAirline}
                 rows={filteredRows}
                 rawCount={rawRows.length}
+                recoveryEntries={recoveryEntries}
+                recoveryTotal={recoveryTotal}
                 search={search}
                 setSearch={setSearch}
                 agents={agents}
@@ -1541,7 +1571,7 @@ function TabStub({ active, onClick, code, label, balance, foreignBalance, isFore
 }
 
 function LedgerTable({
-  airline, rows, rawCount, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onEditOpeningBalance,
+  airline, rows, rawCount, recoveryEntries = [], recoveryTotal = 0, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onEditOpeningBalance,
 }: any) {
   const [ledgerPage, setLedgerPage] = useState(1);
   useEffect(() => {
@@ -1729,6 +1759,44 @@ function LedgerTable({
           />
         </div>
       )}
+
+      {recoveryEntries.length > 0 && (
+        <div style={{ marginTop: 14, padding: 14, border: "1px solid var(--accent-clay, #d97757)", borderRadius: 10, background: "rgba(217, 119, 87, 0.05)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: "var(--accent-clay, #d97757)" }}>Passenger Recovery — Balance to Collect</span>
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+              Total outstanding: <strong className="num">{fmt(recoveryTotal)} PKR</strong> · {recoveryEntries.length} passenger entr{recoveryEntries.length === 1 ? "y" : "ies"}
+            </span>
+          </div>
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  {["Date", "Agent", "Passenger", "Contact #", "Total Sales", "Received", "Remaining"].map((h) => (
+                    <th key={h} style={styles.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {recoveryEntries.map((e: any) => (
+                  <tr key={e.id} style={styles.tr}>
+                    <td style={styles.td}>{formatDisplayDate(e.date)}</td>
+                    <td style={styles.td}>{e.agentName}</td>
+                    <td style={styles.td}>{e.paxName || <span style={{ color: "var(--gray-400)" }}>-</span>}</td>
+                    <td style={styles.td}>{e.paxContact || <span style={{ color: "var(--gray-400)" }}>-</span>}</td>
+                    <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(e.totalSales)}</td>
+                    <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(e.received)}</td>
+                    <td style={{ ...styles.td, ...styles.numCell, fontWeight: 800, color: "var(--accent-clay, #d97757)" }} className="num">{fmt(e.remaining)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--muted-foreground)" }}>
+            Use the Pax Contact # to follow up and recover the remaining balance from each passenger.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1913,6 +1981,10 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       .filter(Boolean)
       .join(" - ");
 
+    const agentTotal = salesVal || 0;
+    const agentRecv = !isTopUp && !isRefund && String(form.agentName || "").trim() !== "" && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
+    const agentRemaining = agentRecv === null ? null : agentTotal - agentRecv;
+
     return {
       balance,
       profit,
@@ -1925,6 +1997,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       ledgerEntry,
       receivedVia: form.receivedVia,
       agentName: form.agentName,
+      agentRemaining,
     };
   }, [form, airline, priorRows, isForeignAirline]);
 
@@ -1968,6 +2041,13 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       : null;
     const activeRoe = parseCleanNum(form.roe) || defaultRoe || 1;
 
+    // Agent breakdown guard: money received can never exceed the total sale.
+    const saveAgentReceived = !isTopUp && !isRefund && String(form.agentName || "").trim() !== "" && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
+    if (saveAgentReceived !== null && salesVal !== null && saveAgentReceived > salesVal) {
+      setError("Received amount cannot be greater than Total Sales for an agent sale.");
+      return;
+    }
+
     let finalCredit = 0;
     if (isIncrease) {
       if (foreignVal !== null && isForeignAirline) {
@@ -2000,6 +2080,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       foreignAmount: isForeignAirline ? foreignCredit : null,
       receivedVia: isTopUp ? null : (form.receivedVia || null),
       receivedViaAccountId: isTopUp ? null : (form.receivedViaAccountId || null),
+      agentReceived: saveAgentReceived,
     };
 
     setError("");
@@ -2043,6 +2124,13 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
   const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
   const isCancelRefund = (form.transactionType || "Add Transaction") === "Cancel/Refund";
+  // Agent / counter sale breakdown: Total Sales mirrors Ticket Sales, Received is what the
+  // passenger has already paid, and the remaining balance is the recovery to collect later.
+  const isAgentSale = recordType === "transaction" && !isTopUp && !isCancelRefund && String(form.agentName || "").trim() !== "";
+  const agentTotalVal = parseCleanNum(form.ticketSales) || 0;
+  const agentReceivedRaw = String(form.agentReceived ?? "").trim();
+  const agentReceivedVal = agentReceivedRaw === "" ? null : parseCleanNum(form.agentReceived);
+  const agentRemainingVal = agentReceivedVal === null ? agentTotalVal : agentTotalVal - agentReceivedVal;
   // A top up adds money to the airline portal (Debit In); every other entry returns or
   // spends from it (Credit From). The FX helper converts into whichever side applies.
   const fxTargetKey = isTopUp ? "debitInId" : "creditFromId";
@@ -2070,14 +2158,22 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     <Overlay onClose={onClose}>
       <div style={styles.modal}>
         <div style={styles.modalHeader}>
-          <div>
-            <h3 style={styles.modalTitle}>
-              {recordType === "openingBalance" ? "Opening Balance" : modal.mode === "add" ? "New Transaction" : "Edit Transaction"}
-            </h3>
-            <div style={{ marginTop: 4, fontSize: 12, color: "var(--muted-foreground)" }}>
-              {recordType === "openingBalance"
-                ? `${airline?.name} · Initial Ledger Balance`
-                : "1 Single Atomic Entry (No Double Counting) — updates portal balance, links receipt to bank/cash, and syncs across ledgers automatically."}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={{ flexShrink: 0, width: 56, height: 40, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: "3px 8px", overflow: "hidden" }} title={airline?.name || "Airline"}>
+              <AirlineLogo name={airline?.name || ""} height={26} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{ ...styles.modalTitle, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span>{recordType === "openingBalance" ? "Opening Balance" : modal.mode === "add" ? "New Transaction" : "Edit Transaction"}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "var(--accent-clay, #d97757)", background: "rgba(217, 119, 87, 0.10)", border: "1px solid var(--accent-clay, #d97757)", borderRadius: 6, padding: "2px 8px" }}>
+                  {airline?.name || "Airline"}{airline?.code ? ` · ${airline.code}` : ""}
+                </span>
+              </h3>
+              <div style={{ marginTop: 4, fontSize: 12, color: "var(--muted-foreground)" }}>
+                {recordType === "openingBalance"
+                  ? `${airline?.name} · Initial Ledger Balance`
+                  : `${airline?.name || "Airline"} account · 1 Single Atomic Entry (No Double Counting) — updates portal balance, links receipt to bank/cash, and syncs across ledgers automatically.`}
+              </div>
             </div>
           </div>
           <button style={styles.iconBtn} onClick={onClose} disabled={savingRecord || deletingRecord || savingOpeningBalance}><X size={18} /></button>
@@ -2272,6 +2368,32 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         </div>
 
+        {isAgentSale && (
+          <div style={{ marginBottom: 14, padding: 12, border: "1px solid var(--accent-clay, #d97757)", borderRadius: 10, background: "rgba(217, 119, 87, 0.06)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent-clay, #d97757)" }}>Agent / Counter Sale Breakdown — {String(form.agentName).trim()}</span>
+              <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Remaining balance is collected from the passenger later</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
+              <div style={styles.field}>
+                <label style={styles.label}>Total Sales (PKR)</label>
+                <input type="number" inputMode="decimal" step="0.01" placeholder="Full ticket sale amount" value={form.ticketSales ?? ""} onChange={(e) => update("ticketSales", e.target.value)} style={styles.input} />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Received (PKR)</label>
+                <input type="number" inputMode="decimal" step="0.01" placeholder="Amount received now" value={form.agentReceived ?? ""} onChange={(e) => update("agentReceived", e.target.value)} style={styles.input} />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Passenger Remaining (PKR)</label>
+                <div style={{ padding: "9px 10px", borderRadius: 6, background: "var(--card)", border: "1px solid var(--border)", fontSize: 13, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: agentRemainingVal < 0 ? "var(--error)" : "var(--accent-clay, #d97757)" }} className="num">
+                  {fmt(agentRemainingVal)} PKR{agentRemainingVal < 0 ? " (over-received)" : agentReceivedRaw === "" && agentTotalVal > 0 ? " (nothing received yet)" : ""}
+                </div>
+              </div>
+            </div>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted-foreground)" }}>Total Sales is the same Ticket Sales amount posted in the ledger. Remaining = Total Sales − Received and is saved with the entry so it can be recovered later.</p>
+          </div>
+        )}
+
         {isCancelRefund && (
           <div style={{ marginBottom: 14, padding: 12, border: "1px solid var(--border)", borderRadius: 10, background: "var(--card)" }}>
             <label style={{ ...styles.label, display: "block", marginBottom: 7 }}>Find existing ticket by PNR (optional)</label>
@@ -2438,6 +2560,11 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                 <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
                   {preview.agentName ? (preview.isRefund ? `Credit (CR) +${fmt(preview.delta)} PKR` : `Debit (DR) +${fmt(preview.salesVal)} PKR`) : "Direct posting"}
                 </span>
+                {preview.agentRemaining !== null && preview.agentRemaining > 0 && (
+                  <span style={{ fontSize: 10, display: "block", color: "var(--accent-clay, #d97757)", fontWeight: 600 }}>
+                    Remaining to recover: {fmt(preview.agentRemaining)} PKR
+                  </span>
+                )}
               </span>
             </div>
 

@@ -88,6 +88,17 @@ function cellValue(value: unknown) {
   return value === null || value === undefined ? "" : value;
 }
 
+// Passenger remaining (recovery) = Ticket Sales − Agent Received; blank when the
+// entry has no saved Received amount (legacy rows).
+function agentRemainingOf(t: any) {
+  const raw = t.agent_received;
+  if (raw === "" || raw === null || raw === undefined) return "";
+  const sales = Number(t.ticket_sales) || 0;
+  const received = Number(raw) || 0;
+  const remaining = sales - received;
+  return Number.isFinite(remaining) ? remaining : "";
+}
+
 async function sheetsBatchUpdate(token: string, requests: unknown[]) {
   return sheetsRequest(":batchUpdate", token, {
     method: "POST",
@@ -173,11 +184,11 @@ async function replaceAirlineTabs(
     // Foreign-currency airlines get three extra FX columns (Debit In, Credit From, running
     // Balance in the airline's currency) so every row reads in both PKR and that currency.
     const headerRow: unknown[] = isForeign
-      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
-      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Received", "Passenger Remaining", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Received", "Passenger Remaining", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
     const openingRow: unknown[] = isForeign
-      ? [air.opening_balance_date, "", "", "", "", 0, "", "", "", "", 0, 0, running, runningForeign, "OPENING BALANCE"]
-      : [air.opening_balance_date, "", "", "", "", 0, "", "", 0, 0, running, "OPENING BALANCE"];
+      ? [air.opening_balance_date, "", "", "", "", 0, "", "", "", "", "", 0, 0, running, runningForeign, "OPENING BALANCE"]
+      : [air.opening_balance_date, "", "", "", "", 0, "", "", "", 0, 0, running, "OPENING BALANCE"];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
@@ -206,19 +217,23 @@ async function replaceAirlineTabs(
 
       const debitFx = isBalanceIncrease ? txForeignCr : "";
       const creditFx = isBalanceIncrease ? "" : txForeignCr;
+      // Agent / counter sale breakdown (blank Received for legacy rows).
+      const agentRecvRaw = r.agent_received;
+      const agentRecv = agentRecvRaw === "" || agentRecvRaw === null || agentRecvRaw === undefined ? "" : (Number(agentRecvRaw) || "");
+      const agentRem = agentRecv === "" ? "" : (Number(r.ticket_sales) || 0) - agentRecv;
       values.push(isForeign
         ? [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-            sales, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
+            sales, agentRecv, agentRem, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
           ]
         : [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-            sales, displayedDebit, displayedCredit, voids, profit, running,
+            sales, agentRecv, agentRem, displayedDebit, displayedCredit, voids, profit, running,
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
           ]);
     }
-    values[2][7] = isForeign ? `${running} PKR (${runningForeign.toFixed(2)} ${curr})` : running;
+    values[2][9] = isForeign ? `${running} PKR (${runningForeign.toFixed(2)} ${curr})` : running;
     requests.push({ updateCells: { range: { sheetId: props.sheetId }, fields: "userEnteredValue" } });
     requests.push({
       updateCells: {
@@ -324,11 +339,12 @@ export async function syncAirlineLedgerToGoogleSheet(
     ["REVISION", revision],
     ["SYNCED AT", new Date().toISOString()],
     [],
-    ["ID", "AIRLINE ID", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "SORT ORDER"],
+    ["ID", "AIRLINE ID", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "AGENT RECEIVED", "PASSENGER REMAINING", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "SORT ORDER"],
     ...snapshot.transactions.map((t: any) => [
       cellValue(t.id), cellValue(t.airline_id), cellValue(t.date), cellValue(t.agent_name),
       cellValue(t.pax_name), cellValue(t.sector), cellValue(t.pnr), cellValue(t.ticket_sales),
-      cellValue(t.debit_in_id), cellValue(t.credit_from_id), cellValue(t.pax_contact),
+      cellValue(t.agent_received), cellValue(agentRemainingOf(t)), cellValue(t.debit_in_id),
+      cellValue(t.credit_from_id), cellValue(t.pax_contact),
       cellValue(t.void_charges), cellValue(t.sort_order),
     ]),
   ];

@@ -53,6 +53,7 @@ export type AirlineLedgerRow = {
   foreignAmount?: number | string | null;
   receivedVia?: string | null;
   receivedViaAccountId?: string | null;
+  agentReceived?: number | string | null;
 };
 export type AirlineLedgerData = {
   airlines: AirlineLedgerAirline[];
@@ -79,6 +80,7 @@ const rowSchema = z.object({
   foreignAmount: z.union([z.number(), z.string()]).nullish(),
   receivedVia: z.string().nullish(),
   receivedViaAccountId: z.string().nullish(),
+  agentReceived: z.union([z.number(), z.string()]).nullish(),
 });
 
 const dataSchema = z.object({
@@ -234,6 +236,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
       foreignAmount: t.foreign_amount ?? null,
       receivedVia: t.received_via ?? null,
       receivedViaAccountId: t.received_via_account_id ?? null,
+      agentReceived: t.agent_received !== null && t.agent_received !== undefined ? t.agent_received : "",
     });
   }
 
@@ -299,6 +302,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           foreign_amount: num(r.foreignAmount),
           received_via: str(r.receivedVia),
           received_via_account_id: str(r.receivedViaAccountId),
+          agent_received: num(r.agentReceived),
         })),
       ),
     };
@@ -357,6 +361,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           pax_contact: t.pax_contact,
           void_charges: t.void_charges,
           sort_order: Number(t.sort_order) || 0,
+          agent_received: t.agent_received !== null && t.agent_received !== undefined ? t.agent_received : null,
         })),
       };
 
@@ -575,6 +580,24 @@ export const listActivePaymentAccounts = createServerFn({ method: "GET" }).handl
 
 
 
+// The agent_received column (agent/counter sale "Received" amount) is added by
+// migration 20261016154500_airline_ledger_agent_received.sql. Databases that have
+// not applied the migration yet must still be able to save transactions, so the
+// column is probed once per server instance and only written when it exists.
+let agentReceivedColumnSupported: boolean | null = null;
+async function airlineTxSupportsAgentReceived(supabase: any): Promise<boolean> {
+  if (agentReceivedColumnSupported !== null) return agentReceivedColumnSupported;
+  try {
+    const { error } = await supabase.from("airline_ledger_transactions").select("agent_received").limit(1);
+    agentReceivedColumnSupported = !error;
+    if (error) console.warn("[airline-ledger] agent_received column unavailable (run migration 20261016154500):", error.message);
+  } catch (e: any) {
+    agentReceivedColumnSupported = false;
+    console.warn("[airline-ledger] agent_received probe failed:", e?.message);
+  }
+  return agentReceivedColumnSupported;
+}
+
 export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({
     airlineId: z.string().min(1),
@@ -595,6 +618,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       roe: z.union([z.number(), z.string(), z.null()]).optional(),
       foreignAmount: z.union([z.number(), z.string(), z.null()]).optional(),
       receivedVia: z.string().optional().nullable(),
+      agentReceived: z.union([z.number(), z.string(), z.null()]).optional(),
       receivedViaAccountId: z.string().optional().nullable(),
     }),
   }).parse(data))
@@ -652,6 +676,9 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
     const foreignAmount = cleanNum(r.foreignAmount);
     const receivedVia = isTopUp ? null : cleanStr(r.receivedVia);
     const receivedViaAccountId = isTopUp ? null : cleanStr(r.receivedViaAccountId);
+    // Agent / counter sale breakdown: how much of the ticket sale was received.
+    // Remaining (recovery balance) is derived as ticket_sales - agent_received.
+    const agentReceived = isTopUp || isRefund ? null : cleanNum(r.agentReceived);
 
     const recordToUpsert: any = {
       id: rowId,
@@ -673,10 +700,26 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       received_via: receivedVia,
       received_via_account_id: receivedViaAccountId,
     };
+    if (agentReceived !== null && await airlineTxSupportsAgentReceived(supabaseAdmin)) {
+      recordToUpsert.agent_received = agentReceived;
+    }
 
-    const { error: upsertErr } = await supabaseAdmin
+    let { error: upsertErr } = await supabaseAdmin
       .from("airline_ledger_transactions")
       .upsert(recordToUpsert, { onConflict: "id" });
+
+    // Defensive retry: if the probe was stale and the database still lacks the
+    // column, save the transaction without the agent breakdown rather than
+    // failing the whole financial entry.
+    if (upsertErr && /agent_received/i.test(upsertErr.message || "")) {
+      agentReceivedColumnSupported = false;
+      const retryRecord = { ...recordToUpsert };
+      delete retryRecord.agent_received;
+      const retry = await supabaseAdmin
+        .from("airline_ledger_transactions")
+        .upsert(retryRecord, { onConflict: "id" });
+      upsertErr = retry.error;
+    }
 
     if (upsertErr) {
       throw new Error(`Failed to save airline transaction: ${upsertErr.message}`);
@@ -776,6 +819,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         foreignAmount,
         receivedVia,
         receivedViaAccountId,
+        agentReceived: agentReceived !== null ? agentReceived : "",
       },
     };
   });
