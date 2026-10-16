@@ -1701,18 +1701,52 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     setPnrLookupDone(true);
   };
 
+  // Pax Contact # must always show a callable number: the agent's saved number
+  // when the ticket belongs to an agency, and the office number when it is
+  // booked by Abdul Razzaq or any agent with no number on file. The field stays
+  // editable so the passenger's own number can replace it before saving.
+  const resolveAgentContact = (value: string): { contact: string; notice: string } => {
+    const dir = agentDirectory ?? [];
+    const name = value.trim().toLowerCase();
+    const match = dir.find((agent: any) => String(agent.agency_name ?? "").trim().toLowerCase() === name && String(agent.cell_number ?? "").trim());
+    if (match) return { contact: String(match.cell_number).trim(), notice: "" };
+    const office = dir.find((agent: any) => /rohi/i.test(String(agent.agency_name ?? "")) && String(agent.cell_number ?? "").trim());
+    if (office) {
+      return {
+        contact: String(office.cell_number).trim(),
+        notice: `No saved number for ${value.trim()} — office number filled in. Replace it with the passenger's own number if it is different.`,
+      };
+    }
+    return { contact: "", notice: `No saved contact number for ${value.trim()}. Enter the number to call so the ledger always carries one.` };
+  };
+
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
-    if (value.trim().toLowerCase() === "abdul razzaq") {
-      update("paxContact", "");
-      setAgentNotice("Abdul Razzaq selected — no saved contact number on file. Please enter the Pax Contact # manually.");
-      return;
-    }
-    setAgentNotice("");
-    const match = (agentDirectory ?? []).find((agent: any) => String(agent.agency_name ?? "").trim().toLowerCase() === value.trim().toLowerCase());
-    if (match) update("paxContact", String(match.cell_number ?? "").trim());
+    const resolved = resolveAgentContact(value);
+    update("paxContact", resolved.contact);
+    setAgentNotice(resolved.notice);
   };
+
+  // Opening a record must also show a callable number: legacy rows saved "0" or
+  // left the field blank. Fill once once the agents directory is available,
+  // without clobbering a real saved number.
+  const paxContactAutoFilledRef = useRef(false);
+  useEffect(() => {
+    if (paxContactAutoFilledRef.current) return;
+    if (!(agentDirectory ?? []).length) return;
+    paxContactAutoFilledRef.current = true;
+    const name = String(form.agentName || "").trim();
+    if (!name) return;
+    const current = String(form.paxContact ?? "").trim();
+    if (current && current !== "0") return;
+    const resolved = resolveAgentContact(name);
+    if (resolved.contact) {
+      update("paxContact", resolved.contact);
+      if (!current) setAgentNotice(resolved.notice);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentDirectory]);
 
   const preview = useMemo(() => {
     const openingBalance = parseCleanNum(airline?.openingBalance);
@@ -1788,12 +1822,6 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
     if (!form.date) {
       setError("Date is required.");
-      return;
-    }
-
-    const isSelfAgent = String(form.agentName || "").trim().toLowerCase() === "abdul razzaq";
-    if (!isTopUp && isSelfAgent && !String(form.paxContact || "").trim()) {
-      setError("Pax Contact # is required when the agent is Abdul Razzaq. Please enter it before saving.");
       return;
     }
 
@@ -2133,7 +2161,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
         <div style={styles.modalGrid}>
           {editableCols.map((c: any) => (
             <div key={c.key} style={styles.field}>
-              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : (c.key === "paxContact" && String(form.agentName || "").trim().toLowerCase() === "abdul razzaq") ? "Pax Contact # (required)" : c.label}</label>
+              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : c.key === "paxContact" ? "Pax Contact # (agent or office number — edit if the passenger's own differs)" : c.label}</label>
               {c.type === "select" ? (
                 <>
                   <div style={{ position: "relative" }}>
