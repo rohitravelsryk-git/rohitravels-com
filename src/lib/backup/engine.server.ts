@@ -700,7 +700,12 @@ export async function reconcileBanksWalletsToSheets() {
     }
 
     const accounts = allBankWalletAccounts ?? [];
-    const allAccountTxnsOrdered = inCreationOrder(txnsResult.data ?? []);
+    // Counter-sale revenue rows are sales records, not cash movements — the
+    // money movement posts separately as the airline receipt. Keep them out of
+    // every bank/wallet statement.
+    const allAccountTxnsOrdered = inCreationOrder(
+      (txnsResult.data ?? []).filter((t: any) => String(t.source_type ?? "") !== "airline_counter_sale")
+    );
 
     // 1. Prepare master tab
     const masterRows: (string | number)[][] = [
@@ -1294,6 +1299,7 @@ export async function reconcileDailyCashBookToSheets() {
       .from("accounts_book_transactions")
       .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
       .in("account_id", accountIds)
+      .neq("source_type", "airline_counter_sale")
       .order("created_at", { ascending: true });
     if (txError) throw new Error(txError.message);
 

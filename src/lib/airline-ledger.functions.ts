@@ -403,26 +403,10 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       transactions: txRes.data ?? [],
     };
 
-    // Link Agent Sales in Airline Accounts to Agent Ledgers in Supabase & Google Sheets
-    (async () => {
-      try {
-        const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-        await syncAirlineTransactionsToAgentLedgers(committedSnapshot.transactions, committedSnapshot.airlines);
-      } catch (agentSyncErr) {
-        console.warn("[airline-ledger] Error syncing airline agent sales to agent ledgers:", agentSyncErr);
-      }
-    })();
-
-    // Link ticket-sale receipts to the selected cash/bank/wallet account idempotently.
-    // Top Up transactions are deliberately excluded from the account receipts.
-    (async () => {
-      try {
-        const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-        await syncAirlineTransactionsToAccountsBook(committedSnapshot.transactions, committedSnapshot.airlines);
-      } catch (accountSyncErr) {
-        console.warn("[airline-ledger] Error syncing ticket receipts to Accounts Book:", accountSyncErr);
-      }
-    })();
+    // Agent ledger and Accounts Book postings (agent sales, ticket receipts,
+    // counter sales) run in the awaited Promise.allSettled below — a detached
+    // background promise can be killed by the serverless runtime before it
+    // finishes, silently skipping those ledgers.
 
     // Downstream mirrors (Agent ledgers, Accounts Book receipts, Financial
     // backup, Airline Google Sheet) complete BEFORE the response returns,
@@ -434,6 +418,30 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     let sheetSynced = true;
     let sheetSyncError: string | null = null;
     await Promise.allSettled([
+      (async () => {
+        try {
+          const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
+          await withTimeout(syncAirlineTransactionsToAgentLedgers(committedSnapshot.transactions, committedSnapshot.airlines), 20000, "Agent ledger sync");
+        } catch (agentSyncErr) {
+          console.warn("[airline-ledger] Error syncing airline agent sales to agent ledgers:", agentSyncErr);
+        }
+      })(),
+      (async () => {
+        try {
+          const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
+          await withTimeout(syncAirlineTransactionsToAccountsBook(committedSnapshot.transactions, committedSnapshot.airlines), 30000, "Accounts Book receipt sync");
+        } catch (accountSyncErr) {
+          console.warn("[airline-ledger] Error syncing ticket receipts to Accounts Book:", accountSyncErr);
+        }
+      })(),
+      (async () => {
+        try {
+          const { syncAirlineCounterSalesToSalesAccounts } = await import("@/lib/airline-ledger-counter-sales.server");
+          await withTimeout(syncAirlineCounterSalesToSalesAccounts(committedSnapshot.transactions, committedSnapshot.airlines), 30000, "Counter sales sync");
+        } catch (counterSalesErr) {
+          console.warn("[airline-ledger] Error syncing counter sales to Sales Accounts:", counterSalesErr);
+        }
+      })(),
       (async () => {
         try {
           const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
@@ -888,6 +896,14 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
             await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
           } catch (e) {
             console.warn("[airline-atomic-delete] Accounts book sync:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const { syncAirlineCounterSalesToSalesAccounts } = await import("@/lib/airline-ledger-counter-sales.server");
+            await syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines);
+          } catch (e) {
+            console.warn("[airline-atomic-delete] Counter sales sync:", e);
           }
         })(),
         (async () => {

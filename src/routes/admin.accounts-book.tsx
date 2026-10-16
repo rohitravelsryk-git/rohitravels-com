@@ -67,6 +67,11 @@ type Service = { id: string; name: string };
 type TabId = "dashboard" | "cashbook" | "cashcount" | "bank" | "sales" | "expenses" | "reports" | "settings";
 
 const EXPENSE_PREFIX = "EXP: ";
+// Counter-sale revenue rows from Airline Accounts are sales records, not cash
+// movements — the money movement posts separately as the airline receipt. Keep
+// them out of every cash view (account ledgers, cash book, balances).
+const isCashViewRow = (t: any) => String((t as any).source_type ?? "") !== "airline_counter_sale";
+
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
 const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
@@ -321,7 +326,7 @@ function BankWalletAccountCards({
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12, margin: "6px 0 18px" }}>
       {orderedAccounts.map((account) => {
-        const rows = transactions.filter((t) => t.account_id === account.id);
+        const rows = transactions.filter((t) => t.account_id === account.id && isCashViewRow(t));
         const balance = finalBalance(rows, account.opening_balance);
         const active = account.id === activeId;
         const isCash = account.kind === "cash";
@@ -490,7 +495,7 @@ function BankWalletOpeningRow({
     setIsEditing(false);
   };
 
-  const currentBal = finalBalance(txns.filter((t) => t.account_id === account.id), numOpening);
+  const currentBal = finalBalance(txns.filter((t) => t.account_id === account.id && isCashViewRow(t)), numOpening);
 
   return (
     <tr
@@ -1179,7 +1184,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   const activeBank = liquidAccounts.find((b) => b.id === bankSel) ?? banks[0] ?? cash ?? null;
   const exportBankStatementCSV = () => {
     if (!activeBank) return;
-    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
+    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id && isCashViewRow(row)));
     const opening = Number(activeBank.opening_balance) || 0;
     const rows: (string | number)[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
@@ -1214,7 +1219,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
 
   const exportBankStatement = (format: "excel" | "pdf") => {
     if (!activeBank) return;
-    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
+    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id && isCashViewRow(row)));
     const opening = Number(activeBank.opening_balance) || 0;
     const statementRows: (string | number)[][] = [
       [
@@ -1658,12 +1663,12 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
   if (isLoading) return <div className="p-10 text-center">Loading Accounts Book…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
 
-  const cashRows = txns.filter((t) => cash && t.account_id === cash.id);
+  const cashRows = txns.filter((t) => cash && t.account_id === cash.id && isCashViewRow(t));
   const moneyAccountIds = new Set(accounts.map((account) => account.id));
   // Daily Cash Book is the single fast-check journal for every cash/bank/wallet movement.
-  const cashbookRows = txns.filter((t) => moneyAccountIds.has(t.account_id));
+  const cashbookRows = txns.filter((t) => moneyAccountIds.has(t.account_id) && isCashViewRow(t));
   const cashBalance = finalBalance(cashRows, cash?.opening_balance ?? 0);
-  const bankTotal = banks.reduce((sum, b) => sum + finalBalance(txns.filter((t) => t.account_id === b.id), b.opening_balance), 0);
+  const bankTotal = banks.reduce((sum, b) => sum + finalBalance(txns.filter((t) => t.account_id === b.id && isCashViewRow(t)), b.opening_balance), 0);
   const saleRows = txns.filter((t) => t.entry_type === "sale" && t.direction === "in");
   const expenseRows = txns.filter((t) => t.entry_type === "expense");
 
@@ -1993,9 +1998,9 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               {activeBank && (
                 <div className="cards">
                   <Card label={`${activeBank.name} — Opening`} value={activeBank.opening_balance} />
-                  <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                  <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
-                  <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
+                  <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out" && isCashViewRow(t)).reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
+                  <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in" && isCashViewRow(t)).reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
+                  <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id && isCashViewRow(t)), activeBank.opening_balance)} tone="pos" />
                 </div>
               )}
               <BankWalletAccountCards
@@ -2024,7 +2029,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
               </div>
               {activeBank ? (
                 <Panel title={`${activeBank.name} Ledger`}>
-                  <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" badge={sourceBadge} />
+                  <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id && isCashViewRow(t)), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" badge={sourceBadge} />
                 </Panel>
               ) : (
                 <Panel title="No accounts yet"><p style={{ fontSize: 13 }}>Add your first bank or wallet account to get started.</p></Panel>

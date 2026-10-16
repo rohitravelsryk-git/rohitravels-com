@@ -102,10 +102,17 @@ export async function syncAirlineTransactionsToAccountsBook(
       const cost = Number(tx.credit_from_id) || 0;
       if (sales === 0 && !tx.pnr) continue;
 
+      const isRefund = txType === "Cancel/Refund" || sales < 0;
+
+      // Self-agent (Abdul Razzaq) counter sales are handled by the counter-sales
+      // sync: the sale becomes a Counter Sales revenue record and only the money
+      // actually received posts to the payment account. Skip here so the full
+      // sale amount is never posted as a cash receipt.
+      if (!isRefund && String(tx.agent_name || "").trim().toLowerCase() === "abdul razzaq") continue;
+
       const sourceId = deterministicAirlineTxUuid(txId);
       activeDesiredSourceIds.add(sourceId);
 
-      const isRefund = txType === "Cancel/Refund" || sales < 0;
       const direction = isRefund ? "out" : "in";
       const amount = Math.abs(sales);
       const directCost = Math.max(cost, 0);

@@ -207,7 +207,7 @@ export async function syncRohiFinancialBackup(snapshot: {
   const bankWalletRows = snapshot.accounts
     .filter((a) => a.kind === "bank" || a.kind === "wallet")
     .flatMap((a) => {
-      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id);
+      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id && String(t.source_type ?? "") !== "airline_counter_sale");
       if (!tx.length) return [[a.id, a.name, a.kind, a.opening_balance, a.opening_balance_date ?? "", a.is_active, "", "", "", "", "", ""]];
       return tx.map((t) => [
         a.id, a.name, a.kind, a.opening_balance, a.opening_balance_date ?? "", a.is_active,
@@ -219,7 +219,7 @@ export async function syncRohiFinancialBackup(snapshot: {
   const cashRows = snapshot.accounts
     .filter((a) => a.kind === "cash")
     .flatMap((a) => {
-      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id);
+      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id && String(t.source_type ?? "") !== "airline_counter_sale");
       if (!tx.length) return [[a.id, a.name, a.opening_balance, a.opening_balance_date ?? "", a.is_active, "", "", "", "", "", "", ""]];
       return tx.map((t) => [
         a.id, a.name, a.opening_balance, a.opening_balance_date ?? "", a.is_active,

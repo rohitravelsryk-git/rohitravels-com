@@ -1920,6 +1920,9 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
+    // Only the self agent's counter sales carry a Received split; switching to any
+    // other agent drops a stale Received value so the entry saves as before.
+    if (value.trim().toLowerCase() !== "abdul razzaq") update("agentReceived", "");
     const resolved = resolveAgentContact(value);
     update("paxContact", resolved.contact);
     setAgentNotice(resolved.notice);
@@ -1982,8 +1985,11 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       .join(" - ");
 
     const agentTotal = salesVal || 0;
-    const agentRecv = !isTopUp && !isRefund && String(form.agentName || "").trim() !== "" && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
+    const agentRecv = !isTopUp && !isRefund && String(form.agentName || "").trim().toLowerCase() === "abdul razzaq" && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
     const agentRemaining = agentRecv === null ? null : agentTotal - agentRecv;
+    // Self-agent counter sales post only the received amount to the payment
+    // account; the rest is collected later and added to the ledger manually.
+    const selfReceipt = agentRecv !== null && agentRecv > 0 ? agentRecv : null;
 
     return {
       balance,
@@ -1998,6 +2004,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       receivedVia: form.receivedVia,
       agentName: form.agentName,
       agentRemaining,
+      selfReceipt,
     };
   }, [form, airline, priorRows, isForeignAirline]);
 
@@ -2041,8 +2048,9 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       : null;
     const activeRoe = parseCleanNum(form.roe) || defaultRoe || 1;
 
-    // Agent breakdown guard: money received can never exceed the total sale.
-    const saveAgentReceived = !isTopUp && !isRefund && String(form.agentName || "").trim() !== "" && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
+    // Agent breakdown guard (self agent only): money received can never exceed the total sale.
+    const isSelfAgentSave = !isTopUp && !isRefund && String(form.agentName || "").trim().toLowerCase() === "abdul razzaq";
+    const saveAgentReceived = isSelfAgentSave && String(form.agentReceived ?? "").trim() !== "" ? parseCleanNum(form.agentReceived) : null;
     if (saveAgentReceived !== null && salesVal !== null && saveAgentReceived > salesVal) {
       setError("Received amount cannot be greater than Total Sales for an agent sale.");
       return;
@@ -2126,7 +2134,11 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const isCancelRefund = (form.transactionType || "Add Transaction") === "Cancel/Refund";
   // Agent / counter sale breakdown: Total Sales mirrors Ticket Sales, Received is what the
   // passenger has already paid, and the remaining balance is the recovery to collect later.
-  const isAgentSale = recordType === "transaction" && !isTopUp && !isCancelRefund && String(form.agentName || "").trim() !== "";
+  // The counter-sale breakdown (Received / Passenger Remaining) is only for the
+  // owner's own counter sales — agent "Abdul Razzaq". Every other agent keeps the
+  // earlier plain flow: the full ticket sale posts exactly as it did before.
+  const isAgentSale = recordType === "transaction" && !isTopUp && !isCancelRefund &&
+    String(form.agentName || "").trim().toLowerCase() === "abdul razzaq";
   const agentTotalVal = parseCleanNum(form.ticketSales) || 0;
   const agentReceivedRaw = String(form.agentReceived ?? "").trim();
   const agentReceivedVal = agentReceivedRaw === "" ? null : parseCleanNum(form.agentReceived);
@@ -2368,31 +2380,6 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         </div>
 
-        {isAgentSale && (
-          <div style={{ marginBottom: 14, padding: 12, border: "1px solid var(--accent-clay, #d97757)", borderRadius: 10, background: "rgba(217, 119, 87, 0.06)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent-clay, #d97757)" }}>Agent / Counter Sale Breakdown — {String(form.agentName).trim()}</span>
-              <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Remaining balance is collected from the passenger later</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
-              <div style={styles.field}>
-                <label style={styles.label}>Total Sales (PKR)</label>
-                <input type="number" inputMode="decimal" step="0.01" placeholder="Full ticket sale amount" value={form.ticketSales ?? ""} onChange={(e) => update("ticketSales", e.target.value)} style={styles.input} />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>Received (PKR)</label>
-                <input type="number" inputMode="decimal" step="0.01" placeholder="Amount received now" value={form.agentReceived ?? ""} onChange={(e) => update("agentReceived", e.target.value)} style={styles.input} />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>Passenger Remaining (PKR)</label>
-                <div style={{ padding: "9px 10px", borderRadius: 6, background: "var(--card)", border: "1px solid var(--border)", fontSize: 13, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: agentRemainingVal < 0 ? "var(--error)" : "var(--accent-clay, #d97757)" }} className="num">
-                  {fmt(agentRemainingVal)} PKR{agentRemainingVal < 0 ? " (over-received)" : agentReceivedRaw === "" && agentTotalVal > 0 ? " (nothing received yet)" : ""}
-                </div>
-              </div>
-            </div>
-            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted-foreground)" }}>Total Sales is the same Ticket Sales amount posted in the ledger. Remaining = Total Sales − Received and is saved with the entry so it can be recovered later.</p>
-          </div>
-        )}
 
         {isCancelRefund && (
           <div style={{ marginBottom: 14, padding: 12, border: "1px solid var(--border)", borderRadius: 10, background: "var(--card)" }}>
@@ -2521,6 +2508,27 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           ))}
         </div>
 
+        {isAgentSale && (
+          <div style={{ marginBottom: 18, padding: 12, border: "1px solid var(--accent-clay, #d97757)", borderRadius: 10, background: "rgba(217, 119, 87, 0.06)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--accent-clay, #d97757)" }}>Agent / Counter Sale Breakdown — {String(form.agentName).trim()}</span>
+              <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Remaining balance is collected from the passenger later</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+              <div style={styles.field}>
+                <label style={styles.label}>Received (PKR)</label>
+                <input type="number" inputMode="decimal" step="0.01" placeholder="Amount received now" value={form.agentReceived ?? ""} onChange={(e) => update("agentReceived", e.target.value)} style={styles.input} />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Passenger Remaining (PKR)</label>
+                <div style={{ padding: "9px 10px", borderRadius: 6, background: "var(--card)", border: "1px solid var(--border)", fontSize: 13, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: agentRemainingVal < 0 ? "var(--error)" : "var(--accent-clay, #d97757)" }} className="num">
+                  {fmt(agentRemainingVal)} PKR{agentRemainingVal < 0 ? " (over-received)" : agentReceivedRaw === "" && agentTotalVal > 0 ? " (nothing received yet)" : ""}
+                </div>
+              </div>
+            </div>
+            <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--muted-foreground)" }}>Ticket Sales in the entry is the total sale value and is what posts to Google Sheets. Remaining = Ticket Sales − Received and is saved with the entry so it can be recovered later. Payments collected later are added to the ledger manually.</p>
+          </div>
+        )}
         {/* 1 Single Atomic Entry (No Double Counting) Posting Breakdown */}
         <div style={{ ...styles.previewBox, flexDirection: "column", gap: 10, padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: 8 }}>
@@ -2548,7 +2556,11 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
               <span style={styles.previewValue}>
                 {preview.receivedVia || (preview.isTopUp ? "Outgoing Top-Up" : "On Credit / Receivable")}
                 <span style={{ fontSize: 10, display: "block", color: "var(--muted-foreground)", fontWeight: 400 }}>
-                  {preview.receivedVia ? `Receipt +${fmt(preview.salesVal)} PKR` : preview.isTopUp ? "Direct portal deposit" : "No cash/bank posting"}
+                  {preview.receivedVia
+                  ? preview.selfReceipt !== null
+                    ? `Receipt +${fmt(preview.selfReceipt)} PKR (received amount)`
+                    : preview.isTopUp ? "Direct portal deposit" : "No auto receipt — add payments manually when collected"
+                  : preview.isTopUp ? "Direct portal deposit" : "No cash/bank posting"}
                 </span>
               </span>
             </div>
