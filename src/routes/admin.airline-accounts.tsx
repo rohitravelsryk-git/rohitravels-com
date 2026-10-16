@@ -1666,6 +1666,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
   const [pnrLookupMessage, setPnrLookupMessage] = useState("");
   const [pnrLookupDone, setPnrLookupDone] = useState(false);
+  const [agentNotice, setAgentNotice] = useState("");
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
 
@@ -1703,7 +1704,12 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
-    if (value.trim().toLowerCase() === "abdul razzaq") { update("paxContact", ""); return; }
+    if (value.trim().toLowerCase() === "abdul razzaq") {
+      update("paxContact", "");
+      setAgentNotice("Abdul Razzaq selected — no saved contact number on file. Please enter the Pax Contact # manually.");
+      return;
+    }
+    setAgentNotice("");
     const match = (agentDirectory ?? []).find((agent: any) => String(agent.agency_name ?? "").trim().toLowerCase() === value.trim().toLowerCase());
     if (match) update("paxContact", String(match.cell_number ?? "").trim());
   };
@@ -1782,6 +1788,12 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
     if (!form.date) {
       setError("Date is required.");
+      return;
+    }
+
+    const isSelfAgent = String(form.agentName || "").trim().toLowerCase() === "abdul razzaq";
+    if (!isTopUp && isSelfAgent && !String(form.paxContact || "").trim()) {
+      setError("Pax Contact # is required when the agent is Abdul Razzaq. Please enter it before saving.");
       return;
     }
 
@@ -2121,20 +2133,25 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
         <div style={styles.modalGrid}>
           {editableCols.map((c: any) => (
             <div key={c.key} style={styles.field}>
-              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : c.label}</label>
+              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : (c.key === "paxContact" && String(form.agentName || "").trim().toLowerCase() === "abdul razzaq") ? "Pax Contact # (required)" : c.label}</label>
               {c.type === "select" ? (
-                <div style={{ position: "relative" }}>
-                  <input
-                    style={styles.input}
-                    value={agentSearch}
-                    placeholder="Search agency name"
-                    onChange={(e) => selectAgent(e.target.value)}
-                    list="registered-agency-names"
-                  />
-                  <datalist id="registered-agency-names">
-                    {agents.map((a: string) => <option key={a} value={a} />)}
-                  </datalist>
-                </div>
+                <>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      style={styles.input}
+                      value={agentSearch}
+                      placeholder="Search agency name"
+                      onChange={(e) => selectAgent(e.target.value)}
+                      list="registered-agency-names"
+                    />
+                    <datalist id="registered-agency-names">
+                      {agents.map((a: string) => <option key={a} value={a} />)}
+                    </datalist>
+                  </div>
+                  {c.key === "agentName" && agentNotice ? (
+                    <p style={{ margin: "5px 0 0", fontSize: 11, color: "var(--warning, #b45309)" }}>{agentNotice}</p>
+                  ) : null}
+                </>
               ) : c.type === "transactionType" ? (
                 <div style={styles.radioGroup} role="radiogroup" aria-label="Transaction type">
                   {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
