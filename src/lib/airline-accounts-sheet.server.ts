@@ -591,14 +591,10 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }),
   });
 
-  const summarySpreadsheet = await getSpreadsheet(id);
-  const summarySheetId = (summarySpreadsheet.sheets ?? []).find((x) => x.properties.title === "Airline Balance")?.properties.sheetId;
-  if (summarySheetId !== undefined) {
-    await formatAirlineBalanceSheet(id, summarySheetId, (airlines as any[]).length);
-  }
-
-  // Create/refresh one dedicated tab for every airline, using standard Rohi export formatting
-  // without forced filter views and with exact 12 columns (including Debit In ID).
+  // Create/refresh one dedicated tab for every airline.
+  // Single metadata read: reused for the stale-tab sweep, the new-tab ids, the
+  // final tab ordering and the summary tab formatting after all data writes.
+  // Rebuild the tab without forced filter views and with exact 12 columns (including Debit In ID).
   const spreadsheet = await getSpreadsheet(id);
   const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
   const usedNames = new Set<string>(sheetMap.keys());
@@ -609,7 +605,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   };
 
   const currentAirlineTabNames = new Set((airlines as any[]).map((air) => safeAirlineTabName(air.name)));
-  const systemTabs = new Set(["Airline Balance", "_DATA"]);
+  const systemTabs = new Set(["Airline Balance", "_DATA", "Airline Contact Details"]);
   for (const [title, sheetId] of Array.from(sheetMap.entries())) {
     if (!systemTabs.has(title) && !currentAirlineTabNames.has(title)) {
       await deleteSheet(id, sheetId);
@@ -834,10 +830,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
   }
 
   // 3. Keep Google Sheets tab order identical to the database/UI airline order.
-  const finalSpreadsheet = await getSpreadsheet(id);
-  const finalSheetMap = new Map<string, number>(
-    (finalSpreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]),
-  );
+  // sheetMap is already accurate: adds and deletes during this run were tracked locally.
+  const finalSheetMap = sheetMap;
   const orderRequests = (airlines as any[])
     .map((air, index) => {
       const sheetId = finalSheetMap.get(safeAirlineTabName(air.name));
