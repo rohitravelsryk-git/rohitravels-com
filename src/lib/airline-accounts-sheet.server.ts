@@ -1,4 +1,4 @@
-import { addSheet, applyRohiExportFormatting, batchUpdateSpreadsheet, batchWrite, buildRohiExportFormattingRequests, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
+import { addSheet, applyRohiExportFormatting, batchClear, batchUpdateSpreadsheet, batchWrite, buildRohiExportFormattingRequests, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
 import { airlineIataCode, airlineLogoUrl, airlineSheetLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
