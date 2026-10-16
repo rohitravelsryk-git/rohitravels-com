@@ -459,7 +459,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-            const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 20000, "Airline ledger Google Sheet sync");
+            const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 45000, "Airline ledger Google Sheet sync");
             syncPending = !result.synced;
             syncError = result.error ?? null;
           } catch (error) {
