@@ -299,7 +299,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   let vendorTabNames = new Set<string>();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: dbVendors } = await supabaseAdmin.from("vendors").select("name, vendor_code");
+    const { data: dbVendors } = await (supabaseAdmin as any).from("vendors").select("name, vendor_code");
     if (dbVendors) {
       for (const v of dbVendors) {
         if (v.name) vendorTabNames.add(v.name.replace(/[\[\]\*\?:\/\\]/g, "_").slice(0, 30).trim().toLowerCase());

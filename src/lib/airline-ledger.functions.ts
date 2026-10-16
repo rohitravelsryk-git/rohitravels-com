@@ -734,7 +734,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
               accounts: accounts.data || [],
               accountTransactions: accountTransactions.data || [],
               services: services.data || [],
-            });
+            }, newRevision);
           } catch (e) {
             console.warn("[airline-atomic] Financial backup sync:", e);
           }
@@ -844,7 +844,7 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
               accounts: accounts.data || [],
               accountTransactions: accountTransactions.data || [],
               services: services.data || [],
-            });
+            }, newRevision);
           } catch (e) {
             console.warn("[airline-atomic-delete] Financial backup sync:", e);
           }

@@ -161,8 +161,7 @@ function LoginPage() {
       }
 
       // Preserve the legacy suspended-account guard for existing agent records.
-      const { data: agent, error: agentLookupError } = await supabase
-        .from("registered_agents")
+      const { data: agent, error: agentLookupError } = await (supabase as any).from("registered_agents")
         .select("status")
         .eq("auth_user_id", sessionData.user.id)
         .maybeSingle();

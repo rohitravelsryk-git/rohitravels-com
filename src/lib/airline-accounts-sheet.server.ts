@@ -836,7 +836,7 @@ export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Pr
     if (!contacts || !contacts.length) {
       try {
         const db = await getAdmin();
-        const { data, error } = await db
+        const { data, error } = await (db as any)
           .from("airline_contacts")
           .select("*")
           .eq("is_active", true)

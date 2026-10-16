@@ -100,7 +100,7 @@ export function AirlineContactDetailsTable({
   }, [contacts, search]);
 
   // Copy helper
-  const handleCopy = (text: string, id: string) => {
+  const handleCopy = (text: string | undefined, id: string) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedId(id);
