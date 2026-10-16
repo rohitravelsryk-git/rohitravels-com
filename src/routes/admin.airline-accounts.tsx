@@ -1631,6 +1631,10 @@ function LedgerTable({
   );
 }
 
+// The Rohi office number (site footer) is the final fallback for Pax Contact #
+// so the field always shows a callable number, even with an empty directory.
+const ROHI_OFFICE_CONTACT = "0305 6622988";
+
 function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onDelete, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
   const [form, setForm] = useState<any>(() => {
@@ -1717,7 +1721,13 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
         notice: `No saved number for ${value.trim()} — office number filled in. Replace it with the passenger's own number if it is different.`,
       };
     }
-    return { contact: "", notice: `No saved contact number for ${value.trim()}. Enter the number to call so the ledger always carries one.` };
+    // Last resort: the Rohi office number shown on the site footer. The ledger
+    // must always carry a callable number, even when the agents directory has
+    // no saved number for the selected agent.
+    return {
+      contact: ROHI_OFFICE_CONTACT,
+      notice: `No saved number for ${value.trim()} — office number ${ROHI_OFFICE_CONTACT} filled in. Replace it with the passenger's own number if it is different.`,
+    };
   };
 
   const selectAgent = (value: string) => {
