@@ -623,12 +623,21 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const valuesPayload: { range: string; values: unknown[][] }[] = [];
   const formatTasks: any[] = [];
 
-  // Ensure airline tabs have space for the Debit In ID column before writing A:L.
+  // Size each airline tab's grid before writing: foreign-currency airlines get three extra
+  // FX columns (Debit In, Credit From, Balance in the airline's currency) => 16 columns,
+  // while PKR airlines keep the original 13-column layout.
+  const tabWidths = new Map<string, number>();
+  for (const air of airlines as any[]) {
+    const tabName = safeAirlineTabName(air.name);
+    if (!sheetMap.has(tabName)) continue;
+    const rawCurr = (air.currency && String(air.currency).trim()) || "";
+    tabWidths.set(tabName, rawCurr && rawCurr !== "PKR" ? 16 : 13);
+  }
   const expandGridRequests = Array.from(sheetMap.entries())
     .filter(([title]) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
-    .map(([, sId]) => ({
+    .map(([title, sId]) => ({
       updateSheetProperties: {
-        properties: { sheetId: sId, gridProperties: { columnCount: 13 } },
+        properties: { sheetId: sId, gridProperties: { columnCount: tabWidths.get(title) ?? 13 } },
         fields: "gridProperties.columnCount",
       },
     }));
@@ -715,13 +724,28 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     const airlineCode = ((!air.code || air.code === "--") && /air\s*arabia/i.test(air.name)) ? "G9" : air.code;
     const airlineTitle = airlineCode ? `Airline: ${s(air.name)} • ${s(airlineCode)}` : `Airline: ${s(air.name)}`;
+    // Foreign-currency airlines get three extra FX columns next to their PKR counterparts:
+    // Debit In (CUR) for top ups added, Credit From (CUR) for refunds received, and a running
+    // Balance in (CUR), so every row is auditable in both PKR and the airline's currency.
+    const colCount = isForeign ? 16 : 13;
+    const padRow = (row: unknown[]) => {
+      const padded = [...row];
+      while (padded.length < colCount) padded.push("");
+      return padded.slice(0, colCount);
+    };
+    const headerRow: unknown[] = isForeign
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
+    const openingRow: unknown[] = isForeign
+      ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", "", "", "", 0, 0, op, opForeign, "OPENING BALANCE"]
+      : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", "", 0, 0, op, "OPENING BALANCE"];
     const specific: unknown[][] = [
-      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Airline Account Statement", "", "", "", "", "", "", "", "", "", "", "", ""],
-      [airlineTitle, "", "", "", "", "", "", "", "", "", "", "", ""],
-      ["", "", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"],
-      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", "", 0, 0, op, "OPENING BALANCE"],
+      ["ROHI INTERNATIONAL TRAVELS"],
+      ["Airline Account Statement"],
+      [airlineTitle],
+      [""],
+      headerRow,
+      openingRow,
     ];
 
     for (const r of rows) {
@@ -754,11 +778,19 @@ export async function syncAirlineAccountsSheet(revision: number) {
       const tag = isRefund ? "REFUND" : isTopUp ? "TOP UP" : "";
       const remarks = [tag, r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - ");
 
-      specific.push([
-        formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-        displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
-        remarks,
-      ]);
+      const debitFx = isIncrease ? txForeignCr : "";
+      const creditFx = isIncrease ? "" : txForeignCr;
+      specific.push(padRow(isForeign
+        ? [
+            formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
+            displayedSales, displayedDebit, debitFx, displayedCredit, creditFx,
+            s(r.pax_contact), voids, profit, running, runningForeign, remarks,
+          ]
+        : [
+            formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
+            displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
+            remarks,
+          ]));
     }
 
     if (op === 0 && rows.length === 0 && running === 0) {
@@ -773,16 +805,17 @@ export async function syncAirlineAccountsSheet(revision: number) {
         : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
     }
 
+    const rangeEnd = colCount === 16 ? "P" : "M";
     valuesPayload.push({
-      range: `${quoteSheet(tabName)}!A1:M${Math.max(20, specific.length)}`,
-      values: specific,
+      range: `${quoteSheet(tabName)}!A1:${rangeEnd}${Math.max(20, specific.length)}`,
+      values: specific.map(padRow),
     });
     formatTasks.push({
       sheetId,
       title: tabName,
-      columnCount: 13,
+      columnCount: colCount,
       dataEndRow: specific.length,
-      numericColumnIndexes: [5, 6, 7, 9, 10, 11],
+      numericColumnIndexes: isForeign ? [5, 6, 7, 8, 9, 11, 12, 13, 14] : [5, 6, 7, 9, 10, 11],
       dateColumnIndexes: [0],
       isServiceOnly: false,
     });

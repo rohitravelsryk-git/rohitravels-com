@@ -170,13 +170,21 @@ async function replaceAirlineTabs(
     const roeVal = Number(air.roe) || 1;
     let runningForeign = Number(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
 
+    // Foreign-currency airlines get three extra FX columns (Debit In, Credit From, running
+    // Balance in the airline's currency) so every row reads in both PKR and that currency.
+    const headerRow: unknown[] = isForeign
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
+    const openingRow: unknown[] = isForeign
+      ? [air.opening_balance_date, "", "", "", "", 0, "", "", "", "", 0, 0, running, runningForeign, "OPENING BALANCE"]
+      : [air.opening_balance_date, "", "", "", "", 0, "", "", 0, 0, running, "OPENING BALANCE"];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
       ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date, "Entries", rows.length, "Current Balance", running],
       [],
-      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      [air.opening_balance_date, "", "", "", "", 0, "", "", 0, 0, running, "OPENING BALANCE"],
+      headerRow,
+      openingRow,
     ];
     for (const r of rows as any[]) {
       const credit = Number(r.credit_from_id) || 0;
@@ -196,11 +204,19 @@ async function replaceAirlineTabs(
         : (isForeign ? (balanceDelta / txRoe) : 0);
       runningForeign += isBalanceIncrease ? txForeignCr : -txForeignCr;
 
-      values.push([
-        r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-        sales, displayedDebit, displayedCredit, voids, profit, running,
-        [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
-      ]);
+      const debitFx = isBalanceIncrease ? txForeignCr : "";
+      const creditFx = isBalanceIncrease ? "" : txForeignCr;
+      values.push(isForeign
+        ? [
+            r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
+            sales, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
+            [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
+          ]
+        : [
+            r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
+            sales, displayedDebit, displayedCredit, voids, profit, running,
+            [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
+          ]);
     }
     values[2][7] = isForeign ? `${running} PKR (${runningForeign.toFixed(2)} ${curr})` : running;
     requests.push({ updateCells: { range: { sheetId: props.sheetId }, fields: "userEnteredValue" } });

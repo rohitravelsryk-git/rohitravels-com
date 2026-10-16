@@ -56,6 +56,17 @@ const COLUMNS: any[] = [
   { key: "ledgerEntry", label: "Ledger Entry", type: "text", width: 190, computed: true },
 ];
 
+// For foreign-currency airlines the statement headers spell out both currencies so every
+// reader can see which column holds PKR and which holds the airline's own currency (CUR).
+const FX_COLUMN_LABELS: Record<string, string> = {
+  ticketSales: "Ticket Sales (PKR)",
+  debitInId: "Debit In ID (PKR)",
+  creditFromId: "Credit From ID (PKR)",
+  voidCharges: "Void Charges (PKR)",
+  profit: "Profit (PKR)",
+  balance: "Balance (PKR / CUR)",
+};
+
 const EMPTY_ROW = (): any => ({
   date: new Date().toISOString().slice(0, 10),
   transactionType: "Add Transaction",
@@ -214,6 +225,10 @@ function computeLedgerRows(rows: any[], airline: any) {
       foreignBalance: runningForeign,
       txRoe,
       txForeignCredit,
+      // How much of the airline's own currency this entry added (top up / debit in)
+      // or returned (credit from), so each row is readable in both currencies.
+      txForeignAdded: isIncrease ? txForeignCredit : 0,
+      txForeignReceived: isIncrease ? 0 : txForeignCredit,
       profit,
       ledgerEntry,
     };
@@ -1502,11 +1517,17 @@ function LedgerTable({
           <thead>
             <tr>
               <th style={{ ...styles.th, width: 44 }}>Sr #</th>
-              {COLUMNS.map((c) => (
-                <th key={c.key} style={{ ...styles.th, minWidth: c.width }}>
-                  {c.label}{c.computed && <span style={styles.autoTag}>auto</span>}
-                </th>
-              ))}
+              {COLUMNS.map((c) => {
+                const cur = airline?.currency || "";
+                const foreignAirline = !!cur && cur !== "PKR";
+                const fxLabel = foreignAirline ? FX_COLUMN_LABELS[c.key] : undefined;
+                const label = fxLabel ? fxLabel.replace("CUR", cur) : c.label;
+                return (
+                  <th key={c.key} style={{ ...styles.th, minWidth: c.width }}>
+                    {label}{c.computed && <span style={styles.autoTag}>auto</span>}
+                  </th>
+                );
+              })}
               <th style={{ ...styles.th, width: 84, textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
@@ -1589,6 +1610,13 @@ function LedgerTable({
                           <div>{fmt(r.balance)}</div>
                           <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
                             {fmt(r.foreignBalance)} {airline.currency}
+                          </div>
+                        </div>
+                      ) : c.key === "debitInId" && isForeignAirline && Number(r.debitInId) > 0 && r.txForeignAdded > 0 ? (
+                        <div>
+                          <div>{fmt(r.debitInId)}</div>
+                          <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
+                            {fmt(r.txForeignAdded)} {airline.currency} @ {r.txRoe}
                           </div>
                         </div>
                       ) : isCredit && isForeignAirline && Number(r.creditFromId) > 0 ? (
