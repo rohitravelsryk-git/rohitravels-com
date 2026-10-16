@@ -815,7 +815,10 @@ export async function syncAirlineAccountsSheet(revision: number) {
       title: tabName,
       columnCount: colCount,
       dataEndRow: specific.length,
-      numericColumnIndexes: isForeign ? [5, 6, 7, 8, 9, 11, 12, 13, 14] : [5, 6, 7, 9, 10, 11],
+      numericColumnIndexes: isForeign ? [5, 6, 8, 11, 12, 13] : [5, 6, 7, 9, 10, 11],
+      // Foreign-currency columns (Debit In CUR, Credit From CUR, Balance in CUR)
+      // always render with two decimal places; PKR columns stay whole-rupee.
+      decimalColumnIndexes: isForeign ? [7, 9, 14] : [],
       dateColumnIndexes: [0],
       isServiceOnly: false,
     });

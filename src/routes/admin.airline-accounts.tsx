@@ -84,6 +84,15 @@ const fmt = (n: any) => {
   return v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
+// Foreign-currency values are always shown with exactly two decimal places,
+// matching how they are stored in Supabase and mirrored to Google Sheets.
+const fmtFx = (n: any) => {
+  const v = Number(n);
+  if (n === "" || n === null || n === undefined) return "-";
+  if (Number.isNaN(v)) return n;
+  return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const monthKey = (d: string) => (d ? d.slice(0, 7) : "unknown");
 const yearKey = (d: string) => (d ? d.slice(0, 4) : "unknown");
@@ -1449,9 +1458,9 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
   );
 }
 function TabStub({ active, onClick, code, label, balance, foreignBalance, isForeign, currency }: any) {
-  const displayBal = isForeign ? `${fmt(foreignBalance)} ${currency}` : fmt(balance);
+  const displayBal = isForeign ? `${fmtFx(foreignBalance)} ${currency}` : fmt(balance);
   const hoverTitle = isForeign
-    ? `${label} • Current Balance: ${fmt(foreignBalance)} ${currency} (PKR ${fmt(balance)})`
+    ? `${label} • Current Balance: ${fmtFx(foreignBalance)} ${currency} (PKR ${fmt(balance)})`
     : `${label} • Current Balance: ${fmt(balance)} PKR`;
   return (
     <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={hoverTitle}>
@@ -1495,7 +1504,7 @@ function LedgerTable({
             </div>
             <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
               {airline?.currency && airline.currency !== "PKR"
-                ? `${fmt(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} (PKR ${fmt(airline?.openingBalance ?? 0)})`
+                ? `${fmtFx(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} (PKR ${fmt(airline?.openingBalance ?? 0)})`
                 : fmt(airline?.openingBalance ?? 0)}
             </strong>
             <span style={{ fontSize: 10, textTransform: "none", letterSpacing: 0 }}>
@@ -1553,7 +1562,7 @@ function LedgerTable({
                   <div>{fmt(airline?.openingBalance ?? 0)}</div>
                   {airline?.currency && airline.currency !== "PKR" && (
                     <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
-                      {fmt(airline?.openingBalanceForeign ?? (Number(airline?.openingBalance) / (Number(airline?.roe) || 1)))} {airline.currency}
+                      {fmtFx(airline?.openingBalanceForeign ?? (Number(airline?.openingBalance) / (Number(airline?.roe) || 1)))} {airline.currency}
                     </div>
                   )}
                 </td>
@@ -1609,21 +1618,21 @@ function LedgerTable({
                         <div>
                           <div>{fmt(r.balance)}</div>
                           <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
-                            {fmt(r.foreignBalance)} {airline.currency}
+                            {fmtFx(r.foreignBalance)} {airline.currency}
                           </div>
                         </div>
                       ) : c.key === "debitInId" && isForeignAirline && Number(r.debitInId) > 0 && r.txForeignAdded > 0 ? (
                         <div>
                           <div>{fmt(r.debitInId)}</div>
                           <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
-                            {fmt(r.txForeignAdded)} {airline.currency} @ {r.txRoe}
+                            {fmtFx(r.txForeignAdded)} {airline.currency} @ {r.txRoe}
                           </div>
                         </div>
                       ) : isCredit && isForeignAirline && Number(r.creditFromId) > 0 ? (
                         <div>
                           <div>{fmt(r.creditFromId)}</div>
                           <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
-                            {fmt(r.txForeignCredit)} {airline.currency} @ {r.txRoe}
+                            {fmtFx(r.txForeignCredit)} {airline.currency} @ {r.txRoe}
                           </div>
                         </div>
                       ) : isDate ? (
@@ -2082,7 +2091,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   {fmt(Number(form.openingBalance) || 0)} PKR
                   {isForeignAirline && form.openingBalanceForeign && (
                     <span style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)", marginLeft: 6 }}>
-                      ({fmt(Number(form.openingBalanceForeign))} {airline.currency})
+                      ({fmtFx(Number(form.openingBalanceForeign))} {airline.currency})
                     </span>
                   )}
                 </span>

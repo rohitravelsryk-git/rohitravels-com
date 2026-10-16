@@ -274,6 +274,7 @@ export function buildRohiExportFormattingRequests(
     dataEndRow: number;
     numericColumnStart?: number;
     numericColumnIndexes?: number[];
+    decimalColumnIndexes?: number[];
     dateColumnIndexes?: number[];
     isServiceOnly?: boolean;
     hasOpeningRow?: boolean;
@@ -291,6 +292,13 @@ export function buildRohiExportFormattingRequests(
     repeatCell: {
       range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
       cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);0" } } },
+      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+    },
+  }));
+  const decimalFormatRequests = (opts.decimalColumnIndexes ?? []).map((columnIndex) => ({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0.00;[Red](#,##0.00);0.00" } } },
       fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
     },
   }));
@@ -592,7 +600,7 @@ export function buildRohiExportFormattingRequests(
       },
     });
     // Distinctive terracotta accent for numeric columns in the total row
-    for (const numCol of numericColumnIndexes) {
+    for (const numCol of [...numericColumnIndexes, ...(opts.decimalColumnIndexes ?? [])]) {
       requests.push({
         repeatCell: {
           range: { sheetId, startRowIndex: totalRowIdx, endRowIndex: totalRowIdx + 1, startColumnIndex: numCol, endColumnIndex: numCol + 1 },
@@ -608,7 +616,7 @@ export function buildRohiExportFormattingRequests(
       });
     }
   }
-  return [...requests, ...numericFormatRequests, ...dateFormatRequests];
+  return [...requests, ...numericFormatRequests, ...decimalFormatRequests, ...dateFormatRequests];
 }
 
 export async function applyRohiExportFormatting(
@@ -619,6 +627,7 @@ export async function applyRohiExportFormatting(
     dataEndRow: number;
     numericColumnStart?: number;
     numericColumnIndexes?: number[];
+    decimalColumnIndexes?: number[];
     dateColumnIndexes?: number[];
     isServiceOnly?: boolean;
     hasOpeningRow?: boolean;
