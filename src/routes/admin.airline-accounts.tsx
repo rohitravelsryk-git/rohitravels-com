@@ -1648,6 +1648,12 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       foreignAmount: initialForeign,
       receivedVia: row.receivedVia || "",
       receivedViaAccountId: row.receivedViaAccountId || "",
+      // Opening-balance editing must open with the account's real saved values.
+      // The date in particular was only displayed as a fallback in the input but
+      // never stored, so every save failed validation with "Opening balance date
+      // is required" unless the user re-picked the date by hand.
+      openingBalanceDate: row.openingBalanceDate || airline?.openingBalanceDate || new Date().toISOString().slice(0, 10),
+      openingBalance: row.openingBalance ?? (modal.recordType === "openingBalance" ? (airline?.openingBalance ?? "") : ""),
       openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && defaultRoe ? (Number(airline?.openingBalance || 0) / defaultRoe).toFixed(2) : ""),
     };
   });
@@ -1845,7 +1851,10 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const handleOpeningBalanceSave = async () => {
     const date = String(form.openingBalanceDate || "").trim();
     const amount = Number(form.openingBalance);
-    const foreignAmount = isForeignAirline && form.openingBalanceForeign !== "" ? Number(form.openingBalanceForeign) : null;
+    const foreignRaw = String(form.openingBalanceForeign ?? "").trim();
+    const foreignNum = foreignRaw === "" ? NaN : Number(foreignRaw);
+    // undefined (not null): "no change" must keep the saved foreign balance.
+    const foreignAmount = isForeignAirline && Number.isFinite(foreignNum) ? foreignNum : undefined;
 
     if (!date) {
       setError("Opening balance date is required.");
@@ -1949,7 +1958,17 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                       inputMode="decimal"
                       step="1"
                       value={form.openingBalance ?? ""}
-                      onChange={(e) => update("openingBalance", e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        update("openingBalance", val);
+                        const num = Number(val);
+                        const roe = Number(airline?.roe || 1);
+                        // PKR and the foreign amount are two views of the same
+                        // balance at the airline's ROE: keep them in sync.
+                        if (val !== "" && Number.isFinite(num) && roe > 0) {
+                          update("openingBalanceForeign", Number((num / roe).toFixed(2)));
+                        }
+                      }}
                       style={styles.input}
                       disabled={savingOpeningBalance}
                     />
