@@ -90,6 +90,7 @@ import { Route as AgentappAgentServicesRouteImport } from './routes/_agentapp.ag
 import { Route as AgentappAgentStickyNotesRouteImport } from './routes/_agentapp.agent.sticky-notes'
 import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
+import { Route as ApiPublicHooksAirlineSheetSyncRouteImport } from './routes/api/public/hooks/airline-sheet-sync'
 import { Route as ApiPublicHooksBackupSyncRouteImport } from './routes/api/public/hooks/backup-sync'
 import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -510,6 +511,12 @@ const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
   path: '/api/public/agent-approve',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksAirlineSheetSyncRoute =
+  ApiPublicHooksAirlineSheetSyncRouteImport.update({
+    id: '/api/public/hooks/airline-sheet-sync',
+    path: '/api/public/hooks/airline-sheet-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksBackupSyncRoute =
   ApiPublicHooksBackupSyncRouteImport.update({
     id: '/api/public/hooks/backup-sync',
@@ -632,6 +639,7 @@ export interface FileRoutesByFullPath {
   '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/airline-sheet-sync': typeof ApiPublicHooksAirlineSheetSyncRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -720,6 +728,7 @@ export interface FileRoutesByTo {
   '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/airline-sheet-sync': typeof ApiPublicHooksAirlineSheetSyncRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -811,6 +820,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/airline-sheet-sync': typeof ApiPublicHooksAirlineSheetSyncRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -902,6 +912,7 @@ export interface FileRouteTypes {
     | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/airline-sheet-sync'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -990,6 +1001,7 @@ export interface FileRouteTypes {
     | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/airline-sheet-sync'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -1080,6 +1092,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/airline-sheet-sync'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -1131,6 +1144,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
+  ApiPublicHooksAirlineSheetSyncRoute: typeof ApiPublicHooksAirlineSheetSyncRoute
   ApiPublicHooksBackupSyncRoute: typeof ApiPublicHooksBackupSyncRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1709,6 +1723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAgentApproveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/airline-sheet-sync': {
+      id: '/api/public/hooks/airline-sheet-sync'
+      path: '/api/public/hooks/airline-sheet-sync'
+      fullPath: '/api/public/hooks/airline-sheet-sync'
+      preLoaderRoute: typeof ApiPublicHooksAirlineSheetSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/backup-sync': {
       id: '/api/public/hooks/backup-sync'
       path: '/api/public/hooks/backup-sync'
@@ -1912,6 +1933,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
+  ApiPublicHooksAirlineSheetSyncRoute: ApiPublicHooksAirlineSheetSyncRoute,
   ApiPublicHooksBackupSyncRoute: ApiPublicHooksBackupSyncRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

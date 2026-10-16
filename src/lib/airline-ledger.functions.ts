@@ -867,6 +867,9 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
     const newRevision = Number(meta?.revision ?? 1);
 
+    // Declared outside the try so the sheet outcome below can read it even when
+    // the runner throws (this also fixes the CI typecheck error).
+    let settledDelete: PromiseSettledResult<unknown>[] = [];
     // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
     try {
       const [airlinesRes, txRes] = await Promise.all([
@@ -881,7 +884,9 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       // pattern). A detached background promise can be killed by the serverless
       // runtime once the response is sent, which silently skipped the Google
       // Sheet write after deletes. Individual timeouts keep the wait bounded.
-      const settledDelete = await Promise.allSettled([
+      // settledDelete is declared above the try so the sheet outcome stays
+      // readable even when the runner throws (also fixes the CI typecheck error).
+      settledDelete = await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
@@ -940,8 +945,13 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       console.warn("[airline-atomic-delete] Downstream sync runner error:", bgErr);
     }
 
-    const sheetsOutcome: any =
-      settledDelete[2] && settledDelete[2].status === "fulfilled" ? (settledDelete[2] as any).value : null;
+    // Find the Google Sheet result by shape, not by index: the sync list can
+    // grow (counter sales were added), and index-based reads silently misalign.
+    const sheetSettled = settledDelete.find(
+      (r): r is PromiseFulfilledResult<{ sheetSynced: boolean; sheetSyncError: string | null }> =>
+        r.status === "fulfilled" && !!r.value && typeof r.value === "object" && "sheetSynced" in r.value
+    );
+    const sheetsOutcome = sheetSettled ? sheetSettled.value : null;
 
     return {
       success: true,
