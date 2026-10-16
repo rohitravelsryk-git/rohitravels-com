@@ -579,7 +579,10 @@ function AirlineLedgerApp() {
                 : "pending",
         );
 
-        if (needsSync && (rawStatus === "error" || rawStatus === "pending") && savePendingRef.current === 0 && !retryInFlight) {
+        // Retry whenever the mirror is behind, even if the status row still
+        // says "synced": a background sync killed mid-run used to leave the
+        // status stale and the poller never retried.
+        if (needsSync && savePendingRef.current === 0 && !retryInFlight) {
           retryInFlight = true;
           try {
             const result: any = await retryAirlineLedgerGoogleSync();

@@ -419,12 +419,16 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       }
     })();
 
-    // Run Financial Google backup and Airline Google Sheet sync concurrently,
-    // detached from the response. The database save is committed, so the UI
-    // should not wait ~45s for Google Sheet rebuilds before reporting success.
-    // A detached sync that fails marks its own status row, and the admin page's
-    // status poller plus the on-open sync retry it automatically.
-    void Promise.allSettled([
+    // Downstream mirrors (Agent ledgers, Accounts Book receipts, Financial
+    // backup, Airline Google Sheet) complete BEFORE the response returns,
+    // using the same pattern as Accounts Book's triggerLiveAccountsSync. A
+    // detached background promise can be killed by the serverless runtime as
+    // soon as the response is sent, which silently skipped the Google Sheet
+    // write and left the workbook stale. Awaiting guarantees the mirror runs;
+    // individual timeouts keep the wait bounded.
+    let sheetSynced = true;
+    let sheetSyncError: string | null = null;
+    await Promise.allSettled([
       (async () => {
         try {
           const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
@@ -462,13 +466,16 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
           const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 45000, "Airline ledger Google Sheet sync");
           if (!result.synced) {
-            console.error("Airline Sheet sync failed after database save:", result.error);
+            sheetSynced = false;
+            sheetSyncError = result.error ?? "Airline Google Sheet sync failed";
+            console.error("Airline Sheet sync failed after database save:", sheetSyncError);
           }
         } catch (error) {
-          const syncError = String(error instanceof Error ? error.message : error);
-          console.error("Airline Sheet sync failed after database save:", syncError);
+          sheetSynced = false;
+          sheetSyncError = String(error instanceof Error ? error.message : error);
+          console.error("Airline Sheet sync failed after database save:", sheetSyncError);
           await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
-            .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+            .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: sheetSyncError.slice(0, 1000) });
         }
       })(),
     ]);
@@ -477,8 +484,8 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       success: true,
       revision: savedRevision,
       persisted: true,
-      syncPending: true,
-      syncError: null,
+      syncPending: !sheetSynced,
+      syncError: sheetSyncError,
     };
   });
 
@@ -809,13 +816,11 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
 
-      // Fire-and-forget (delete): the database row is committed, so the response must not
-      // wait for the Google Sheet rebuilds (up to ~45s each). Each sync marks its
-      // own status row, and the admin page's status poller + on-open sync heal
-      // any run that fails. Blocking the response here made every save appear to
-      // hang for ~45s and triggered the browser "changes will not be saved"
-      // warning when the user refreshed during the wait.
-      void Promise.allSettled([
+      // Downstream mirrors complete BEFORE the response returns (Accounts Book
+      // pattern). A detached background promise can be killed by the serverless
+      // runtime once the response is sent, which silently skipped the Google
+      // Sheet write after deletes. Individual timeouts keep the wait bounded.
+      await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
