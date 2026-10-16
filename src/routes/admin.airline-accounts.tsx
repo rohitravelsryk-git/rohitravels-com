@@ -1665,13 +1665,30 @@ const ROHI_OFFICE_CONTACT = "0305 6622988";
 
 function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onDelete, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
+  // The ROE prefills from the airline's own currency & ROE settings (gear icon on the
+  // dashboard row). If that setting is missing or still 1 for a foreign currency, fall
+  // back to the carrier's standard rate so entries never silently convert at ROE 1.
+  const savedRoeSetting = Number(airline?.roe) || 0;
+  const roeFromSettings = isForeignAirline ? savedRoeSetting > 1 : savedRoeSetting > 0;
+  const fallbackRoe = (() => {
+    if (!isForeignAirline) return 1;
+    const code = String(airline?.code || "");
+    const name = String(airline?.name || "");
+    if (code === "G9" || /air\s*arabia/i.test(name)) return 77.30; // AED
+    if (code === "XY" || /flynas/i.test(name)) return 75.50; // SAR
+    if (code === "F3" || /flyadeal/i.test(name)) return 284.00; // USD
+    return 0;
+  })();
+  const defaultRoe = isForeignAirline ? (roeFromSettings ? savedRoeSetting : (fallbackRoe || 1)) : 1;
   const [form, setForm] = useState<any>(() => {
     const row = modal.row || {};
-    const defaultRoe = Number(airline?.roe) || 1;
     const initialRoe = Number(row.roe) || defaultRoe;
+    const rowIsTopUp = /top\s*up/i.test(String(row.transactionType || ""));
     const initialForeign = row.foreignAmount !== undefined && row.foreignAmount !== null && row.foreignAmount !== ""
       ? String(row.foreignAmount)
-      : (isForeignAirline && row.creditFromId ? (Number(row.creditFromId) / initialRoe).toFixed(2) : "");
+      : (isForeignAirline && rowIsTopUp && row.debitInId
+        ? (Number(String(row.debitInId).replace(/,/g, "")) / initialRoe).toFixed(2)
+        : (isForeignAirline && row.creditFromId ? (Number(row.creditFromId) / initialRoe).toFixed(2) : ""));
 
     return {
       ...row,
@@ -1797,7 +1814,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     const creditVal = parseCleanNum(form.creditFromId);
     const salesVal = parseCleanNum(form.ticketSales);
     const foreignVal = form.foreignAmount !== "" && form.foreignAmount !== null && form.foreignAmount !== undefined ? parseCleanNum(form.foreignAmount) : null;
-    const activeRoe = parseCleanNum(form.roe) || parseCleanNum(airline?.roe) || 1;
+    const activeRoe = parseCleanNum(form.roe) || defaultRoe || 1;
 
     let delta = 0;
     if (isIncrease) {
@@ -1875,7 +1892,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     const foreignVal = form.foreignAmount !== "" && form.foreignAmount !== null && form.foreignAmount !== undefined
       ? parseCleanNum(form.foreignAmount)
       : null;
-    const activeRoe = parseCleanNum(form.roe) || parseCleanNum(airline?.roe) || 1;
+    const activeRoe = parseCleanNum(form.roe) || defaultRoe || 1;
 
     let finalCredit = 0;
     if (isIncrease) {
@@ -1952,17 +1969,15 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 
   const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
   const isCancelRefund = (form.transactionType || "Add Transaction") === "Cancel/Refund";
-  const topUpCurrency = /flynas/i.test(airline?.name || "") ? "SAR"
-    : /airarabia/i.test(airline?.name || "") ? "AED"
-    : /flyadeal/i.test(airline?.name || "") ? "USD"
-    : (airline?.currency && airline.currency !== "PKR" ? airline.currency : null);
+  // A top up adds money to the airline portal (Debit In); every other entry returns or
+  // spends from it (Credit From). The FX helper converts into whichever side applies.
+  const fxTargetKey = isTopUp ? "debitInId" : "creditFromId";
 
   const editableCols = isTopUp
     ? [
         COLUMNS.find((c) => c.key === "date"),
         { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details (e.g. Bank to Air Arabia)" },
         { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Amount (PKR)", type: "number" },
-        ...(topUpCurrency ? [{ key: "foreignAmount", label: `Top Up Amount (${topUpCurrency})`, type: "number", width: 150 }] : []),
       ].filter(Boolean)
     : isCancelRefund
       ? [
@@ -2093,7 +2108,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         ) : (
         <>
-        {isForeignAirline && !isTopUp && (
+        {isForeignAirline && (
           <div style={{
             background: "rgba(217, 119, 87, 0.08)",
             border: "1px solid var(--accent-clay, #d97757)",
@@ -2103,7 +2118,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
-                Foreign Currency ROE Helper ({airline.currency} @ ROE {form.roe ?? airline.roe ?? 1})
+                {isTopUp ? `Foreign Currency ROE Helper (Top Up — Debit In ${airline.currency} @ ROE ${form.roe ?? defaultRoe})` : `Foreign Currency ROE Helper (${airline.currency} @ ROE ${form.roe ?? defaultRoe})`}
               </span>
               <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
                 Locked on this entry permanently
@@ -2111,7 +2126,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               <div style={styles.field}>
-                <label style={{ ...styles.label, fontSize: 11 }}>Amount in {airline.currency}</label>
+                <label style={{ ...styles.label, fontSize: 11 }}>{isTopUp ? `Top Up Amount in ${airline.currency}` : `Amount in ${airline.currency}`}</label>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -2121,10 +2136,10 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   onChange={(e) => {
                     const fVal = e.target.value;
                     const num = Number(fVal);
-                    const roe = Number(form.roe || airline.roe || 1);
+                    const roe = Number(form.roe || defaultRoe || 1);
                     update("foreignAmount", fVal);
-                    if (fVal !== "" && Number.isFinite(num)) {
-                      update("creditFromId", Math.round(num * roe));
+                    if (fVal !== "" && Number.isFinite(num) && roe > 0) {
+                      update(fxTargetKey, Math.round(num * roe));
                     }
                   }}
                   style={{ ...styles.input, padding: "6px 8px" }}
@@ -2136,20 +2151,20 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   type="number"
                   inputMode="decimal"
                   step="0.01"
-                  value={form.roe ?? airline.roe ?? 1}
+                  value={form.roe ?? defaultRoe}
                   onChange={(e) => {
                     const roeVal = e.target.value;
                     const numRoe = Number(roeVal);
                     update("roe", roeVal);
                     if (form.foreignAmount && Number.isFinite(Number(form.foreignAmount)) && numRoe > 0) {
-                      update("creditFromId", Math.round(Number(form.foreignAmount) * numRoe));
+                      update(fxTargetKey, Math.round(Number(form.foreignAmount) * numRoe));
                     }
                   }}
                   style={{ ...styles.input, padding: "6px 8px" }}
                 />
               </div>
               <div style={styles.field}>
-                <label style={{ ...styles.label, fontSize: 11 }}>Credit in PKR</label>
+                <label style={{ ...styles.label, fontSize: 11 }}>{isTopUp ? "Debit in PKR (auto)" : "Credit in PKR (auto)"}</label>
                 <div style={{
                   padding: "7px 10px",
                   borderRadius: 6,
@@ -2159,10 +2174,15 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   fontWeight: 700,
                   color: "var(--foreground)",
                 }}>
-                  {fmt(Number(form.creditFromId) || 0)} PKR
+                  {fmt(Number(form[fxTargetKey]) || 0)} PKR
                 </div>
               </div>
             </div>
+            {!roeFromSettings && (
+              <p style={{ margin: "8px 0 0", fontSize: 11, color: "var(--warning, #b45309)" }}>
+                This airline's ROE setting is {savedRoeSetting > 0 ? savedRoeSetting : "not set"}, so the standard {airline.currency} ROE {defaultRoe} was used. Update it in the airline's currency settings (gear icon) so new entries start with your current rate.
+              </p>
+            )}
           </div>
         )}
 
