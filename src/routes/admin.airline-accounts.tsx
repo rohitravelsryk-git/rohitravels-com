@@ -566,7 +566,7 @@ function AirlineLedgerApp() {
         const currentRevision = revisionRef.current;
         const lastSynced = Number(status?.lastSyncedRevision ?? 0);
         const rawStatus = String(status?.status ?? "not_configured");
-        const needsSync = currentRevision > 0 && lastSynced < currentRevision;
+        const needsSync = currentRevision > 0 && (lastSynced < currentRevision || rawStatus === "error");
 
         setSheetSyncError(status?.errorMessage ?? null);
         setSheetSyncStatus(
@@ -662,6 +662,11 @@ function AirlineLedgerApp() {
 
   useEffect(() => {
     if (!loaded || conflictRef.current) return;
+    // Atomic transaction saves/deletes (Add Record modal) update the ledger AND
+    // lastSavedDataRef themselves; running the full snapshot autosave on top of
+    // them duplicated the entire save + Google Sheets pipeline after every
+    // modal action and burned the Sheets quota until syncs failed partway.
+    if (savingTxRef.current) return;
     const snapshot = { airlines, agents, transactions };
     const fingerprint = JSON.stringify(snapshot);
     // Nothing changed since the last load/save: never re-write the ledger.
@@ -1048,10 +1053,11 @@ function AirlineLedgerApp() {
 
   const deleteRow = async (airlineId: string, id: string) => {
     const previousTransactions = transactions;
-    setTransactions((prev) => ({
-      ...prev,
-      [airlineId]: (prev[airlineId] || []).filter((r) => r.id !== id),
-    }));
+    const nextTransactions = {
+      ...transactions,
+      [airlineId]: (transactions[airlineId] || []).filter((r: any) => r.id !== id),
+    };
+    setTransactions(nextTransactions);
 
     const toastId = toast.loading("Deleting from Supabase & syncing Google Sheets…");
     setSaving(true);
@@ -1070,8 +1076,9 @@ function AirlineLedgerApp() {
       lastSavedDataRef.current = {
         airlines: airlines.map((a: any) => ({ ...a })),
         agents: [...agents],
-        transactions: transactions,
+        transactions: nextTransactions,
       };
+      lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
       dirtyRef.current = false;
       toast.success("Transaction deleted & Google Sheets synced", { id: toastId });
       setSavedFlash(true);

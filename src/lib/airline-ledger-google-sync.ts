@@ -440,13 +440,22 @@ async function requireUnlocked() {
 export const syncAirlineLedgerGoogleSheetOnOpen = createServerFn({ method: "POST" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("airline_ledger_meta")
-    .select("revision")
-    .eq("id", 1)
-    .maybeSingle();
-  if (error) throw new Error(`Airline ledger revision lookup failed: ${error.message}`);
-  const revision = Number(data?.revision ?? 1);
+  const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
+  const [metaRes, statusRes] = await Promise.all([
+    db.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
+    db.from("airline_ledger_google_sync").select("status,last_synced_revision").eq("id", 1).maybeSingle(),
+  ]);
+  if (metaRes.error) throw new Error(`Airline ledger revision lookup failed: ${metaRes.error.message}`);
+  const revision = Number(metaRes.data?.revision ?? 1);
+
+  // A full rebuild costs a large share of the per-minute Google Sheets quota.
+  // Rebuild only when the mirror is actually behind or the last run failed;
+  // opening the page when everything is already synced must be free.
+  const status = String(statusRes.data?.status ?? "");
+  const lastSyncedRevision = Number(statusRes.data?.last_synced_revision ?? 0);
+  if (status === "synced" && lastSyncedRevision >= revision) {
+    return { synced: true, skipped: true, revision };
+  }
   return syncAirlineLedgerGoogleSheetNow(revision);
 });
 

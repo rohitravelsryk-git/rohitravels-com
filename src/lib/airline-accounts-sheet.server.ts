@@ -576,20 +576,12 @@ export async function syncAirlineAccountsSheet(revision: number) {
     ["META", `revision ${revision}`, syncedAt],
   ];
 
-  await gw(`/spreadsheets/${id}/values:batchClear`, {
-    method: "POST",
-    body: JSON.stringify({ ranges: TABS.map((tab) => `'${tab}'`) }),
-  });
-  await gw(`/spreadsheets/${id}/values:batchUpdate`, {
-    method: "POST",
-    body: JSON.stringify({
-      valueInputOption: "USER_ENTERED",
-      data: [
-        { range: `'Airline Balance'!A1`, values: balance },
-        { range: `'_DATA'!A1`, values: data },
-      ],
-    }),
-  });
+  // The summary tabs are no longer written here. Every range (Airline Balance,
+  // _DATA and every airline statement tab) is written in ONE atomic batched
+  // call further below. Writing the summary first and the statement tabs later
+  // in separate calls is what produced torn syncs: a quota error or timeout
+  // between the two calls left the balance updated while airline statement
+  // tabs stayed stale.
 
   // Create/refresh one dedicated tab for every airline.
   // Single metadata read: reused for the stale-tab sweep, the new-tab ids, the
@@ -598,6 +590,19 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const spreadsheet = await getSpreadsheet(id);
   const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
   const usedNames = new Set<string>(sheetMap.keys());
+
+  // Clear every mirrored tab (system tabs plus every airline statement tab) in
+  // one call, then write the complete snapshot in one call. The only window
+  // where tabs can be empty is between these two calls, and the save handler
+  // retries the whole sync, so a failure here self-heals instead of leaving
+  // stale statement rows behind.
+  const tabsToClear = [
+    ...TABS.map((tab) => `'${tab}'`),
+    ...Array.from(sheetMap.keys())
+      .filter((title) => title !== "Airline Balance" && title !== "_DATA" && title !== "Airline Contact Details")
+      .map((title) => quoteSheet(title)),
+  ];
+  await batchClear(id, tabsToClear);
 
   const safeAirlineTabName = (raw: string) => {
     const clean = String(raw || "Airline").replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim();
@@ -820,13 +825,26 @@ export async function syncAirlineAccountsSheet(revision: number) {
     });
   }
 
-  // 1. Write all sheet data in one batched call
-  await batchWrite(id, valuesPayload, "USER_ENTERED");
+  // 1. Write ALL sheet data (summary, raw data and every airline statement tab)
+  // in one atomic batched call. Either the whole mirror matches the database or
+  // the sync fails and is retried — a torn state is no longer possible.
+  const allDataPayload = [
+    { range: `'Airline Balance'!A1`, values: balance },
+    { range: `'_DATA'!A1`, values: data },
+    ...valuesPayload,
+  ];
+  await batchWrite(id, allDataPayload, "USER_ENTERED");
 
-  // 2. Format Airline Balance summary sheet
-  const balSheetId = sheetMap.get("Airline Balance");
-  if (balSheetId !== undefined) {
-    await formatAirlineBalanceSheet(id, balSheetId, (airlines as any[]).length);
+  // 2. Formatting is cosmetic: run it best-effort so a formatting/rate-limit
+  // failure can never mark a successful data sync as failed (which previously
+  // left the status "error" while the data was actually current).
+  try {
+    const balSheetId = sheetMap.get("Airline Balance");
+    if (balSheetId !== undefined) {
+      await formatAirlineBalanceSheet(id, balSheetId, (airlines as any[]).length);
+    }
+  } catch (formatErr) {
+    console.warn("[airline-sheet] Balance formatting skipped:", formatErr);
   }
 
   // 3. Keep Google Sheets tab order identical to the database/UI airline order.
@@ -853,7 +871,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
     allFormatRequests.push(...orderRequests);
   }
   if (allFormatRequests.length > 0) {
-    await batchUpdateSpreadsheet(id, allFormatRequests);
+    try {
+      await batchUpdateSpreadsheet(id, allFormatRequests);
+    } catch (formatErr) {
+      console.warn("[airline-sheet] Statement formatting skipped:", formatErr);
+    }
   }
 
   return { spreadsheetId: id, url: airlineAccountsSheetUrl(id), syncedAt };

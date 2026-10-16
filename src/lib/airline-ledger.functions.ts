@@ -419,68 +419,66 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       }
     })();
 
-    // Run Financial Google backup and Airline Google Sheet sync concurrently
-    let syncPending = false;
-    let syncError: string | null = null;
-    try {
-      await Promise.allSettled([
-        (async () => {
-          try {
-            const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-            const [accounts, accountTransactions, services] = await Promise.all([
-              supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
-              supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
-              supabaseAdmin.from("accounts_book_services").select("*").order("name"),
-            ]);
-            if (!accounts.error && !accountTransactions.error && !services.error) {
-              const result = await withTimeout(syncRohiFinancialBackup({
-                airlines: committedSnapshot.airlines,
-                airlineTransactions: committedSnapshot.transactions,
-                accounts: accounts.data ?? [],
-                accountTransactions: accountTransactions.data ?? [],
-                services: services.data ?? [],
-              }, savedRevision), 15000, "Financial Google backup");
-              if (result.synced) {
-                await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
-                  id: 1,
-                  last_source_revision: result.revision,
-                  last_synced_at: result.syncedAt,
-                  status: "synced",
-                  error_message: null,
-                  sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
-                  updated_at: new Date().toISOString(),
-                });
-              }
+    // Run Financial Google backup and Airline Google Sheet sync concurrently,
+    // detached from the response. The database save is committed, so the UI
+    // should not wait ~45s for Google Sheet rebuilds before reporting success.
+    // A detached sync that fails marks its own status row, and the admin page's
+    // status poller plus the on-open sync retry it automatically.
+    void Promise.allSettled([
+      (async () => {
+        try {
+          const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+          const [accounts, accountTransactions, services] = await Promise.all([
+            supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
+            supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+            supabaseAdmin.from("accounts_book_services").select("*").order("name"),
+          ]);
+          if (!accounts.error && !accountTransactions.error && !services.error) {
+            const result = await withTimeout(syncRohiFinancialBackup({
+              airlines: committedSnapshot.airlines,
+              airlineTransactions: committedSnapshot.transactions,
+              accounts: accounts.data ?? [],
+              accountTransactions: accountTransactions.data ?? [],
+              services: services.data ?? [],
+            }, savedRevision), 15000, "Financial Google backup");
+            if (result.synced) {
+              await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
+                id: 1,
+                last_source_revision: result.revision,
+                last_synced_at: result.syncedAt,
+                status: "synced",
+                error_message: null,
+                sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
+                updated_at: new Date().toISOString(),
+              });
             }
-          } catch (backupErr) {
-            console.error("Async financial Google backup failed:", backupErr);
           }
-        })(),
-        (async () => {
-          try {
-            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-            const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 45000, "Airline ledger Google Sheet sync");
-            syncPending = !result.synced;
-            syncError = result.error ?? null;
-          } catch (error) {
-            syncPending = true;
-            syncError = String(error instanceof Error ? error.message : error);
-            console.error("Airline Sheet sync failed after database save:", syncError);
-            await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
-              .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+        } catch (backupErr) {
+          console.error("Async financial Google backup failed:", backupErr);
+        }
+      })(),
+      (async () => {
+        try {
+          const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+          const result = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 45000, "Airline ledger Google Sheet sync");
+          if (!result.synced) {
+            console.error("Airline Sheet sync failed after database save:", result.error);
           }
-        })(),
-      ]);
-    } catch (e) {
-      console.warn("[airline-ledger] Sync runner error:", e);
-    }
+        } catch (error) {
+          const syncError = String(error instanceof Error ? error.message : error);
+          console.error("Airline Sheet sync failed after database save:", syncError);
+          await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
+            .from("airline_ledger_google_sync").upsert({ id: 1, status: "error", error_message: syncError.slice(0, 1000) });
+        }
+      })(),
+    ]);
 
     return {
       success: true,
       revision: savedRevision,
       persisted: true,
-      syncPending,
-      syncError,
+      syncPending: true,
+      syncError: null,
     };
   });
 
@@ -695,7 +693,13 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
 
-      await Promise.allSettled([
+      // Fire-and-forget: the database row is committed, so the response must not
+      // wait for the Google Sheet rebuilds (up to ~45s each). Each sync marks its
+      // own status row, and the admin page's status poller + on-open sync heal
+      // any run that fails. Blocking the response here made every save appear to
+      // hang for ~45s and triggered the browser "changes will not be saved"
+      // warning when the user refreshed during the wait.
+      void Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
@@ -805,7 +809,13 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
 
-      await Promise.allSettled([
+      // Fire-and-forget (delete): the database row is committed, so the response must not
+      // wait for the Google Sheet rebuilds (up to ~45s each). Each sync marks its
+      // own status row, and the admin page's status poller + on-open sync heal
+      // any run that fails. Blocking the response here made every save appear to
+      // hang for ~45s and triggered the browser "changes will not be saved"
+      // warning when the user refreshed during the wait.
+      void Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
