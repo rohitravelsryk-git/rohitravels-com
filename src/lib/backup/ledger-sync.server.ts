@@ -36,7 +36,7 @@ async function loadAirlineEntryMap(): Promise<Map<string, string>> {
     const [txRes, airlineRes] = await Promise.all([
       (supabaseAdmin as any)
         .from("airline_ledger_transactions")
-        .select("id, pax_name, pnr, sector, airline_id"),
+        .select("id, pax_name, pnr, sector, airline_id, void_charges"),
       (supabaseAdmin as any)
         .from("airline_ledger_airlines")
         .select("id, code, name"),
@@ -51,10 +51,13 @@ async function loadAirlineEntryMap(): Promise<Map<string, string>> {
     for (const t of txRes.data ?? []) {
       const id = String(t.id || "");
       if (!id) continue;
-      const entry = [t.pax_name, t.sector, t.pnr, codeById.get(String(t.airline_id || ""))]
+      const entryBase = [t.pax_name, t.sector, t.pnr, codeById.get(String(t.airline_id || ""))]
         .map((v: any) => String(v || "").trim())
         .filter(Boolean)
         .join(" - ");
+      const entry = Number(t.void_charges) > 0
+        ? `${entryBase}${entryBase ? " " : ""}+VOID`
+        : entryBase;
       airlineEntryById.set(id, entry);
     }
   } catch (enrichErr) {
