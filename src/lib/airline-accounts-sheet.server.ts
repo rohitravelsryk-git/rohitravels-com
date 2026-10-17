@@ -671,7 +671,7 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
       : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
   }
 
-  const rangeEnd = colCount === 16 ? "P" : "M";
+  const rangeEnd = colCount === 17 ? "Q" : "N";
   return {
     tabName,
     specific,
@@ -691,8 +691,8 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
 }
 
 // Width each airline tab's grid must have so the write below always fits:
-// the service-provider tab writes up to column O (15), foreign-currency
-// airlines 16 columns, PKR airlines 13.
+// service-provider tabs keep their existing 15-column layout; foreign-currency
+// airline statements use 17 columns and PKR statements use 14.
 function airlineTabWidth(air: any): number {
   if (/other\s*service\s*providers/i.test(air.name)) return 15;
   return airlineCurrencyMode(air).isForeign ? 17 : 14;
