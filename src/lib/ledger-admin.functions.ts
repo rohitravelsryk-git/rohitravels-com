@@ -478,9 +478,15 @@ export async function unlinkAgentLedgerEntries(sourceId: string): Promise<{ ok: 
  */
 export async function syncAirlineTransactionsToAgentLedgers(
   transactions: any[],
-  airlines: any[] = []
-): Promise<{ processed: number; linked: number; errors: string[] }> {
+  airlines: any[] = [],
+  options?: { onlyTxIds?: string[] }
+): Promise<{ processed: number; linked: number; errors: string[]; partyNames?: string[] }> {
   const errors: string[] = [];
+  // Scoped mode (Add Record save path): post ONLY these transactions instead of
+  // re-running the whole history, and mirror only the affected party tabs.
+  // The unscoped full sync remains the reconcile/backfill path.
+  const scopeSet = options?.onlyTxIds?.length ? new Set(options.onlyTxIds.map(String)) : null;
+  const touchedPartyNames: string[] = [];
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -514,7 +520,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
     let linkedCount = 0;
     const currentTxIdsWithAgent = new Set<string>();
 
-    for (const tx of transactions) {
+    for (const tx of (scopeSet ? transactions.filter((t: any) => scopeSet.has(String(t.id))) : transactions)) {
       const rawAgent = String(tx.agent_name || "").trim();
       const ticketSales = Number(tx.ticket_sales) || 0;
       const transactionType = String(tx.transaction_type || "").trim().toLowerCase();
@@ -532,6 +538,10 @@ export async function syncAirlineTransactionsToAgentLedgers(
           const txId = String(tx.id || "");
           const existing = txId ? existingByTxId.get(txId) : null;
           if (existing) {
+            if (scopeSet) {
+              const ownerAgent = allAgents.find((a: any) => String(a.user_id) === String(existing.agent_user_id));
+              if (ownerAgent) touchedPartyNames.push(String(ownerAgent.agency_name || ownerAgent.user_id || "").trim());
+            }
             await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", existing.id);
             existingByTxId.delete(txId);
           }
@@ -570,6 +580,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
         errors.push(msg);
         continue;
       }
+      if (scopeSet) touchedPartyNames.push(String(matchedAgent.agency_name || matchedAgent.user_id || "").trim());
 
       const airlineName = airlineMap.get(tx.airline_id) || "Airline";
       const isRefund = tx.transaction_type === "Cancel/Refund" || ticketSales < 0;
@@ -626,8 +637,27 @@ export async function syncAirlineTransactionsToAgentLedgers(
     }
 
     for (const [orphanedTxId, orphanedEntry] of existingByTxId.entries()) {
+      // Scoped mode: only entries belonging to the scoped transactions may be
+      // removed here — never touch the rest of the ledger history.
+      if (scopeSet && !scopeSet.has(orphanedTxId)) continue;
       if (!currentTxIdsWithAgent.has(orphanedTxId)) {
         await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", orphanedEntry.id);
+      }
+    }
+
+    // Scoped calls (save path) mirror ONLY Balances Overview + the affected
+    // party tabs — a few Sheet writes instead of a full workbook rebuild, which
+    // is what made the save wait exceed the 20s posting timeout.
+    if (scopeSet && touchedPartyNames.length > 0) {
+      try {
+        const { syncAgentLedgerTabsNow } = await import("./backup/ledger-sync.server");
+        const targeted = await withBackgroundTimeout(syncAgentLedgerTabsNow(touchedPartyNames), 30000);
+        if (Number(targeted?.written ?? 0) > 0) {
+          return { processed: transactions.length, linked: linkedCount, errors, partyNames: touchedPartyNames };
+        }
+        console.warn("[airline-to-agent-ledger] Targeted mirror matched no party tabs; falling back to full rebuild.");
+      } catch (targetedErr) {
+        console.warn("[airline-to-agent-ledger] Targeted Google Sheet sync failed, falling back to full rebuild:", targetedErr);
       }
     }
 

@@ -24,8 +24,16 @@ export function deterministicAirlineTxUuid(txId: string): string {
  */
 export async function syncAirlineTransactionsToAccountsBook(
   transactions: any[],
-  airlines: any[] = []
+  airlines: any[] = [],
+  options?: { onlyTxIds?: string[]; skipSheetSync?: boolean }
 ): Promise<{ processed: number; linked: number; updated: number; removed: number }> {
+  // Scoped mode (Add Record save path): post ONLY these transactions. The
+  // orphan cleanup below must then only consider receipts derived from the
+  // scoped transactions — every other receipt in history stays untouched.
+  const scopeSet = options?.onlyTxIds?.length ? new Set(options.onlyTxIds.map(String)) : null;
+  const scopedSourceIds = scopeSet
+    ? new Set([...scopeSet].map((id) => deterministicAirlineTxUuid(id)))
+    : null;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -76,7 +84,7 @@ export async function syncAirlineTransactionsToAccountsBook(
     const activeDesiredSourceIds = new Set<string>();
 
     // 4. Iterate over current transactions
-    for (const tx of transactions) {
+    for (const tx of (scopeSet ? transactions.filter((t: any) => scopeSet.has(String(t.id))) : transactions)) {
       const txId = String(tx.id || "");
       if (!txId) continue;
 
@@ -201,6 +209,9 @@ export async function syncAirlineTransactionsToAccountsBook(
     // 5. Clean up any orphaned receipts (e.g., ticket deleted or payment method unlinked)
     let removedCount = 0;
     for (const [existingSourceId, existingRow] of existingBySourceId.entries()) {
+      // Scoped mode: only receipts belonging to the scoped transactions may be
+      // removed here.
+      if (scopedSourceIds && !scopedSourceIds.has(existingSourceId)) continue;
       if (!activeDesiredSourceIds.has(existingSourceId)) {
         await supabaseAdmin
           .from("accounts_book_transactions")
@@ -210,8 +221,10 @@ export async function syncAirlineTransactionsToAccountsBook(
       }
     }
 
-    // 6. Trigger live Google Sheets sync if any changes occurred
-    if (linkedCount > 0 || updatedCount > 0 || removedCount > 0) {
+    // 6. Trigger live Google Sheets sync if any changes occurred.
+    // The save path passes skipSheetSync and runs ONE combined banks/cash/sales
+    // sync itself, instead of two duplicate full reconciles per save.
+    if (!options?.skipSheetSync && (linkedCount > 0 || updatedCount > 0 || removedCount > 0)) {
       try {
         // Awaited (not queued): the serverless runtime can terminate a detached
       // background promise as soon as this response returns, which silently

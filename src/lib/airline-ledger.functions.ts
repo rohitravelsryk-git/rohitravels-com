@@ -777,6 +777,9 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
     let agentPosting: { linked: number; errors: string[] } | null = null;
     let sheetSynced = true;
     let sheetSyncError: string | null = null;
+    // Whether the receipt/counter-sale postings actually wrote anything — only
+    // then does the save need the Banks/Wallets + Daily Cash + Sales mirror.
+    let accountsPostingChanged = false;
 
     // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
     try {
@@ -799,7 +802,11 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-            const agentResult = await withTimeout(syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines), 20000, "Agent ledger sync");
+            const agentResult = await withTimeout(
+              syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines, { onlyTxIds: [rowId] }),
+              20000,
+              "Agent ledger sync",
+            );
             agentPosting = { linked: Number(agentResult?.linked ?? 0), errors: agentResult?.errors ?? [] };
           } catch (e) {
             agentPosting = { linked: 0, errors: [String(e instanceof Error ? e.message : e)] };
@@ -809,7 +816,15 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-            await withTimeout(syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines), 30000, "Accounts Book receipt sync");
+            const accountsResult = await withTimeout(
+              syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines, { onlyTxIds: [rowId], skipSheetSync: true }),
+              30000,
+              "Accounts Book receipt sync",
+            );
+            accountsPostingChanged = accountsPostingChanged ||
+              Number(accountsResult?.linked ?? 0) > 0 ||
+              Number(accountsResult?.updated ?? 0) > 0 ||
+              Number(accountsResult?.removed ?? 0) > 0;
           } catch (e) {
             console.warn("[airline-atomic] Accounts book sync:", e);
           }
@@ -817,12 +832,34 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineCounterSalesToSalesAccounts } = await import("@/lib/airline-ledger-counter-sales.server");
-            await withTimeout(syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines), 30000, "Counter sales sync");
+            const counterResult = await withTimeout(
+              syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines, { onlyTxIds: [rowId], skipSheetSync: true }),
+              30000,
+              "Counter sales sync",
+            );
+            accountsPostingChanged = accountsPostingChanged ||
+              Number(counterResult?.linked ?? 0) > 0 ||
+              Number(counterResult?.updated ?? 0) > 0 ||
+              Number(counterResult?.removed ?? 0) > 0;
           } catch (e) {
             console.warn("[airline-atomic] Counter sales sync:", e);
           }
         })(),
       ]);
+
+      // ONE combined Banks/Wallets + Daily Cash + Sales Accounts mirror round
+      // for the whole save. The posting syncs above no longer each run their
+      // own full reconcile (two duplicate rounds per save), and it is skipped
+      // entirely when nothing was posted to a payment account (e.g. a pure
+      // credit sale with no cash movement).
+      if (accountsPostingChanged) {
+        try {
+          const { triggerLiveAccountsSync } = await import("@/lib/accounts-book.functions");
+          await withTimeout(triggerLiveAccountsSync(true, ["banks", "cash", "sales"]), 30000, "Banks/Cash/Sales sheet sync");
+        } catch (combinedErr) {
+          console.warn("[airline-atomic] Combined accounts sheet sync:", combinedErr);
+        }
+      }
 
       // Mirrors complete BEFORE the response returns, exactly like the
       // financial postings above: a detached background promise is killed by

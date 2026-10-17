@@ -39,8 +39,20 @@ const COUNTER_SALES_CATEGORY = "Air Ticket";
  */
 export async function syncAirlineCounterSalesToSalesAccounts(
   transactions: any[],
-  airlines: any[] = []
+  airlines: any[] = [],
+  options?: { onlyTxIds?: string[]; skipSheetSync?: boolean }
 ): Promise<{ processed: number; linked: number; updated: number; removed: number }> {
+  // Scoped mode (Add Record save path): process ONLY these transactions; the
+  // cleanup below must only consider records derived from them.
+  const scopeSet = options?.onlyTxIds?.length ? new Set(options.onlyTxIds.map(String)) : null;
+  const scopedSourceIds = scopeSet
+    ? new Set(
+        [...scopeSet].flatMap((id) => [
+          counterSaleUuid(id, "rohi-airline-counter-sale:"),
+          counterSaleUuid(id, "rohi-airline-counter-receipt:"),
+        ])
+      )
+    : null;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -96,7 +108,7 @@ export async function syncAirlineCounterSalesToSalesAccounts(
     const desired = new Map<string, any>();
     let processed = 0;
 
-    for (const tx of transactions) {
+    for (const tx of (scopeSet ? transactions.filter((t: any) => scopeSet.has(String(t.id))) : transactions)) {
       const txId = String(tx.id || "");
       if (!txId) continue;
       const txType = String(tx.transaction_type || "Add Transaction").trim();
@@ -223,13 +235,16 @@ export async function syncAirlineCounterSalesToSalesAccounts(
     // Records whose transaction no longer qualifies (agent changed, became a
     // refund/top-up, deleted, or the received amount dropped to zero) are removed.
     for (const [sourceId, existingRow] of existingBySourceId) {
+      // Scoped mode: only records belonging to the scoped transactions may be
+      // removed here.
+      if (scopedSourceIds && !scopedSourceIds.has(sourceId)) continue;
       if (!desired.has(sourceId)) {
         await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", existingRow.id);
         removed++;
       }
     }
 
-    if (linked || updated || removed) {
+    if (!options?.skipSheetSync && (linked || updated || removed)) {
       try {
         // Awaited (not queued): a detached background promise can be terminated by
       // the serverless runtime after the response, silently skipping the

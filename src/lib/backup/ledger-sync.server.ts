@@ -21,21 +21,15 @@ export async function ensureMasterLedgerSheet(): Promise<{ id: string; url: stri
   return { id, url: `https://docs.google.com/spreadsheets/d/${id}/edit` };
 }
 
-/** 
- * Syncs ledger data to the master sheet.
- * Updates Balances Overview and individual agent party tabs (direct entries per agent)
- * using the professional Rohi Warm Clay export standard (voucher & airline style).
+/**
+ * Loads the airline transaction texts used to mirror the website's "Ledger
+ * Entry" column: "Pax - Sector - PNR - Airline Code", composed exactly as the
+ * Airline Accounts page composes it. Only rows carrying a valid
+ * "Ref: AIRLINE-TX-<id>" link are rewritten; bookings, manual entries, and
+ * vendor rows keep their existing details text. The details text stored in
+ * Supabase is never modified — this is presentation only in the mirror.
  */
-export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
-  const spreadsheet = await ensureMasterLedgerSheet();
-  const spreadsheetId = spreadsheet.id;
-
-  // The Description column mirrors the website's "Ledger Entry" text for
-  // airline-linked rows: "Pax - Sector - PNR - Airline Code", composed exactly
-  // as the Airline Accounts page composes it. Only rows carrying a valid
-  // "Ref: AIRLINE-TX-<id>" link are rewritten; bookings, manual entries, and
-  // vendor rows keep their existing details text. The details text stored in
-  // Supabase is never modified — this is presentation only in the mirror.
+async function loadAirlineEntryMap(): Promise<Map<string, string>> {
   const airlineEntryById = new Map<string, string>();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -66,22 +60,23 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
   } catch (enrichErr) {
     console.warn("[ledger-sync] Could not load airline transactions for Ledger Entry text:", enrichErr);
   }
+  return airlineEntryById;
+}
 
-  const airlineRefOf = (details: any): string | null => {
+function makeLedgerEntryFor(airlineEntryById: Map<string, string>) {
+  return (details: any): string | null => {
     const m = String(details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
-    return m && m[1] ? m[1] : null;
-  };
-  const ledgerEntryFor = (details: any): string | null => {
-    const ref = airlineRefOf(details);
+    const ref = m && m[1] ? m[1] : null;
     return ref ? (airlineEntryById.get(ref) ?? null) : null;
   };
+}
 
-  const info = await getSpreadsheet(spreadsheetId);
-  const existingSheets = new Map<string, number>(
-    (info.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
-  );
-
-  // 1. Update Balances Overview Sheet
+/** Writes the Balances Overview tab (full rebuild of that single small tab). */
+async function writeBalancesOverviewTab(
+  spreadsheetId: string,
+  existingSheets: Map<string, number>,
+  data: any[]
+): Promise<void> {
   const overviewSheet = "Balances Overview";
   let overviewSheetId = existingSheets.get(overviewSheet) ?? null;
   if (overviewSheetId === null) {
@@ -174,84 +169,159 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
       console.warn("[ledger-sync] Error applying formatting to Balances Overview:", fmtErr);
     }
   }
+}
+
+/** Writes one party's own statement tab (same layout as the full rebuild). */
+async function writePartyTab(
+  spreadsheetId: string,
+  existingSheets: Map<string, number>,
+  agent: any,
+  ledgerEntryFor: (details: any) => string | null
+): Promise<void> {
+  const tabName = (agent.agency_name || "Account")
+    .replace(/[\[\]\*\?:\/\\]/g, "_")
+    .slice(0, 30)
+    .trim();
+  let tabSheetId = existingSheets.get(tabName) ?? null;
+  if (tabSheetId === null) {
+    tabSheetId = await addSheet(spreadsheetId, tabName);
+    if (tabSheetId !== null) existingSheets.set(tabName, tabSheetId);
+  }
+
+  const ledgerHeaders = ["Date", "Description", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
+  const agentValues: unknown[][] = [
+    ["ROHI INTERNATIONAL TRAVELS"],
+    ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
+    [`${agent.agency_name.toUpperCase()}`],
+    [`Current Outstanding Balance: Rs ${Number(agent.balance || 0).toLocaleString()}  •  ${(agent.ledger || []).length} entries`],
+    ledgerHeaders,
+  ];
+
+  let agentDebits = 0;
+  let agentCredits = 0;
+
+  for (const l of agent.ledger || []) {
+    const rawDate = l.date ? String(l.date).slice(0, 10) : "—";
+    const d = Number(l.debit) || 0;
+    const c = Number(l.credit) || 0;
+    agentDebits += d;
+    agentCredits += c;
+
+    // Airline-linked rows show the website's Ledger Entry text; everything
+    // else keeps its stored details text.
+    const description = ledgerEntryFor(l.details) ?? String(l.details || "—");
+
+    agentValues.push([
+      rawDate,
+      description,
+      d,
+      c,
+      Number(l.balance) || 0,
+    ]);
+  }
+
+  // Totals row.
+  agentValues.push([
+    "TOTALS",
+    "Statement Summary",
+    agentDebits,
+    agentCredits,
+    Number(agent.balance) || 0,
+  ]);
+
+  await clearSheet(spreadsheetId, tabName);
+  await writeRange(
+    spreadsheetId,
+    `${quoteSheet(tabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${agentValues.length}`,
+    agentValues
+  );
+
+  if (tabSheetId !== null) {
+    try {
+      await applyRohiExportFormatting(spreadsheetId, tabSheetId, {
+        columnCount: ledgerHeaders.length,
+        dataEndRow: agentValues.length,
+        numericColumnIndexes: [2, 3, 4],
+        dateColumnIndexes: [0],
+        hasTotalRow: true,
+        totalRowIndex: agentValues.length - 1,
+      });
+    } catch (fmtErr) {
+      console.warn(`[ledger-sync] Error formatting agent sheet "${tabName}":`, fmtErr);
+    }
+  }
+}
+
+/**
+ * TARGETED agent-ledger mirror: recomputes all party balances from Supabase
+ * (the single source of truth) but writes ONLY Balances Overview plus the
+ * requested parties' own tabs. Never prunes or deletes tabs — the full
+ * reconcile on page open stays responsible for that. Used by the Add Record
+ * save path so a save waits seconds, not a full multi-tab workbook rebuild.
+ */
+export async function syncAgentLedgerTabsNow(partyNames: string[]): Promise<{ status: "success" | "failed"; written: number; error?: string }> {
+  try {
+    const wanted = new Set((partyNames || []).map((n) => String(n || "").toLowerCase().trim()).filter(Boolean));
+    if (wanted.size === 0) return { status: "success", written: 0 };
+
+    const { getUnifiedPartyLedgers } = await import("@/lib/ledger-admin.functions");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { masterData } = await getUnifiedPartyLedgers(supabaseAdmin as any);
+
+    const selected = (masterData || []).filter((a: any) =>
+      wanted.has(String(a.agency_name || "").toLowerCase().trim())
+    );
+    if (selected.length === 0) return { status: "success", written: 0 };
+
+    const spreadsheet = await ensureMasterLedgerSheet();
+    const info = await getSpreadsheet(spreadsheet.id);
+    const existingSheets = new Map<string, number>(
+      (info.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
+    );
+
+    // Overview is always refreshed: totals and every party's outstanding
+    // balance must stay correct even though only one statement tab changed.
+    await writeBalancesOverviewTab(spreadsheet.id, existingSheets, masterData);
+
+    const ledgerEntryFor = makeLedgerEntryFor(await loadAirlineEntryMap());
+    for (const agent of selected) {
+      await writePartyTab(spreadsheet.id, existingSheets, agent, ledgerEntryFor);
+    }
+
+    // Targeted mode never prunes tabs (vendor tabs and history stay untouched).
+    return { status: "success", written: selected.length };
+  } catch (err: any) {
+    console.error("[ledger-sync] syncAgentLedgerTabsNow error:", err);
+    return { status: "failed", written: 0, error: err?.message || String(err) };
+  }
+}
+
+/** 
+ * Syncs ledger data to the master sheet.
+ * Updates Balances Overview and individual agent party tabs (direct entries per agent)
+ * using the professional Rohi Warm Clay export standard (voucher & airline style).
+ */
+export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
+  const spreadsheet = await ensureMasterLedgerSheet();
+  const spreadsheetId = spreadsheet.id;
+
+  // The Description column mirrors the website's "Ledger Entry" text for
+  // airline-linked rows (see loadAirlineEntryMap / makeLedgerEntryFor below).
+  const airlineEntryById = await loadAirlineEntryMap();
+  const ledgerEntryFor = makeLedgerEntryFor(airlineEntryById);
+
+  const info = await getSpreadsheet(spreadsheetId);
+  const existingSheets = new Map<string, number>(
+    (info.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
+  );
+
+  // 1. Update Balances Overview Sheet
+  await writeBalancesOverviewTab(spreadsheetId, existingSheets, data);
 
   // 2. Update individual party tabs (direct entries — each agent's own tab is
   // the single mirror of their statement, with no separate journal tab).
-
   for (const agent of data) {
-    const tabName = (agent.agency_name || "Account")
-      .replace(/[\[\]\*\?:\/\\]/g, "_")
-      .slice(0, 30)
-      .trim();
-    let tabSheetId = existingSheets.get(tabName) ?? null;
-    if (tabSheetId === null) {
-      tabSheetId = await addSheet(spreadsheetId, tabName);
-      if (tabSheetId !== null) existingSheets.set(tabName, tabSheetId);
-    }
-
-    const ledgerHeaders = ["Date", "Description", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
-    const agentValues: unknown[][] = [
-      ["ROHI INTERNATIONAL TRAVELS"],
-      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-      [`${agent.agency_name.toUpperCase()}`],
-      [`Current Outstanding Balance: Rs ${Number(agent.balance || 0).toLocaleString()}  •  ${(agent.ledger || []).length} entries`],
-      ledgerHeaders,
-    ];
-
-    let agentDebits = 0;
-    let agentCredits = 0;
-
-    for (const l of agent.ledger || []) {
-      const rawDate = l.date ? String(l.date).slice(0, 10) : "—";
-      const d = Number(l.debit) || 0;
-      const c = Number(l.credit) || 0;
-      agentDebits += d;
-      agentCredits += c;
-
-      // Airline-linked rows show the website's Ledger Entry text; everything
-      // else keeps its stored details text.
-      const description = ledgerEntryFor(l.details) ?? String(l.details || "—");
-
-      agentValues.push([
-        rawDate,
-        description,
-        d,
-        c,
-        Number(l.balance) || 0,
-      ]);
-    }
-
-    // Totals row. Passenger totals are shown only when at least one row is a
-    // linked airline transaction, so manual-only statements stay clean.
-    agentValues.push([
-      "TOTALS",
-      "Statement Summary",
-      agentDebits,
-      agentCredits,
-      Number(agent.balance) || 0,
-    ]);
-
-    await clearSheet(spreadsheetId, tabName);
-    await writeRange(
-      spreadsheetId,
-      `${quoteSheet(tabName)}!A1:${colLetter(ledgerHeaders.length - 1)}${agentValues.length}`,
-      agentValues
-    );
-
-    if (tabSheetId !== null) {
-      try {
-        await applyRohiExportFormatting(spreadsheetId, tabSheetId, {
-          columnCount: ledgerHeaders.length,
-          dataEndRow: agentValues.length,
-          numericColumnIndexes: [2, 3, 4],
-          dateColumnIndexes: [0],
-          hasTotalRow: true,
-          totalRowIndex: agentValues.length - 1,
-        });
-      } catch (fmtErr) {
-        console.warn(`[ledger-sync] Error formatting agent sheet "${tabName}":`, fmtErr);
-      }
-    }
+    await writePartyTab(spreadsheetId, existingSheets, agent, ledgerEntryFor);
   }
 
   // 3. Prune tabs for deleted/unregistered parties and obsolete system tabs.
