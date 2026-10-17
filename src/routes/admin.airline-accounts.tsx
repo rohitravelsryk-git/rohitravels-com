@@ -2019,7 +2019,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
       // The date in particular was only displayed as a fallback in the input but
       // never stored, so every save failed validation with "Opening balance date
       // is required" unless the user re-picked the date by hand.
-      openingBalanceDate: row.openingBalanceDate || airline?.openingBalanceDate || new Date().toISOString().slice(0, 10),
+      openingBalanceDate: row.openingBalanceDate || airline?.openingBalanceDate || "2026-10-17",
       openingBalance: row.openingBalance ?? (modal.recordType === "openingBalance" ? (airline?.openingBalance ?? "") : ""),
       openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && defaultRoe ? (Number(airline?.openingBalance || 0) / defaultRoe).toFixed(2) : ""),
     };
