@@ -266,6 +266,15 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   if (transactionError) throw new Error(transactionError.message);
   if (serviceError) throw new Error(serviceError.message);
 
+  // Direct database changes (e.g. SQL run in Supabase) bypass the normal
+  // mutation-triggered sync. Kicking a background Sales Accounts mirror here,
+  // without waiting, keeps Google Sheets current whenever Accounts Book opens.
+  try {
+    void triggerLiveAccountsSync(false, ["sales"]);
+  } catch (syncKickError) {
+    console.warn("[accounts-book] background sales mirror notice:", syncKickError);
+  }
+
   const cleanServices = (services ?? []).map((s) => (/kv\s*visit\s*visa/i.test(s.name) ? { ...s, name: "Visit Visa" } : s));
   const cleanTransactions = inCreationOrder(transactions ?? []).map((t) => (t.category && /kv\s*visit\s*visa/i.test(t.category) ? { ...t, category: "Visit Visa" } : t));
 
