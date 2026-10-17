@@ -1717,7 +1717,7 @@ function LedgerTable({
             {ledgerSafePage === 1 && !/other\s*service\s*providers/i.test(airline?.name) && (
               <tr style={{ ...styles.tr, background: "rgba(217, 119, 87, 0.05)", fontWeight: 500 }}>
                 <td style={{ ...styles.tdMuted, fontWeight: 700 }}>1</td>
-                <td style={styles.td}>{formatDisplayDate(airline?.openingBalanceDate || new Date().toISOString().slice(0, 10))}</td>
+                <td style={styles.td}>{formatDisplayDate(airline?.openingBalanceDate || "2026-10-17")}</td>
                 <td style={styles.td}>
                   <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
                     Opening Balance
