@@ -689,6 +689,12 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
     const isRefund = resolvedType === "Cancel/Refund";
 
     const rowId = cleanStr(r.id) || (Math.random().toString(36).slice(2, 10) + Date.now().toString(36));
+    // Entries are ordered exactly as they were entered: every new transaction
+    // is stamped with its entry time, so same-date entries always appear in
+    // entered order on the website and in every Sheet mirror, and the running
+    // balance is computed over that same order. Editing an existing row never
+    // changes its position.
+    const isNewRow = !cleanStr(r.id);
     const date = cleanStr(r.date) || new Date().toISOString().slice(0, 10);
     const paxName = cleanStr(r.paxName) || (isTopUp ? "Top Up Portal" : isRefund ? "Refund Record" : "Pax");
     const agentName = cleanStr(r.agentName);
@@ -727,6 +733,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       received_via: receivedVia,
       received_via_account_id: receivedViaAccountId,
     };
+    if (isNewRow) recordToUpsert.sort_order = Date.now();
     if (agentReceived !== null && await airlineTxSupportsAgentReceived(supabaseAdmin)) {
       recordToUpsert.agent_received = agentReceived;
     }
