@@ -123,14 +123,30 @@ async function ensureBackupTabs(token: string) {
   }
 }
 
+function formatSheetDateValue(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(value.trim());
+  if (!match) return value;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return value;
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${String(day).padStart(2, "0")}-${months[month - 1]}-${String(year).slice(-2)}`;
+}
+
 function toRowData(rows: unknown[][]) {
   return rows.map((row) => ({
-    values: row.map((value) => ({
-      userEnteredValue:
-        typeof value === "number"
-          ? { numberValue: value }
-          : { stringValue: String(cellValue(value)) },
-    })),
+    values: row.map((raw) => {
+      const value = formatSheetDateValue(raw);
+      return {
+        userEnteredValue:
+          typeof value === "number"
+            ? { numberValue: value }
+            : { stringValue: String(cellValue(value)) },
+      };
+    }),
   }));
 }
 
@@ -141,7 +157,7 @@ async function ensureAirlineTabs(token: string, airlines: Array<{ name: string }
   const needed = Array.from(new Set(airlines.map((a) => clean(a.name)))).filter((name) => !existing.has(name));
   if (!needed.length) return;
   await sheetsBatchUpdate(token, needed.map((title) => ({
-    addSheet: { properties: { title, gridProperties: { rowCount: 2000, columnCount: 12, frozenRowCount: 5 } } },
+    addSheet: { properties: { title, gridProperties: { rowCount: 2000, columnCount: 20, frozenRowCount: 5 } } },
   })));
 }
 
@@ -188,11 +204,11 @@ async function replaceAirlineTabs(
     // airline tabs — they are reported on the Agent Ledger and Sales Category
     // sheets instead, per the unified posting specification.
     const headerRow: unknown[] = isForeign
-      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
-      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Agent/Pax Contact #", "Remarks", "Received Via"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Agent/Pax Contact #", "Remarks", "Received Via"];
     const openingRow: unknown[] = isForeign
-      ? [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "OPENING BALANCE"]
-      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, running, "OPENING BALANCE"];
+      ? [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "", "OPENING BALANCE", ""]
+      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, running, "", "OPENING BALANCE", ""];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
@@ -225,12 +241,15 @@ async function replaceAirlineTabs(
         ? [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
             sales, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
+            r.pax_contact || "",
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
+            r.received_via || "",
           ]
         : [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-            sales, displayedDebit, displayedCredit, voids, profit, running,
+            sales, displayedDebit, displayedCredit, voids, profit, running, r.pax_contact || "",
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
+            r.received_via || "",
           ]);
     }
     values[2][9] = isForeign ? `${running} PKR (${runningForeign.toFixed(2)} ${curr})` : running;
