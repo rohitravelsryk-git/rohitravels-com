@@ -1106,7 +1106,7 @@ function AirlineLedgerApp() {
       }
       // Surface agent-ledger posting results immediately instead of waiting
       // for the next page load's reconcile.
-      const ap = res?.agentPosting;
+      const ap = (res as { agentPosting?: { linked: number; errors: string[] } | null } | undefined)?.agentPosting;
       if (ap && Array.isArray(ap.errors) && ap.errors.length > 0) {
         setLedgerRepairIssue(`Agent ledger posting problem: ${ap.errors.slice(0, 3).join(" | ")}`);
       } else {

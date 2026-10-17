@@ -797,7 +797,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
       console.warn("[airline-to-agent-ledger] Google Sheet sync failed:", syncErr);
     }
 
-    return { processed: transactions.length, linked: linkedCount };
+    return { processed: transactions.length, linked: linkedCount, errors, partyNames: touchedPartyNames };
   } catch (err) {
     console.warn("[airline-to-agent-ledger] syncAirlineTransactionsToAgentLedgers error:", err);
     return { processed: 0, linked: 0, errors: [String(err instanceof Error ? err.message : err)] };
