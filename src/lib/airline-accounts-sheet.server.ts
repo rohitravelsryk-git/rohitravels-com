@@ -603,18 +603,18 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
 
   const airlineCode = ((!air.code || air.code === "--") && /air\s*arabia/i.test(air.name)) ? "G9" : air.code;
   const airlineTitle = airlineCode ? `Airline: ${s(air.name)} • ${s(airlineCode)}` : `Airline: ${s(air.name)}`;
-  const colCount = isForeign ? 16 : 13;
+  const colCount = isForeign ? 17 : 14;
   const padRow = (row: unknown[]) => {
     const padded = [...row];
     while (padded.length < colCount) padded.push("");
     return padded.slice(0, colCount);
   };
   const headerRow: unknown[] = isForeign
-    ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
-    : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
+    ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Agent/Pax Contact #", "Remarks", "Received Via"]
+    : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Agent/Pax Contact #", "Remarks", "Received Via"];
   const openingRow: unknown[] = isForeign
-    ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, "", 0, op, opForeign, "OPENING BALANCE"]
-    : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, "", 0, op, "OPENING BALANCE"];
+    ? [formatSheetDate(air.opening_balance_date) || "17-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, 0, op, opForeign, "", "OPENING BALANCE", ""]
+    : [formatSheetDate(air.opening_balance_date) || "17-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, op, "", "OPENING BALANCE", ""];
   const specific: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS"],
     ["Airline Account Statement"],
@@ -650,12 +650,12 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
       ? [
           formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
           displayedSales, displayedDebit, debitFx, displayedCredit, creditFx,
-          s(r.pax_contact), voids, profit, running, runningForeign, remarks,
+          voids, profit, running, runningForeign, s(r.pax_contact), remarks, s(r.received_via),
         ]
       : [
           formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-          displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
-          remarks,
+          displayedSales, displayedDebit, displayedCredit, voids, profit, running, s(r.pax_contact),
+          remarks, s(r.received_via),
         ]));
   }
 
@@ -695,7 +695,7 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
 // airlines 16 columns, PKR airlines 13.
 function airlineTabWidth(air: any): number {
   if (/other\s*service\s*providers/i.test(air.name)) return 15;
-  return airlineCurrencyMode(air).isForeign ? 16 : 13;
+  return airlineCurrencyMode(air).isForeign ? 17 : 14;
 }
 
 /* ---------- Google Sheets sync (full rebuild) ---------- */
