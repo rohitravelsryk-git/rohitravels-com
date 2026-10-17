@@ -72,7 +72,10 @@ const EXPENSE_PREFIX = "EXP: ";
 // them out of every cash view (account ledgers, cash book, balances).
 const isCashViewRow = (t: any) => String((t as any).source_type ?? "") !== "airline_counter_sale";
 
-const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
+// "Air Ticket" is the single ticket-sales category (Counter Sales was
+// consolidated into it; migration 20261017100000). Per-category tabs
+// (Visa Processing, Insurance, ...) are unchanged.
+const DEFAULT_SALES_CATS = ["Air Ticket", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
 const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [

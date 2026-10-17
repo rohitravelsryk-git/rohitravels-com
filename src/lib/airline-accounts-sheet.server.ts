@@ -457,6 +457,249 @@ function formatSheetDate(val: unknown): string {
   return s;
 }
 
+/* ---------- shared builders (used by both the full rebuild and the fast targeted sync) ---------- */
+
+// One canonical currency/ROE mode per airline. Previously this logic was
+// duplicated between the summary and the statement builders with subtly
+// different fallbacks; a single source keeps summary and statements consistent.
+function airlineCurrencyMode(air: any): { curr: string; roeVal: number; isForeign: boolean } {
+  const isG9 = air.code === "G9" || /air\s*arabia/i.test(air.name);
+  const code = (isG9 && (!air.code || air.code === "--")) ? "G9" : air.code;
+  const isXY = code === "XY" || /flynas/i.test(air.name);
+  const isF3 = code === "F3" || /flyadeal/i.test(air.name);
+  const isCarrierForeign = isG9 || isXY || isF3;
+  const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+  const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
+  const rawCurr = (air.currency && air.currency.trim()) || "";
+  const rawRoe = n(air.roe);
+  const openingForeignVal = air.opening_balance_foreign !== null && air.opening_balance_foreign !== undefined ? n(air.opening_balance_foreign) : null;
+
+  if (rawCurr && rawCurr !== "PKR") {
+    return { curr: rawCurr, roeVal: rawRoe > 0 ? rawRoe : defaultRoe, isForeign: true };
+  }
+  if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
+    return { curr: "PKR", roeVal: 1, isForeign: false };
+  }
+  if (isCarrierForeign) {
+    return { curr: defaultCurrency, roeVal: rawRoe > 1 ? rawRoe : defaultRoe, isForeign: true };
+  }
+  return { curr: "PKR", roeVal: 1, isForeign: false };
+}
+
+// The exact PKR delta a transaction applies to the airline balance, plus the
+// transaction's effective ROE used for the foreign running column.
+function airlineBalanceDelta(r: any, isIncrease: boolean, isForeign: boolean, roeVal: number): { balanceDelta: number; txRoe: number } {
+  const credit = parseCleanNumber(r.credit_from_id);
+  const debitAmount = parseCleanNumber(r.debit_in_id);
+  const salesAmount = parseCleanNumber(r.ticket_sales);
+  const foreignAmount = parseCleanNumber(r.foreign_amount);
+  const txRoe = parseCleanNumber(r.roe) || roeVal;
+
+  let balanceDelta = 0;
+  if (isIncrease) {
+    if (debitAmount > 0) balanceDelta = debitAmount;
+    else if (credit > 0) balanceDelta = credit;
+    else if (salesAmount > 0) balanceDelta = salesAmount;
+    else if (foreignAmount > 0 && isForeign) balanceDelta = Math.round(foreignAmount * txRoe);
+  } else {
+    balanceDelta = credit;
+  }
+  return { balanceDelta, txRoe };
+}
+
+// Builds the small "Airline Balance" summary tab exactly as the full rebuild does.
+function buildAirlineBalanceSummary(airlines: any[], txs: any[]): { balance: unknown[][]; lastNonServiceRow: number } {
+  const balance: unknown[][] = [
+    ["✈  ROHI INTERNATIONAL TRAVELS  |   CURRENT AIRLINE BALANCES"],
+    ["AIRLINE / CARRIER", "LOGO", "FOREIGN BALANCE (FX)", "CURRENT BALANCE (PKR)"],
+  ];
+  let lastNonServiceRow = 2;
+  for (let idx = 0; idx < airlines.length; idx++) {
+    const air = airlines[idx];
+    const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
+    const rows = sortTransactionsByDate(txs.filter((r: any) => r.airline_id === air.id));
+    let running = n(air.opening_balance);
+    const { curr, roeVal, isForeign } = airlineCurrencyMode(air);
+    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
+    for (const r of rows) {
+      const { isIncrease } = classifyAirlineRow(r);
+      const { balanceDelta, txRoe } = airlineBalanceDelta(r, isIncrease, isForeign, roeVal);
+      running += isIncrease ? balanceDelta : -balanceDelta;
+      const foreignAmount = parseCleanNumber(r.foreign_amount);
+      const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
+      runningForeign += isIncrease ? txForeignCr : -txForeignCr;
+    }
+    const logoPng = isServiceOnly ? "" : airlineSheetLogoUrl(air.code, air.name);
+    const logoFormula = logoPng ? `=IMAGE("${logoPng}", 1)` : "";
+    if (isServiceOnly) {
+      balance.push([air.name, logoFormula, "-", "-"]);
+    } else {
+      lastNonServiceRow = 3 + idx;
+      const foreignBalance = isForeign
+        ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
+        : "-";
+      balance.push([air.name, logoFormula, foreignBalance, running]);
+    }
+  }
+  balance.push([]);
+  balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastNonServiceRow})`]);
+  return { balance, lastNonServiceRow };
+}
+
+const safeAirlineTabName = (raw: string) => {
+  const clean = String(raw || "Airline").replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim();
+  return (clean || "Airline").slice(0, 90);
+};
+
+type AirlineTabBuild = {
+  tabName: string;
+  specific: unknown[][];
+  range: string;
+  writeCols: number;
+  formatTask: any;
+};
+
+// Builds one airline's statement tab payload exactly as the full rebuild does.
+// Pure computation — the caller owns every spreadsheet mutation, so the same
+// builder serves the full rebuild and the fast per-transaction sync.
+function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number): AirlineTabBuild {
+  const op = n(air.opening_balance);
+  let running = op;
+  const { curr, roeVal, isForeign } = airlineCurrencyMode(air);
+  let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
+  const opForeign = runningForeign;
+  const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
+
+  if (isServiceOnly) {
+    const specific: unknown[][] = [
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", "", "", ""],
+      ["Service Provider Account Statement", "", "", "", "", "", "", "", "", "", "", "", ""],
+      [`Airline: ${s(air.name)}`, "", "", "", "", "", "", "", "", "", "", ""],
+      [`Entries: ${rows.length} • All Tickets Record`, "", "", "", "", "", "", "", "", "", "", "", ""],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Pax Contact #", "Void Charges", "Profit", "Running Balance", "Remarks"],
+    ];
+    for (const r of rows) {
+      const sales = n(r.ticket_sales);
+      const debit = n(r.debit_in_id);
+      const credit = n(r.credit_from_id);
+      const voids = n(r.void_charges);
+      specific.push([
+        formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), sales,
+        debit > 0 ? debit : "", credit, s(r.pax_contact), voids, sales - credit, "-",
+        [r.pax_name, r.sector, r.pnr].map((v: any) => s(v).trim()).filter(Boolean).join(" - "),
+      ]);
+    }
+    return {
+      tabName,
+      specific,
+      writeCols: 15,
+      range: `'${tabName}'!A1:O${Math.max(5, specific.length)}`,
+      formatTask: {
+        sheetId, title: tabName, columnCount: 15, dataEndRow: specific.length,
+        numericColumnStart: 5, numericColumnIndexes: [5, 6, 7, 8, 9, 11, 12, 13], dateColumnIndexes: [0],
+      },
+    };
+  }
+
+  const airlineCode = ((!air.code || air.code === "--") && /air\s*arabia/i.test(air.name)) ? "G9" : air.code;
+  const airlineTitle = airlineCode ? `Airline: ${s(air.name)} • ${s(airlineCode)}` : `Airline: ${s(air.name)}`;
+  const colCount = isForeign ? 16 : 13;
+  const padRow = (row: unknown[]) => {
+    const padded = [...row];
+    while (padded.length < colCount) padded.push("");
+    return padded.slice(0, colCount);
+  };
+  const headerRow: unknown[] = isForeign
+    ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
+    : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
+  const openingRow: unknown[] = isForeign
+    ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, "", 0, op, opForeign, "OPENING BALANCE"]
+    : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, "", 0, op, "OPENING BALANCE"];
+  const specific: unknown[][] = [
+    ["ROHI INTERNATIONAL TRAVELS"],
+    ["Airline Account Statement"],
+    [airlineTitle],
+    [""],
+    headerRow,
+    openingRow,
+  ];
+
+  for (const r of rows) {
+    const { isIncrease, isTopUp, isRefund } = classifyAirlineRow(r);
+    const credit = parseCleanNumber(r.credit_from_id);
+    const debitAmount = parseCleanNumber(r.debit_in_id);
+    const salesAmount = parseCleanNumber(r.ticket_sales);
+    const { balanceDelta, txRoe } = airlineBalanceDelta(r, isIncrease, isForeign, roeVal);
+
+    running += isIncrease ? balanceDelta : -balanceDelta;
+    const foreignAmount = parseCleanNumber(r.foreign_amount);
+    const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
+    runningForeign += isIncrease ? txForeignCr : -txForeignCr;
+
+    const displayedSales = isIncrease ? 0 : salesAmount;
+    const displayedDebit = isIncrease ? balanceDelta : (debitAmount > 0 ? debitAmount : "");
+    const displayedCredit = isIncrease ? "" : credit;
+    const voids = parseCleanNumber(r.void_charges);
+    const profit = isIncrease ? 0 : displayedSales - (credit > 0 ? credit : 0);
+    const tag = isRefund ? "REFUND" : isTopUp ? "TOP UP" : "";
+    const remarks = [tag, r.pax_name, r.sector, r.pnr].map((v: any) => s(v).trim()).filter(Boolean).join(" - ");
+
+    const debitFx = isIncrease ? txForeignCr : "";
+    const creditFx = isIncrease ? "" : txForeignCr;
+    specific.push(padRow(isForeign
+      ? [
+          formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
+          displayedSales, displayedDebit, debitFx, displayedCredit, creditFx,
+          s(r.pax_contact), voids, profit, running, runningForeign, remarks,
+        ]
+      : [
+          formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
+          displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
+          remarks,
+        ]));
+  }
+
+  if (op === 0 && rows.length === 0 && running === 0) {
+    specific[3][0] = isForeign
+      ? `Opening Balance: 0 • Entries: 0 • Current Balance: 0 (0.00 ${curr})`
+      : "Opening Balance: 0 • Entries: 0 • Current Balance: 0";
+  } else {
+    const opStr = op.toLocaleString();
+    const balStr = running.toLocaleString();
+    specific[3][0] = isForeign
+      ? `Opening Balance: ${opStr} (${opForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}) • Entries: ${rows.length} • Current Balance: ${balStr} (${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr})`
+      : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
+  }
+
+  const rangeEnd = colCount === 16 ? "P" : "M";
+  return {
+    tabName,
+    specific,
+    writeCols: colCount,
+    range: `${quoteSheet(tabName)}!A1:${rangeEnd}${Math.max(20, specific.length)}`,
+    formatTask: {
+      sheetId,
+      title: tabName,
+      columnCount: colCount,
+      dataEndRow: specific.length,
+      numericColumnIndexes: isForeign ? [5, 6, 8, 11, 12, 13] : [5, 6, 7, 9, 10, 11],
+      decimalColumnIndexes: isForeign ? [7, 9, 14] : [],
+      dateColumnIndexes: [0],
+      isServiceOnly: false,
+    },
+  };
+}
+
+// Width each airline tab's grid must have so the write below always fits:
+// the service-provider tab writes up to column O (15), foreign-currency
+// airlines 16 columns, PKR airlines 13.
+function airlineTabWidth(air: any): number {
+  if (/other\s*service\s*providers/i.test(air.name)) return 15;
+  return airlineCurrencyMode(air).isForeign ? 16 : 13;
+}
+
+/* ---------- Google Sheets sync (full rebuild) ---------- */
+
 export async function syncAirlineAccountsSheet(revision: number) {
   const db = await getAdmin();
   const [a, t] = await Promise.all([
@@ -469,91 +712,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const id = await ensureSpreadsheet();
   const syncedAt = new Date().toISOString();
 
-  // Airline Balance summary tab (Airport FID board style):
-  // Columns: AIRLINE / CARRIER, LOGO, FOREIGN BALANCE (FX), CURRENT BALANCE (PKR)
-  const balance: unknown[][] = [
-    ["✈  ROHI INTERNATIONAL TRAVELS  |   CURRENT AIRLINE BALANCES"],
-    ["AIRLINE / CARRIER", "LOGO", "FOREIGN BALANCE (FX)", "CURRENT BALANCE (PKR)"],
-  ];
-  let totalPkr = 0;
-  let lastNonServiceRow = 2;
-  for (let idx = 0; idx < (airlines as any[]).length; idx++) {
-    const air = (airlines as any[])[idx];
-    const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
-    const rows = sortTransactionsByDate((txs as any[]).filter((r) => r.airline_id === air.id));
-    let running = n(air.opening_balance);
-
-    const isG9 = air.code === "G9" || /air\s*arabia/i.test(air.name);
-    const code = (isG9 && (!air.code || air.code === "--")) ? "G9" : air.code;
-    const isXY = code === "XY" || /flynas/i.test(air.name);
-    const isF3 = code === "F3" || /flyadeal/i.test(air.name);
-    const isCarrierForeign = isG9 || isXY || isF3;
-    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
-    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
-    const rawCurr = (air.currency && air.currency.trim()) || "";
-    const rawRoe = n(air.roe);
-    const openingForeignVal = air.opening_balance_foreign !== null && air.opening_balance_foreign !== undefined ? n(air.opening_balance_foreign) : null;
-
-    let curr = "PKR";
-    let roeVal = 1;
-    let isForeign = false;
-
-    if (rawCurr && rawCurr !== "PKR") {
-      curr = rawCurr;
-      roeVal = rawRoe > 0 ? rawRoe : defaultRoe;
-      isForeign = true;
-    } else if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
-      curr = "PKR";
-      roeVal = 1;
-      isForeign = false;
-    } else if (isCarrierForeign) {
-      curr = defaultCurrency;
-      roeVal = rawRoe > 1 ? rawRoe : defaultRoe;
-      isForeign = true;
-    }
-
-    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
-    for (const r of rows) {
-      const { isIncrease } = classifyAirlineRow(r);
-      const credit = parseCleanNumber(r.credit_from_id);
-      const debitAmount = parseCleanNumber(r.debit_in_id);
-      const salesAmount = parseCleanNumber(r.ticket_sales);
-      const foreignAmount = parseCleanNumber(r.foreign_amount);
-      const txRoe = parseCleanNumber(r.roe) || roeVal;
-
-      let balanceDelta = 0;
-      if (isIncrease) {
-        if (debitAmount > 0) balanceDelta = debitAmount;
-        else if (credit > 0) balanceDelta = credit;
-        else if (salesAmount > 0) balanceDelta = salesAmount;
-        else if (foreignAmount > 0 && isForeign) balanceDelta = Math.round(foreignAmount * txRoe);
-      } else {
-        balanceDelta = credit;
-      }
-
-      running += isIncrease ? balanceDelta : -balanceDelta;
-      const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
-      runningForeign += isIncrease ? txForeignCr : -txForeignCr;
-    }
-
-    const logoPng = isServiceOnly ? "" : airlineSheetLogoUrl(air.code, air.name);
-    const logoFormula = logoPng ? `=IMAGE("${logoPng}", 1)` : "";
-
-    if (isServiceOnly) {
-      balance.push([air.name, logoFormula, "-", "-"]);
-    } else {
-      totalPkr += running;
-      lastNonServiceRow = 3 + idx;
-      const foreignBalance = isForeign
-        ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
-        : "-";
-      balance.push([air.name, logoFormula, foreignBalance, running]);
-    }
-  }
-  const lastBalanceRow = 2 + (airlines as any[]).length;
-  balance.push([]);
-  // Sum formula excludes Other Service Providers if it is at the end or sums actual range
-  balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastNonServiceRow})`]);
+  const { balance } = buildAirlineBalanceSummary(airlines as any[], txs as any[]);
 
   // Every range (Airline Balance and every airline statement tab) is written in
   // ONE atomic batched call further below. Writing the summary first and the
@@ -561,10 +720,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
   // error or timeout between the two calls left the balance updated while
   // airline statement tabs stayed stale.
 
-  // Create/refresh one dedicated tab for every airline.
   // Single metadata read: reused for the stale-tab sweep, the new-tab ids, the
   // final tab ordering and the summary tab formatting after all data writes.
-  // Rebuild the tab without forced filter views and with exact 12 columns (including Debit In ID).
   const spreadsheet = await getSpreadsheet(id);
   const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
   const usedNames = new Set<string>(sheetMap.keys());
@@ -582,11 +739,6 @@ export async function syncAirlineAccountsSheet(revision: number) {
   ];
   await batchClear(id, tabsToClear);
 
-  const safeAirlineTabName = (raw: string) => {
-    const clean = String(raw || "Airline").replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim();
-    return (clean || "Airline").slice(0, 90);
-  };
-
   const currentAirlineTabNames = new Set((airlines as any[]).map((air) => safeAirlineTabName(air.name)));
   const systemTabs = new Set(["Airline Balance", "Airline Contact Details"]);
   for (const [title, sheetId] of Array.from(sheetMap.entries())) {
@@ -597,20 +749,16 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
   }
 
-  // Accumulated across every airline tab: all data goes out in ONE batched write and all
-  // formatting in ONE batchUpdate (keeps clear of the Google Sheets per-minute write quota).
-  const valuesPayload: { range: string; values: unknown[][] }[] = [];
-  const formatTasks: any[] = [];
-
-  // Size each airline tab's grid before writing: foreign-currency airlines get three extra
-  // FX columns (Debit In, Credit From, Balance in the airline's currency) => 16 columns,
-  // while PKR airlines keep the original 13-column layout.
+  // Size each airline tab's grid BEFORE writing so the write always fits the
+  // grid. The width must match the actual write width from buildAirlineTab
+  // (15 for the service-provider tab, 16 for foreign-currency, 13 otherwise) —
+  // a mismatch here is exactly what made every full sync fail with a grid
+  // error and leave all tabs stale.
   const tabWidths = new Map<string, number>();
   for (const air of airlines as any[]) {
     const tabName = safeAirlineTabName(air.name);
     if (!sheetMap.has(tabName)) continue;
-    const rawCurr = (air.currency && String(air.currency).trim()) || "";
-    tabWidths.set(tabName, rawCurr && rawCurr !== "PKR" ? 16 : 13);
+    tabWidths.set(tabName, airlineTabWidth(air));
   }
   const expandGridRequests = Array.from(sheetMap.entries())
     .filter(([title]) => title !== "Airline Balance" && title !== "Airline Contact Details")
@@ -621,6 +769,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
       },
     }));
   if (expandGridRequests.length) await batchUpdateSpreadsheet(id, expandGridRequests);
+
+  const valuesPayload: { range: string; values: unknown[][] }[] = [];
+  const formatTasks: any[] = [];
 
   for (const air of airlines as any[]) {
     const baseName = safeAirlineTabName(air.name);
@@ -640,172 +791,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
 
     const rows = sortTransactionsByDate((txs as any[]).filter((r) => r.airline_id === air.id));
-    const op = n(air.opening_balance);
-    let running = op;
-    const code = air.code || "";
-    const isG9 = code === "G9" || /air\s*arabia/i.test(air.name);
-    const isXY = code === "XY" || /flynas/i.test(air.name);
-    const isF3 = code === "F3" || /flyadeal/i.test(air.name);
-    const isCarrierForeign = isG9 || isXY || isF3;
-    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
-    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
-    const rawCurr = (air.currency && air.currency.trim()) || "";
-    const rawRoe = n(air.roe);
-    const openingForeignVal = air.opening_balance_foreign !== null && air.opening_balance_foreign !== undefined ? n(air.opening_balance_foreign) : null;
-
-    let curr = "PKR";
-    let roeVal = 1;
-    let isForeign = false;
-
-    if (rawCurr && rawCurr !== "PKR") {
-      curr = rawCurr;
-      roeVal = rawRoe > 0 ? rawRoe : defaultRoe;
-      isForeign = true;
-    } else if (rawCurr === "PKR" && (!isCarrierForeign || openingForeignVal === 0 || rawRoe === 1)) {
-      curr = "PKR";
-      roeVal = 1;
-      isForeign = false;
-    } else if (isCarrierForeign) {
-      curr = defaultCurrency;
-      roeVal = rawRoe > 1 ? rawRoe : defaultRoe;
-      isForeign = true;
-    }
-    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
-    const opForeign = runningForeign;
-
-    const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
-    if (isServiceOnly) {
-      const specific: unknown[][] = [
-        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", "", "", ""],
-        ["Service Provider Account Statement", "", "", "", "", "", "", "", "", "", "", "", ""],
-        [`Airline: ${s(air.name)}`, "", "", "", "", "", "", "", "", "", "", ""],
-        [`Entries: ${rows.length} • All Tickets Record`, "", "", "", "", "", "", "", "", "", "", "", ""],
-        ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Pax Contact #", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      ];
-      for (const r of rows) {
-        const sales = n(r.ticket_sales);
-        const debit = n(r.debit_in_id);
-        const credit = n(r.credit_from_id);
-        const voids = n(r.void_charges);
-        specific.push([
-          formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), sales,
-          debit > 0 ? debit : "", credit, s(r.pax_contact), voids, sales - credit, "-",
-          [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
-        ]);
-      }
-      valuesPayload.push({ range: `'${tabName}'!A1:O${Math.max(5, specific.length)}`, values: specific });
-      formatTasks.push({
-        sheetId, title: tabName, columnCount: 15, dataEndRow: specific.length,
-        numericColumnStart: 5, numericColumnIndexes: [5, 6, 7, 8, 9, 11, 12, 13], dateColumnIndexes: [0],
-      });
-      continue;
-    }
-
-    const airlineCode = ((!air.code || air.code === "--") && /air\s*arabia/i.test(air.name)) ? "G9" : air.code;
-    const airlineTitle = airlineCode ? `Airline: ${s(air.name)} • ${s(airlineCode)}` : `Airline: ${s(air.name)}`;
-    // Foreign-currency airlines get three extra FX columns next to their PKR counterparts:
-    // Debit In (CUR) for top ups added, Credit From (CUR) for refunds received, and a running
-    // Balance in (CUR), so every row is auditable in both PKR and the airline's currency.
-    // Passenger-level Received / Passenger Remaining stay off the airline tabs;
-    // they are reported on the Agent Ledger sheets instead.
-    const colCount = isForeign ? 16 : 13;
-    const padRow = (row: unknown[]) => {
-      const padded = [...row];
-      while (padded.length < colCount) padded.push("");
-      return padded.slice(0, colCount);
-    };
-    const headerRow: unknown[] = isForeign
-      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
-      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
-    const openingRow: unknown[] = isForeign
-      ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, "", 0, op, opForeign, "OPENING BALANCE"]
-      : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, "", 0, op, "OPENING BALANCE"];
-    const specific: unknown[][] = [
-      ["ROHI INTERNATIONAL TRAVELS"],
-      ["Airline Account Statement"],
-      [airlineTitle],
-      [""],
-      headerRow,
-      openingRow,
-    ];
-
-    for (const r of rows) {
-      const { isIncrease, isTopUp, isRefund } = classifyAirlineRow(r);
-      const credit = parseCleanNumber(r.credit_from_id);
-      const debitAmount = parseCleanNumber(r.debit_in_id);
-      const salesAmount = parseCleanNumber(r.ticket_sales);
-      const foreignAmount = parseCleanNumber(r.foreign_amount);
-      const txRoe = parseCleanNumber(r.roe) || roeVal;
-
-      let balanceDelta = 0;
-      if (isIncrease) {
-        if (debitAmount > 0) balanceDelta = debitAmount;
-        else if (credit > 0) balanceDelta = credit;
-        else if (salesAmount > 0) balanceDelta = salesAmount;
-        else if (foreignAmount > 0 && isForeign) balanceDelta = Math.round(foreignAmount * txRoe);
-      } else {
-        balanceDelta = credit;
-      }
-
-      running += isIncrease ? balanceDelta : -balanceDelta;
-      const txForeignCr = foreignAmount > 0 ? foreignAmount : (isForeign ? (balanceDelta / txRoe) : 0);
-      runningForeign += isIncrease ? txForeignCr : -txForeignCr;
-
-      // Agent / counter sale breakdown: Received saved on the entry, and the
-      // remaining passenger balance = Ticket Sales − Received (blank for legacy
-      // rows saved before the Received field existed).
-      const displayedSales = isIncrease ? 0 : salesAmount;
-      const displayedDebit = isIncrease ? balanceDelta : (debitAmount > 0 ? debitAmount : "");
-      const displayedCredit = isIncrease ? "" : credit;
-      const voids = parseCleanNumber(r.void_charges);
-      const profit = isIncrease ? 0 : displayedSales - (credit > 0 ? credit : 0);
-      const tag = isRefund ? "REFUND" : isTopUp ? "TOP UP" : "";
-      const remarks = [tag, r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - ");
-
-      const debitFx = isIncrease ? txForeignCr : "";
-      const creditFx = isIncrease ? "" : txForeignCr;
-      specific.push(padRow(isForeign
-        ? [
-            formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-            displayedSales, displayedDebit, debitFx, displayedCredit, creditFx,
-            s(r.pax_contact), voids, profit, running, runningForeign, remarks,
-          ]
-        : [
-            formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-            displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
-            remarks,
-          ]));
-    }
-
-    if (op === 0 && rows.length === 0 && running === 0) {
-      specific[3][0] = isForeign
-        ? `Opening Balance: 0 • Entries: 0 • Current Balance: 0 (0.00 ${curr})`
-        : "Opening Balance: 0 • Entries: 0 • Current Balance: 0";
-    } else {
-      const opStr = op.toLocaleString();
-      const balStr = running.toLocaleString();
-      specific[3][0] = isForeign
-        ? `Opening Balance: ${opStr} (${opForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}) • Entries: ${rows.length} • Current Balance: ${balStr} (${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr})`
-        : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
-    }
-
-    const rangeEnd = colCount === 16 ? "P" : "M";
-    valuesPayload.push({
-      range: `${quoteSheet(tabName)}!A1:${rangeEnd}${Math.max(20, specific.length)}`,
-      values: specific.map(padRow),
-    });
-    formatTasks.push({
-      sheetId,
-      title: tabName,
-      columnCount: colCount,
-      dataEndRow: specific.length,
-      numericColumnIndexes: isForeign ? [5, 6, 8, 11, 12, 13] : [5, 6, 7, 9, 10, 11],
-      // Foreign-currency columns (Debit In CUR, Credit From CUR, Balance in CUR)
-      // always render with two decimal places; PKR columns stay whole-rupee.
-      decimalColumnIndexes: isForeign ? [7, 9, 14] : [],
-      dateColumnIndexes: [0],
-      isServiceOnly: false,
-    });
+    const built = buildAirlineTab(air, rows, tabName, sheetId);
+    valuesPayload.push({ range: built.range, values: built.specific });
+    formatTasks.push(built.formatTask);
   }
 
   // 1. Write ALL sheet data (summary and every airline statement tab) in one
@@ -863,6 +851,98 @@ export async function syncAirlineAccountsSheet(revision: number) {
   return { spreadsheetId: id, url: airlineAccountsSheetUrl(id), syncedAt };
 }
 
+/* ---------- Google Sheets sync (fast targeted path) ---------- */
+
+/**
+ * Rewrites ONLY the given airlines' statement tabs plus the small Airline
+ * Balance summary tab. A transaction save touches one airline, so rebuilding
+ * all tabs through the serialized gateway on every save is wasted work that
+ * times out and leaves tabs stale. Falls back to the full rebuild in the
+ * caller when a tab is missing (e.g. a newly added airline).
+ */
+export async function syncAirlineAccountsSheetFast(
+  airlineIds: string[],
+  revision: number
+): Promise<{ applied: boolean; error?: string }> {
+  const ids = Array.from(new Set((airlineIds || []).map((x) => String(x || "").trim()).filter(Boolean)));
+  if (ids.length === 0) return { applied: false, error: "no airline selected" };
+
+  const db = await getAdmin();
+  const [a, t] = await Promise.all([
+    db.from("airline_ledger_airlines").select("*").order("sort_order"),
+    db.from("airline_ledger_transactions").select("*").order("date", { ascending: true }).order("sort_order", { ascending: true }),
+  ]);
+  if (a.error || t.error) return { applied: false, error: a.error?.message || t.error?.message };
+  const airlines = a.data ?? [];
+  const txs = t.data ?? [];
+  const byId = new Map<string, any>((airlines as any[]).map((x) => [x.id, x]));
+  const targets: any[] = [];
+  for (const airlineId of ids) {
+    const air = byId.get(airlineId);
+    if (!air) return { applied: false, error: `airline not found: ${airlineId}` };
+    targets.push(air);
+  }
+
+  const id = DESIGNATED_SHEET_ID;
+  const spreadsheet = await getSpreadsheet(id);
+  const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
+  const gridBySheetId = new Map<number, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.sheetId as number, (x.properties as any).gridProperties?.columnCount ?? 0]));
+
+  const tabNames = targets.map((air) => safeAirlineTabName(air.name));
+  for (const tabName of tabNames) {
+    if (!sheetMap.has(tabName)) return { applied: false, error: `airline tab missing: ${tabName}` };
+  }
+
+  const payloads = targets.map((air) => {
+    const tabName = safeAirlineTabName(air.name);
+    const rows = sortTransactionsByDate((txs as any[]).filter((r) => r.airline_id === air.id));
+    return buildAirlineTab(air, rows, tabName, sheetMap.get(tabName)!);
+  });
+
+  // Make sure each touched tab's grid is at least as wide as its write.
+  const expandGridRequests: any[] = [];
+  for (const p of payloads) {
+    const current = gridBySheetId.get(p.formatTask.sheetId) ?? 0;
+    if (p.writeCols > current) {
+      expandGridRequests.push({
+        updateSheetProperties: {
+          properties: { sheetId: p.formatTask.sheetId, gridProperties: { columnCount: p.writeCols } },
+          fields: "gridProperties.columnCount",
+        },
+      });
+    }
+  }
+  if (expandGridRequests.length) await batchUpdateSpreadsheet(id, expandGridRequests);
+
+  const { balance } = buildAirlineBalanceSummary(airlines as any[], txs as any[]);
+  await batchClear(id, [...tabNames.map((t) => quoteSheet(t)), `'Airline Balance'`]);
+  await batchWrite(
+    id,
+    [{ range: `'Airline Balance'!A1`, values: balance }, ...payloads.map((p) => ({ range: p.range, values: p.specific }))],
+    "USER_ENTERED"
+  );
+
+  // Formatting is cosmetic and best-effort, exactly like the full rebuild.
+  try {
+    const balSheetId = sheetMap.get("Airline Balance");
+    if (balSheetId !== undefined) {
+      await formatAirlineBalanceSheet(id, balSheetId, (airlines as any[]).length);
+    }
+  } catch (formatErr) {
+    console.warn("[airline-sheet] Fast sync balance formatting skipped:", formatErr);
+  }
+  try {
+    const allFormatRequests: any[] = [];
+    for (const task of payloads.map((p) => p.formatTask)) {
+      allFormatRequests.push(...buildRohiExportFormattingRequests(task.sheetId, task));
+    }
+    if (allFormatRequests.length) await batchUpdateSpreadsheet(id, allFormatRequests);
+  } catch (formatErr) {
+    console.warn("[airline-sheet] Fast sync statement formatting skipped:", formatErr);
+  }
+
+  return { applied: true };
+}
 
 export async function syncAirlineContactDetailsSheet(customContacts?: any[]): Promise<{ status: "success" | "failed"; sheet: string; error?: string }> {
   try {

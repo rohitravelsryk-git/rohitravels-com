@@ -365,27 +365,113 @@ export async function syncAirlineLedgerToGoogleSheet(
 
 type AirlineSheetSyncResult = { synced: boolean; revision: number; error: string | null };
 
-// Only one full Google Sheet rebuild may run at a time. Concurrent callers (a save
+async function markAirlineSheetSyncStatus(status: string, errorMessage: string | null, syncedRevision: number | null) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
+  await db.from("airline_ledger_google_sync").upsert({
+    id: 1,
+    status,
+    last_synced_revision: syncedRevision,
+    last_synced_at: status === "synced" ? new Date().toISOString() : null,
+    error_message: errorMessage ? errorMessage.slice(0, 1000) : null,
+  });
+}
+
+// A hung gateway call used to hold the coalescing lock forever, so every later
+// save found "a sync already running" and silently skipped its own mirror write
+// — tabs then stayed stale until the next page-open catch-up. The deadline
+// marks the run failed, reports it, and frees the lock so the next save can
+// sync again immediately.
+const AIRLINE_SHEET_SYNC_DEADLINE_MS = 120_000;
+
+function withSyncDeadline(run: Promise<AirlineSheetSyncResult>): Promise<AirlineSheetSyncResult> {
+  return Promise.race([
+    run,
+    new Promise<AirlineSheetSyncResult>((_resolve, reject) =>
+      setTimeout(
+        () => reject(new Error(`Airline Sheet rebuild exceeded its ${AIRLINE_SHEET_SYNC_DEADLINE_MS / 1000}s deadline`)),
+        AIRLINE_SHEET_SYNC_DEADLINE_MS,
+      )
+    ),
+  ]);
+}
+
+async function runFullRebuildWithDeadline(revision: number): Promise<AirlineSheetSyncResult> {
+  try {
+    return await withSyncDeadline(runAirlineLedgerGoogleSheetSync(revision));
+  } catch (error) {
+    const message = String(error instanceof Error ? error.message : error);
+    try {
+      await markAirlineSheetSyncStatus("error", message, null);
+    } catch (markErr) {
+      console.warn("[airline-sheet] Could not record sync error status:", markErr);
+    }
+    return { synced: false, revision, error: message };
+  }
+}
+
+// Only one Google Sheet rebuild may run at a time. Concurrent callers (a save
 // while the page-open sync is still running) are coalesced: the active run finishes,
 // then drains the latest queued revision. Without this, two interleaved rebuilds can
 // write the summary tabs from a new snapshot and the statement tabs from an old one,
 // which is exactly how stale airline statement tabs appeared.
 let activeAirlineSheetSync: Promise<AirlineSheetSyncResult> | null = null;
+let activeAirlineSheetSyncStartedAt = 0;
 let queuedAirlineSheetRevision: number | null = null;
 
+// A run older than this window is treated as a zombie (its deadline already
+// passed) and a new run is allowed to replace it instead of joining forever.
+const AIRLINE_SHEET_SYNC_ZOMBIE_MS = 150_000;
+
 export async function syncAirlineLedgerGoogleSheetNow(revision: number): Promise<AirlineSheetSyncResult> {
-  if (activeAirlineSheetSync) {
+  if (activeAirlineSheetSync && Date.now() - activeAirlineSheetSyncStartedAt < AIRLINE_SHEET_SYNC_ZOMBIE_MS) {
     queuedAirlineSheetRevision = Math.max(queuedAirlineSheetRevision ?? 0, revision);
     return activeAirlineSheetSync;
   }
+  activeAirlineSheetSyncStartedAt = Date.now();
   const run = (async (): Promise<AirSheetSyncInner> => {
-    let result = await runAirlineLedgerGoogleSheetSync(revision);
+    let result = await runFullRebuildWithDeadline(revision);
     while (queuedAirlineSheetRevision !== null) {
       const next = queuedAirlineSheetRevision;
       queuedAirlineSheetRevision = null;
-      result = await runAirlineLedgerGoogleSheetSync(next);
+      result = await runFullRebuildWithDeadline(next);
     }
     return result;
+  })().finally(() => {
+    activeAirlineSheetSync = null;
+  });
+  activeAirlineSheetSync = run;
+  return run;
+}
+
+/**
+ * Fast per-transaction path: mirrors only the named airlines' statement tabs
+ * plus the Airline Balance summary, then falls back to the full rebuild when
+ * the fast path is impossible (tab missing/new airline). Uses the same
+ * coalescing lock as the full rebuild so the two can never interleave.
+ */
+export async function syncAirlineLedgerGoogleSheetTabsNow(
+  airlineIds: string[],
+  revision: number,
+): Promise<AirlineSheetSyncResult> {
+  if (activeAirlineSheetSync && Date.now() - activeAirlineSheetSyncStartedAt < AIRLINE_SHEET_SYNC_ZOMBIE_MS) {
+    queuedAirlineSheetRevision = Math.max(queuedAirlineSheetRevision ?? 0, revision);
+    return activeAirlineSheetSync;
+  }
+  activeAirlineSheetSyncStartedAt = Date.now();
+  const run = (async (): Promise<AirlineSheetSyncResult> => {
+    try {
+      const { syncAirlineAccountsSheetFast } = await import("@/lib/airline-accounts-sheet.server");
+      const fast = await syncAirlineAccountsSheetFast(airlineIds, revision);
+      if (fast.applied) {
+        await markAirlineSheetSyncStatus("synced", null, revision);
+        return { synced: true, revision, error: null };
+      }
+      console.warn("[airline-sheet] Fast tab sync not possible, falling back to full rebuild:", fast.error);
+    } catch (fastErr) {
+      console.warn("[airline-sheet] Fast tab sync failed, falling back to full rebuild:", fastErr);
+    }
+    return await runFullRebuildWithDeadline(revision);
   })().finally(() => {
     activeAirlineSheetSync = null;
   });

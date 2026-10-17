@@ -809,18 +809,32 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         })(),
       ]);
 
-      // Fire-and-forget mirror rebuilds: the database rows (including every
-      // ledger posting above) are already committed. Each sync marks its own
-      // status row, and the admin page's status poller + on-open sync heal any
-      // run that fails. Blocking the response here made every save appear to
-      // hang for ~45s and triggered the browser "changes will not be saved"
-      // warning when the user refreshed during the wait.
-      void Promise.allSettled([
+      // Mirrors complete BEFORE the response returns, exactly like the
+      // financial postings above: a detached background promise is killed by
+      // the serverless runtime as soon as the response is sent, which is what
+      // left airline statement tabs stale after Add Record saves while the
+      // agent ledger stayed current. The airline mirror uses the FAST targeted
+      // path (only this airline's tab + the small summary tab) so the wait is
+      // a few seconds, not a full 14-tab rebuild. The full rebuild remains the
+      // caller's fallback and the page-open catch-up.
+      let sheetSynced = true;
+      let sheetSyncError: string | null = null;
+      await Promise.allSettled([
         (async () => {
           try {
-            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-            await syncAirlineLedgerGoogleSheetNow(newRevision);
+            const { syncAirlineLedgerGoogleSheetTabsNow } = await import("@/lib/airline-ledger-google-sync");
+            const result = await withTimeout(
+              syncAirlineLedgerGoogleSheetTabsNow([airlineId], newRevision),
+              45000,
+              "Airline ledger Google Sheet sync",
+            );
+            if (!result.synced) {
+              sheetSynced = false;
+              sheetSyncError = result.error ?? "Airline Google Sheet sync failed";
+            }
           } catch (e) {
+            sheetSynced = false;
+            sheetSyncError = String(e instanceof Error ? e.message : e);
             console.warn("[airline-atomic] Airline Google Sheet sync:", e);
           }
         })(),
@@ -832,13 +846,13 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
               supabaseAdmin.from("accounts_book_transactions").select("*"),
               supabaseAdmin.from("accounts_book_services").select("*"),
             ]);
-            await syncRohiFinancialBackup({
+            await withTimeout(syncRohiFinancialBackup({
               airlines: allAirlines,
               airlineTransactions: allTransactions,
               accounts: accounts.data || [],
               accountTransactions: accountTransactions.data || [],
               services: services.data || [],
-            }, newRevision);
+            }, newRevision), 25000, "Financial Google backup sync");
           } catch (e) {
             console.warn("[airline-atomic] Financial backup sync:", e);
           }
@@ -853,6 +867,8 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       success: true,
       revision: newRevision,
       agentPosting,
+      sheetSynced,
+      sheetSyncError,
       row: {
         id: rowId,
         date,
@@ -957,8 +973,15 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
         })(),
         (async () => {
           try {
-            const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-            const sheetRes = await syncAirlineLedgerGoogleSheetNow(newRevision);
+            const { syncAirlineLedgerGoogleSheetTabsNow } = await import("@/lib/airline-ledger-google-sync");
+            // Targeted mirror: only this airline's statement tab + the summary
+            // tab, with an automatic full-rebuild fallback when the fast path
+            // is impossible (e.g. the tab was deleted or renamed).
+            const sheetRes = await withTimeout(
+              syncAirlineLedgerGoogleSheetTabsNow([data.airlineId], newRevision),
+              45000,
+              "Airline ledger Google Sheet sync",
+            );
             return { sheetSynced: sheetRes.synced === true, sheetSyncError: sheetRes.error ?? null };
           } catch (e) {
             console.warn("[airline-atomic-delete] Airline Google Sheet sync:", e);

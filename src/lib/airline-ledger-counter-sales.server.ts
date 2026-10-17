@@ -18,12 +18,15 @@ function counterSaleUuid(txId: string, seed: string): string {
 
 // The owner's own counter sales: agent "Abdul Razzaq" in Airline Accounts.
 const SELF_AGENT = "abdul razzaq";
-const COUNTER_SALES_CATEGORY = "Counter Sales";
+// The single sales category for counter sales: "Air Ticket" (the duplicate
+// "Counter Sales" / "Sales Account" categories were consolidated into it;
+// see migration 20261017100000_consolidate_air_ticket_sales_category.sql).
+const COUNTER_SALES_CATEGORY = "Air Ticket";
 
 /**
  * Post self-agent (Abdul Razzaq) airline counter sales into Accounts Book:
  *
- * 1. A revenue record in Sales Accounts > "Counter Sales" carrying the full
+ * 1. A revenue record in Sales Accounts > "Air Ticket" carrying the full
  *    Ticket Sales value, the supplier cost (for profit) and the passenger's
  *    remaining balance in the details.
  * 2. A cash receipt on the selected "Received Via" account for ONLY the money
@@ -41,7 +44,7 @@ export async function syncAirlineCounterSalesToSalesAccounts(
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // 1. Make sure the "Counter Sales" category exists so the Sales Accounts tab
+    // 1. Make sure the "Air Ticket" category exists so the Sales Accounts tab
     //    and its Google Sheet tab have a home for these records.
     const { data: services } = await supabaseAdmin
       .from("accounts_book_services")
@@ -121,7 +124,7 @@ export async function syncAirlineCounterSalesToSalesAccounts(
       if (viaId && accountById.has(viaId)) receiptAccount = accountById.get(viaId);
       else if (viaName && accountByName.has(viaName.toLowerCase())) receiptAccount = accountByName.get(viaName.toLowerCase());
 
-      // Revenue record: the full ticket sale in Sales Accounts > Counter Sales,
+      // Revenue record: the full ticket sale in Sales Accounts > Air Ticket,
       // with all details (pax, PNR, sector, contact, Ticket Sales, Remaining).
       const saleSourceId = counterSaleUuid(txId, "rohi-airline-counter-sale:");
       const saleAccount = receiptAccount ?? cashAccount;
