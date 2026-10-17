@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   Search, Plus, Pencil, Trash2, Phone, Mail, MapPin,
-  RefreshCw, Download, Check, Copy, X, Loader2, Building, CreditCard, User
+  RefreshCw, Download, Check, Copy, X, Loader2, Building, CreditCard
 } from "lucide-react";
 import {
   type AirlineContact,
