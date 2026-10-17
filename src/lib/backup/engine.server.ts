@@ -688,7 +688,7 @@ export async function reconcileBanksWalletsToSheets() {
         .order("created_at", { ascending: true }),
     ]);
 
-    let allBankWalletAccounts: Array<{ id: string; name: string; kind: string; logo_url?: string | null; opening_balance?: number | null; opening_balance_date?: string | null; created_at?: string | null; is_active?: boolean | null; sort_order?: number | null }> = accountsResult.data ?? [];
+    let allBankWalletAccounts: Array<{ id: string; name: string; kind: string; logo_url?: string | null; opening_balance?: number | null; opening_balance_date?: string | null; created_at?: string | null; is_active?: boolean | null; sort_order?: number | null }> = (accountsResult.data ?? []) as unknown as typeof allBankWalletAccounts;
     if (accountsResult.error && /logo_url/i.test(accountsResult.error.message ?? "")) {
       const fallback = await db
         .from("accounts_book_accounts")

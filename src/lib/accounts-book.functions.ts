@@ -447,7 +447,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
 export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), logo_url: logoUrlSchema }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
+  const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
   if (error) throw new Error(mentionsLogoColumn(error.message) ? LOGO_COLUMN_HELP : error.message);
   const sheetSync = await syncLive(["banks", "cash"]);
   return { success: true, sheetSync };
