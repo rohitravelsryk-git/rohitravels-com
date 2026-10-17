@@ -987,16 +987,13 @@ export async function reconcileSalesAccountsToSheets() {
     const safeSheetPart = (value: string) => value.replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
     // Read accounts, services and all sale transactions in parallel
-    const [accountsResult, servicesResult, txnsResult] = await Promise.all([
-      db.from("accounts_book_accounts").select("id,name,kind"),
+    const [servicesResult, txnsResult] = await Promise.all([
       db.from("accounts_book_services").select("name").eq("is_active", true),
       db.from("accounts_book_transactions")
         .select("id,account_id,entry_date,created_at,description,category,party,amount,direct_cost,direction,source_type,entry_type")
         .or("source_type.eq.sale,entry_type.eq.sale")
         .order("created_at", { ascending: true }),
     ]);
-
-    const accountMap = new Map((accountsResult.data ?? []).map((a) => [String(a.id), String(a.name)]));
 
     // normalizeSalesCategory is defined at top-level
 
@@ -1023,46 +1020,8 @@ export async function reconcileSalesAccountsToSheets() {
       if (cat) salesCategories.add(cat);
     }
 
-    // Build Master Sales Accounts sheet (12 columns)
-    let totalSalesAmt = 0;
-    let totalProfitAmt = 0;
-    const masterDataRows: (string | number)[][] = [];
-    let sr = 1;
-
-    for (const t of allSales) {
-      if (t.direction === "out" && Number(t.direct_cost || 0) === 0) continue;
-      const saleAmt = Number(t.amount || 0);
-      const costAmt = Number(t.direct_cost || 0);
-      const profit = saleAmt - costAmt;
-      totalSalesAmt += saleAmt;
-      totalProfitAmt += profit;
-      const accName = accountMap.get(String(t.account_id)) || "Account";
-      const parsed = parseSaleDetails(t.description, t.party);
-
-      masterDataRows.push([
-        sr++,
-        String(formatSheetDate(t.entry_date) || ""),
-        normalizeSalesCategory(String(t.category || "General")),
-        parsed.country || "—",
-        parsed.agent || t.party || "—",
-        parsed.pax_name || cleanSaleDescriptionDisplay(t.description) || "—",
-        parsed.contact_no || "—",
-        parsed.vendor || "—",
-        accName,
-        saleAmt,
-        costAmt,
-        profit
-      ]);
-    }
-
-    const masterRows: (string | number)[][] = [
-      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", "", "", "", "", ""],
-      ["Sales Accounts", "", "", "", "", "", "", "", "", "", "", ""],
-      [`Master Sales Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Total Sales: Rs ${totalSalesAmt.toLocaleString()} • Total Profit: Rs ${totalProfitAmt.toLocaleString()}`, "", "", "", "", "", "", "", "", "", "", ""],
-      ["SR #", "Date", "Category", "Country", "Agent", "Pax Name", "Contact No.", "Vendor", "Payment Method", "Sale Amount (PKR)", "Purchase Amount (PKR)", "Profit (PKR)"],
-      ...masterDataRows
-    ];
+    // The master "Sales Accounts" journal tab was removed per admin direction:
+    // the workbook is category tabs only (e.g. Air Ticket, Insurance, Umrah).
 
     // Build Category Tabs (10 columns: Sr No., Date, Country, Agent, Pax Name, Contact No., Vendor, Sale Amount, Purchase Amount, Profit)
     const categorySheetData: Array<{ sheet: string; rows: (string | number)[][]; count: number }> = [];
@@ -1110,40 +1069,23 @@ export async function reconcileSalesAccountsToSheets() {
     }
 
     // Ensure tabs exist
-    await ensureSheetTab(target.id, "Sales Accounts", existingSheets);
     for (const item of categorySheetData) {
       await ensureSheetTab(target.id, item.sheet, existingSheets);
     }
 
     // Batch clear
-    const clearRanges = [
-      quoteSheet("Sales Accounts"),
-      ...categorySheetData.map((item) => quoteSheet(item.sheet))
-    ];
+    const clearRanges = categorySheetData.map((item) => quoteSheet(item.sheet));
     await batchClear(target.id, clearRanges);
 
     // Batch write
-    const writeData = [
-      { range: `'Sales Accounts'!A1:L${masterRows.length}`, values: masterRows },
-      ...categorySheetData.map((item) => ({
-        range: `'${item.sheet}'!A1:J${item.rows.length}`,
-        values: item.rows,
-      }))
-    ];
+    const writeData = categorySheetData.map((item) => ({
+      range: `'${item.sheet}'!A1:J${item.rows.length}`,
+      values: item.rows,
+    }));
     await batchWrite(target.id, writeData, "USER_ENTERED");
 
     // Batch format
     const allFormattingRequests: any[] = [];
-    const masterSheetId = existingSheets.get("Sales Accounts");
-    if (masterSheetId !== undefined) {
-      allFormattingRequests.push(...buildRohiExportFormattingRequests(masterSheetId, {
-        columnCount: 12,
-        dataEndRow: masterRows.length,
-        numericColumnIndexes: [9, 10, 11],
-        dateColumnIndexes: [1],
-        hasOpeningRow: false,
-      }));
-    }
 
     for (const item of categorySheetData) {
       const sheetId = existingSheets.get(item.sheet);
@@ -1166,16 +1108,15 @@ export async function reconcileSalesAccountsToSheets() {
       }
     }
 
-    // Prune category tabs whose category no longer exists (e.g. consolidated or
-    // renamed categories). This workbook is dedicated to Sales Accounts, so any
-    // tab that is neither the master journal nor a current category tab is a
-    // stale mirror and is removed. Supabase remains the source of truth, so the
-    // removed rows are recoverable from the authoritative tables.
+    // Prune stale tabs: this workbook is category tabs only, so any tab that is
+    // not a current category tab (including the old master "Sales Accounts"
+    // journal and consolidated names like "Counter Sales") is removed.
+    // Supabase remains the source of truth, so the removed rows are recoverable
+    // from the authoritative tables.
     const currentCategoryTabs = new Set(categorySheetData.map((item) => item.sheet.toLowerCase()));
     for (const [title, sId] of existingSheets.entries()) {
       if (sId === undefined) continue;
       const lower = title.toLowerCase().trim();
-      if (lower === "sales accounts") continue; // master journal tab
       if (lower === "readme" || lower === "_data" || lower === "balances overview") continue;
       if (currentCategoryTabs.has(lower)) continue;
       try {
@@ -1188,8 +1129,8 @@ export async function reconcileSalesAccountsToSheets() {
 
     outcomes.push({
       table: "accounts_book_transactions",
-      sheet: "Sales Accounts",
-      rows: masterRows.length - 1,
+      sheet: "Sales Accounts (category tabs)",
+      rows: categorySheetData.reduce((sum, item) => sum + item.count, 0),
       mode: "full",
       cursor: null,
       errors: []
@@ -1779,7 +1720,7 @@ export async function runSync(opts: RunOptions = {}) {
             ? [
                 // Daily Cash Book, Expenses, and Banks & Wallets have specialized,
                 // human-formatted reconcilers and must not be overwritten by raw table dumps.
-                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
+                // Sales Accounts is category tabs only — no master journal tab.
                 // Bank/wallet account ledgers are owned exclusively by
                 // reconcileBanksWalletsToSheets(). Do not create generic account tabs here;
                 // that previously produced duplicates such as "JazzCash" alongside
