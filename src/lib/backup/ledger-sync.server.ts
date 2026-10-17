@@ -23,10 +23,10 @@ export async function ensureMasterLedgerSheet(): Promise<{ id: string; url: stri
 
 /** 
  * Syncs ledger data to the master sheet.
- * Updates Balances Overview, Agent_Transactions, and individual agent tabs
+ * Updates Balances Overview and individual agent party tabs (direct entries per agent)
  * using the professional Rohi Warm Clay export standard (voucher & airline style).
  */
-export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
+export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
   const spreadsheet = await ensureMasterLedgerSheet();
   const spreadsheetId = spreadsheet.id;
 
@@ -168,100 +168,9 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     }
   }
 
-  // 2. Update Agent_Transactions Sheet
-  const txSheet = "Agent_Transactions";
-  let txSheetId = existingSheets.get(txSheet) ?? null;
-  if (txSheetId === null) {
-    txSheetId = await addSheet(spreadsheetId, txSheet);
-    if (txSheetId !== null) existingSheets.set(txSheet, txSheetId);
-  }
+  // 2. Update individual party tabs (direct entries — each agent's own tab is
+  // the single mirror of their statement, with no separate journal tab).
 
-  // Compile transactions across all agents if not passed directly
-  let txList = allTransactions ?? [];
-  if (!allTransactions || allTransactions.length === 0) {
-    txList = [];
-    for (const a of data) {
-      for (const row of a.ledger || []) {
-        txList.push({
-          tx_id: row.id,
-          date: row.date,
-          agent_name: a.agency_name,
-          details: row.details,
-          debit: row.debit,
-          credit: row.credit,
-          balance: row.balance,
-        });
-      }
-    }
-    txList.sort((x, y) => new Date(x.date).getTime() - new Date(y.date).getTime());
-  }
-
-  const txHeaders = [
-    "Tx ID",
-    "Date",
-    "Agent Name",
-    "PNR",
-    "Type",
-    "Ticket Sales (PKR)",
-    "Received (PKR)",
-    "Passenger Remaining (PKR)",
-    "Debit (PKR)",
-    "Credit (PKR)",
-    "Balance (PKR)",
-    "Description",
-  ];
-
-  const txValues: unknown[][] = [
-    ["ROHI INTERNATIONAL TRAVELS"],
-    ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-    ["AGENT LEDGER ACCOUNTS - AGENT TRANSACTIONS JOURNAL"],
-    [`Official Live Record • ${txList.length} journal entries across all agencies`],
-    txHeaders,
-  ];
-
-  for (const t of txList) {
-    const rawDate = t.date ? String(t.date).slice(0, 10) : "—";
-    const pnrMatch = String(t.details || "").match(/PNR[:\s]+([A-Z0-9]+)/i);
-    const pnr = pnrMatch ? pnrMatch[1] : "—";
-    const type = (Number(t.debit) || 0) > 0 ? "Booking / Debit" : "Payment / Credit";
-    const paxCols = paxColsFor(t.details);
-    txValues.push([
-      String(t.tx_id || "—").slice(0, 18),
-      rawDate,
-      String(t.agent_name || "—"),
-      pnr,
-      type,
-      paxCols.sales,
-      paxCols.recv,
-      paxCols.rem,
-      Number(t.debit) || 0,
-      Number(t.credit) || 0,
-      Number(t.balance) || 0,
-      String(t.details || "—"),
-    ]);
-  }
-
-  await clearSheet(spreadsheetId, txSheet);
-  await writeRange(
-    spreadsheetId,
-    `${quoteSheet(txSheet)}!A1:${colLetter(txHeaders.length - 1)}${txValues.length}`,
-    txValues
-  );
-
-  if (txSheetId !== null) {
-    try {
-      await applyRohiExportFormatting(spreadsheetId, txSheetId, {
-        columnCount: txHeaders.length,
-        dataEndRow: txValues.length,
-        numericColumnIndexes: [5, 6, 7, 8, 9, 10],
-        dateColumnIndexes: [1],
-      });
-    } catch (fmtErr) {
-      console.warn("[ledger-sync] Error applying formatting to Agent_Transactions:", fmtErr);
-    }
-  }
-
-  // 3. Update individual party tabs
   for (const agent of data) {
     const tabName = (agent.agency_name || "Account")
       .replace(/[\[\]\*\?:\/\\]/g, "_")
@@ -352,11 +261,10 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     }
   }
 
-  // 4. Prune tabs for deleted/unregistered parties and obsolete system tabs.
+  // 3. Prune tabs for deleted/unregistered parties and obsolete system tabs.
   // CRITICAL REQUIREMENT: Preserve all vendor data and tabs — no vendor sheets may ever be deleted.
   const protectedTabs = new Set([
     "Balances Overview",
-    "Agent_Transactions",
     "README",
     "_DATA",
   ]);

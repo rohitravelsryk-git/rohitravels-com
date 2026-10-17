@@ -301,7 +301,7 @@ export async function getUnifiedPartyLedgers(supabaseAdmin: any): Promise<{
 
 /**
  * Calculates live balances and ledger entries for all registered parties,
- * and updates Google Sheets (Balances Overview, Agent_Transactions, and individual party tabs).
+ * and updates Google Sheets (Balances Overview and individual party tabs — direct entries per agent).
  */
 export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success" | "failed"; count: number; error?: string }> {
   try {
@@ -614,74 +614,92 @@ export async function syncAirlineTransactionsToAgentLedgers(
   }
 }
 
+/**
+ * Self-healing reconcile for agent ledger postings: compares every committed
+ * airline sale against the "Ref: AIRLINE-TX" links in ledger_manual_entries and
+ * runs the idempotent posting sync when anything is missing or orphaned.
+ * Never throws — failures are logged so pages can still load from committed data.
+ */
+export async function reconcileMissingAgentPostings(): Promise<void> {
+// Self-healing reconcile: whenever the Agent Ledger page opens, first make
+// sure every committed airline sale actually has its agent-ledger posting.
+// A lost/killed save-time posting used to leave the ledger silently missing
+// entries. The check is a cheap id comparison against the Ref: AIRLINE-TX
+// links; the full idempotent posting sync only runs when something is
+// genuinely missing or orphaned, so steady-state page loads stay fast.
+// Reconciliation must never block the page: any failure is logged and the
+// page still renders from committed data.
+try {
+  const [txRes, entryRes] = await Promise.all([
+    (supabaseAdmin as any)
+      .from("airline_ledger_transactions")
+      .select("id, transaction_type, ticket_sales, pnr")
+      .order("date", { ascending: true })
+      .order("sort_order", { ascending: true }),
+    (supabaseAdmin as any)
+      .from("ledger_manual_entries")
+      .select("id, details")
+      .ilike("details", "%Ref: AIRLINE-TX-%"),
+  ]);
+  if (!txRes.error && !entryRes.error) {
+    const txById = new Map<string, any>();
+    for (const t of txRes.data ?? []) {
+      if (t.id) txById.set(String(t.id), t);
+    }
+    const postedTxIds = new Set<string>();
+    const orphanedEntries: any[] = [];
+    for (const e of entryRes.data ?? []) {
+      const m = String(e.details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
+      if (!m || !m[1]) continue;
+      if (txById.has(m[1])) postedTxIds.add(m[1]);
+      else orphanedEntries.push(e);
+    }
+    const missingSales = (txRes.data ?? []).filter((t: any) => {
+      const type = String(t.transaction_type || "").trim().toLowerCase();
+      const isRefundOrTopUp = type === "cancel/refund" || type === "refund" || type === "top up";
+      if (isRefundOrTopUp) return false;
+      const ticketSales = Number(t.ticket_sales) || 0;
+      if (ticketSales === 0 && !t.pnr) return false;
+      return !postedTxIds.has(String(t.id || ""));
+    });
+    if (missingSales.length > 0 || orphanedEntries.length > 0) {
+      console.warn(
+        `[agent-ledger] Reconciling agent ledger postings on page load: ${missingSales.length} missing, ${orphanedEntries.length} orphaned.`,
+      );
+      const airlinesRes = await (supabaseAdmin as any)
+        .from("airline_ledger_airlines")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      if (!airlinesRes.error) {
+        await syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []);
+      } else {
+        console.warn("[agent-ledger] Reconcile skipped, airlines unavailable:", airlinesRes.error.message);
+      }
+    }
+  } else {
+    console.warn(
+      "[agent-ledger] Reconcile check skipped:",
+      txRes.error?.message || entryRes.error?.message,
+    );
+  }
+} catch (reconcileErr) {
+  console.warn("[agent-ledger] Reconcile check failed (page still loads):", reconcileErr);
+}
+
+}
+
 export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Self-healing reconcile: whenever the Agent Ledger page opens, first make
-  // sure every committed airline sale actually has its agent-ledger posting.
-  // A lost/killed save-time posting used to leave the ledger silently missing
-  // entries. The check is a cheap id comparison against the Ref: AIRLINE-TX
-  // links; the full idempotent posting sync only runs when something is
-  // genuinely missing or orphaned, so steady-state page loads stay fast.
-  // Reconciliation must never block the page: any failure is logged and the
-  // page still renders from committed data.
+  // Self-healing reconcile on page load: ensures every committed airline sale
+  // has its agent-ledger posting before the page reads the ledger.
   try {
-    const [txRes, entryRes] = await Promise.all([
-      (supabaseAdmin as any)
-        .from("airline_ledger_transactions")
-        .select("id, transaction_type, ticket_sales, pnr")
-        .order("date", { ascending: true })
-        .order("sort_order", { ascending: true }),
-      (supabaseAdmin as any)
-        .from("ledger_manual_entries")
-        .select("id, details")
-        .ilike("details", "%Ref: AIRLINE-TX-%"),
-    ]);
-    if (!txRes.error && !entryRes.error) {
-      const txById = new Map<string, any>();
-      for (const t of txRes.data ?? []) {
-        if (t.id) txById.set(String(t.id), t);
-      }
-      const postedTxIds = new Set<string>();
-      const orphanedEntries: any[] = [];
-      for (const e of entryRes.data ?? []) {
-        const m = String(e.details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
-        if (!m || !m[1]) continue;
-        if (txById.has(m[1])) postedTxIds.add(m[1]);
-        else orphanedEntries.push(e);
-      }
-      const missingSales = (txRes.data ?? []).filter((t: any) => {
-        const type = String(t.transaction_type || "").trim().toLowerCase();
-        const isRefundOrTopUp = type === "cancel/refund" || type === "refund" || type === "top up";
-        if (isRefundOrTopUp) return false;
-        const ticketSales = Number(t.ticket_sales) || 0;
-        if (ticketSales === 0 && !t.pnr) return false;
-        return !postedTxIds.has(String(t.id || ""));
-      });
-      if (missingSales.length > 0 || orphanedEntries.length > 0) {
-        console.warn(
-          `[agent-ledger] Reconciling agent ledger postings on page load: ${missingSales.length} missing, ${orphanedEntries.length} orphaned.`,
-        );
-        const airlinesRes = await (supabaseAdmin as any)
-          .from("airline_ledger_airlines")
-          .select("*")
-          .order("sort_order", { ascending: true });
-        if (!airlinesRes.error) {
-          await syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []);
-        } else {
-          console.warn("[agent-ledger] Reconcile skipped, airlines unavailable:", airlinesRes.error.message);
-        }
-      }
-    } else {
-      console.warn(
-        "[agent-ledger] Reconcile check skipped:",
-        txRes.error?.message || entryRes.error?.message,
-      );
-    }
+    await reconcileMissingAgentPostings();
   } catch (reconcileErr) {
-    console.warn("[agent-ledger] Reconcile check failed (page still loads):", reconcileErr);
+    console.warn("[agent-ledger] Reconcile failed (page still loads):", reconcileErr);
   }
+
 
   const { masterData } = await getUnifiedPartyLedgers(supabaseAdmin);
   return masterData;

@@ -122,6 +122,17 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+  // Self-healing reconcile: opening Airline Accounts also repairs any agent
+  // ledger postings that a killed save left behind, so the ledger backfills
+  // without the user having to visit the Agent Ledger page first. Never
+  // throws — a failed reconcile must not break loading airline data.
+  try {
+    const { reconcileMissingAgentPostings } = await import("@/lib/ledger-admin.functions");
+    await reconcileMissingAgentPostings();
+  } catch (reconcileErr) {
+    console.warn("[airline-ledger] Agent posting reconcile failed (page still loads):", reconcileErr);
+  }
+
   // The four tables are read separately, so a save committing mid-read could
   // return a torn snapshot (old rows stamped with the new revision). Read the
   // revision before AND after the tables and retry until both match, so the
