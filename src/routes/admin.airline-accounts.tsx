@@ -1454,6 +1454,7 @@ function AirlineLedgerApp() {
             ) : (
               <LedgerTable
                 airline={activeAirline}
+                summary={perAirlineSummary.find((a: any) => a.id === activeTab)}
                 rows={filteredRows}
                 rawCount={rawRows.length}
                 recoveryEntries={recoveryEntries}
@@ -1640,7 +1641,7 @@ function TabStub({ active, onClick, code, label, balance, foreignBalance, isFore
 }
 
 function LedgerTable({
-  airline, rows, rawCount, recoveryEntries = [], recoveryTotal = 0, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onEditOpeningBalance,
+  airline, rows, rawCount, recoveryEntries = [], recoveryTotal = 0, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onEditOpeningBalance, summary,
 }: any) {
   const [ledgerPage, setLedgerPage] = useState(1);
   useEffect(() => {
@@ -1663,16 +1664,18 @@ function LedgerTable({
             title="Click to edit Opening Balance"
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span>Opening balance</span>
+              <span>Current balance</span>
               <Pencil size={11} color="var(--muted-foreground)" />
             </div>
             <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
               {airline?.currency && airline.currency !== "PKR"
-                ? `${fmtFx(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} (PKR ${fmt(airline?.openingBalance ?? 0)})`
-                : fmt(airline?.openingBalance ?? 0)}
+                ? `${fmtFx(summary?.currentForeignBalance ?? airline.openingBalanceForeign ?? 0)} ${airline.currency} (PKR ${fmt(summary?.currentBalance ?? 0)})`
+                : fmt(summary?.currentBalance ?? 0)}
             </strong>
             <span style={{ fontSize: 10, textTransform: "none", letterSpacing: 0 }}>
-              {airline?.currency && airline.currency !== "PKR" ? `ROE: ${airline.roe || 1} · ` : ""}Saved date: {airline?.openingBalanceDate || "—"}
+              Opening: {airline?.currency && airline.currency !== "PKR"
+                ? `${fmtFx(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} · ROE: ${airline.roe || 1}`
+                : fmt(airline?.openingBalance ?? 0)} · Saved date: {airline?.openingBalanceDate || "—"}
             </span>
           </div>
           )}
