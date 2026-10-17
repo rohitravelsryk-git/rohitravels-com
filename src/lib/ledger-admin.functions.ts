@@ -303,6 +303,19 @@ export async function getUnifiedPartyLedgers(supabaseAdmin: any): Promise<{
  * Calculates live balances and ledger entries for all registered parties,
  * and updates Google Sheets (Balances Overview and individual party tabs — direct entries per agent).
  */
+// Bounded wait for network/Sheet work: after the deadline the caller is
+// released while the original promise keeps running in the background, so a
+// slow backfill or Sheet rebuild can delay a page load but never hang it.
+function withBackgroundTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`timeout after ${ms}ms`)), ms);
+    promise.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
 export async function syncAgentLedgersLiveInternal(): Promise<{ status: "success" | "failed"; count: number; error?: string }> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -619,7 +632,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
     }
 
     try {
-      await syncAgentLedgersLiveInternal();
+      await withBackgroundTimeout(syncAgentLedgersLiveInternal(), 90000);
     } catch (syncErr) {
       console.warn("[airline-to-agent-ledger] Google Sheet sync failed:", syncErr);
     }
@@ -694,7 +707,10 @@ export async function reconcileMissingAgentPostings(): Promise<{
         .select("*")
         .order("sort_order", { ascending: true });
       if (!airlinesRes.error) {
-        const syncResult = await syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []);
+        const syncResult = await withBackgroundTimeout(
+          syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []),
+          120000,
+        );
         linked = syncResult.linked ?? 0;
         if (syncResult.errors?.length) errors.push(...syncResult.errors);
       } else {
@@ -715,11 +731,13 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // Self-healing reconcile on page load: ensures every committed airline sale
-  // has its agent-ledger posting before the page reads the ledger.
+  // has its agent-ledger posting before the page reads the ledger. Bounded so
+  // a long first backfill (or a stuck Sheet rebuild) delays but never hangs
+  // this page; the backfill continues in the background either way.
   try {
-    await reconcileMissingAgentPostings();
+    await withBackgroundTimeout(reconcileMissingAgentPostings(), 45000);
   } catch (reconcileErr) {
-    console.warn("[agent-ledger] Reconcile failed (page still loads):", reconcileErr);
+    console.warn("[agent-ledger] Reconcile failed or timed out (page still loads):", reconcileErr);
   }
 
 

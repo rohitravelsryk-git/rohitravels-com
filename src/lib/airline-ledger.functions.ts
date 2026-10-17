@@ -137,9 +137,22 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
   let agentReconcile: AirlineLedgerData["agentReconcile"] = undefined;
   try {
     const { reconcileMissingAgentPostings } = await import("@/lib/ledger-admin.functions");
-    agentReconcile = await reconcileMissingAgentPostings();
+    // The reconcile can post every historical transaction on its first run
+    // (e.g. right after the ledger table was created) plus a Sheet rebuild.
+    // Bound it so the page always loads: the backfill keeps running in the
+    // background and a refresh moments later shows the completed result.
+    agentReconcile = await withTimeout(reconcileMissingAgentPostings(), 45000, "Agent ledger reconcile");
   } catch (reconcileErr) {
     console.warn("[airline-ledger] Agent posting reconcile failed (page still loads):", reconcileErr);
+    agentReconcile = {
+      checked: 0,
+      missing: 0,
+      orphaned: 0,
+      linked: 0,
+      errors: [
+        `Agent ledger backfill is still running in the background (${String(reconcileErr instanceof Error ? reconcileErr.message : reconcileErr)}). Refresh in a minute to see the completed result.`,
+      ],
+    };
   }
 
   // The four tables are read separately, so a save committing mid-read could
