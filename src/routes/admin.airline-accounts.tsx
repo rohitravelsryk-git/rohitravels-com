@@ -2400,7 +2400,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             <div style={styles.modalGrid}>
               <div style={styles.field}>
                 <label style={styles.label}>Opening balance date</label>
-                <input type="date" value={form.openingBalanceDate ?? "2026-10-17"} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
+                <input type="date" value={form.openingBalanceDate || "2026-10-17"} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
               </div>
               {isForeignAirline ? (
                 <>
@@ -2836,7 +2836,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                 setError("");
                 setForm((f: any) => ({
                   ...f,
-                  openingBalanceDate: airline?.openingBalanceDate ?? "2026-10-17",
+                  openingBalanceDate: airline?.openingBalanceDate || "2026-10-17",
                   openingBalance: Number(airline?.openingBalance ?? 0),
                   openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
                 }));
