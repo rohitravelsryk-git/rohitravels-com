@@ -613,7 +613,7 @@ function buildAirlineTab(air: any, rows: any[], tabName: string, sheetId: number
     ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Agent/Pax Contact #", "Remarks", "Received Via"]
     : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Agent/Pax Contact #", "Remarks", "Received Via"];
   const openingRow: unknown[] = isForeign
-    ? [formatSheetDate(air.opening_balance_date) || "17-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, 0, op, opForeign, "", "OPENING BALANCE", ""]
+    ? [formatSheetDate(air.opening_balance_date) || "17-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, op, opForeign, "", "OPENING BALANCE", ""]
     : [formatSheetDate(air.opening_balance_date) || "17-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, op, "", "OPENING BALANCE", ""];
   const specific: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS"],
