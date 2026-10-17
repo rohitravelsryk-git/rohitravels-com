@@ -687,12 +687,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
         const debit = n(r.debit_in_id);
         const credit = n(r.credit_from_id);
         const voids = n(r.void_charges);
-        const svcRecvRaw = r.agent_received;
-        const svcRecv = svcRecvRaw === "" || svcRecvRaw === null || svcRecvRaw === undefined ? "" : (parseCleanNumber(svcRecvRaw) || "");
-        const svcRem = svcRecv === "" ? "" : sales - svcRecv;
         specific.push([
           formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr), sales,
-          svcRecv, svcRem, debit > 0 ? debit : "", credit, s(r.pax_contact), voids, sales - credit, "-",
+          debit > 0 ? debit : "", credit, s(r.pax_contact), voids, sales - credit, "-",
           [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
         ]);
       }
@@ -709,18 +706,20 @@ export async function syncAirlineAccountsSheet(revision: number) {
     // Foreign-currency airlines get three extra FX columns next to their PKR counterparts:
     // Debit In (CUR) for top ups added, Credit From (CUR) for refunds received, and a running
     // Balance in (CUR), so every row is auditable in both PKR and the airline's currency.
-    const colCount = isForeign ? 18 : 15;
+    // Passenger-level Received / Passenger Remaining stay off the airline tabs;
+    // they are reported on the Agent Ledger sheets instead.
+    const colCount = isForeign ? 16 : 13;
     const padRow = (row: unknown[]) => {
       const padded = [...row];
       while (padded.length < colCount) padded.push("");
       return padded.slice(0, colCount);
     };
     const headerRow: unknown[] = isForeign
-      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Received (PKR)", "Passenger Remaining (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
-      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Received (PKR)", "Passenger Remaining (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", `Debit In (${curr})`, "Credit From ID (PKR)", `Credit From (${curr})`, "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", `Balance in (${curr})`, "Remarks"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales (PKR)", "Debit In ID (PKR)", "Credit From ID (PKR)", "Pax Contact #", "Void Charges (PKR)", "Profit (PKR)", "Running Balance (PKR)", "Remarks"];
     const openingRow: unknown[] = isForeign
-      ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", "", "", "", 0, 0, op, opForeign, "OPENING BALANCE"]
-      : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", "", "", 0, 0, op, "OPENING BALANCE"];
+      ? [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, 0, 0, "", 0, op, opForeign, "OPENING BALANCE"]
+      : [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, 0, 0, "", 0, op, "OPENING BALANCE"];
     const specific: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Airline Account Statement"],
@@ -755,9 +754,6 @@ export async function syncAirlineAccountsSheet(revision: number) {
       // Agent / counter sale breakdown: Received saved on the entry, and the
       // remaining passenger balance = Ticket Sales − Received (blank for legacy
       // rows saved before the Received field existed).
-      const agentRecvRaw = r.agent_received;
-      const agentRecv = agentRecvRaw === "" || agentRecvRaw === null || agentRecvRaw === undefined ? "" : (parseCleanNumber(agentRecvRaw) || "");
-      const agentRem = agentRecv === "" ? "" : salesAmount - agentRecv;
       const displayedSales = isIncrease ? 0 : salesAmount;
       const displayedDebit = isIncrease ? balanceDelta : (debitAmount > 0 ? debitAmount : "");
       const displayedCredit = isIncrease ? "" : credit;
@@ -771,12 +767,12 @@ export async function syncAirlineAccountsSheet(revision: number) {
       specific.push(padRow(isForeign
         ? [
             formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-            displayedSales, agentRecv, agentRem, displayedDebit, debitFx, displayedCredit, creditFx,
+            displayedSales, displayedDebit, debitFx, displayedCredit, creditFx,
             s(r.pax_contact), voids, profit, running, runningForeign, remarks,
           ]
         : [
             formatSheetDate(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-            displayedSales, agentRecv, agentRem, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
+            displayedSales, displayedDebit, displayedCredit, s(r.pax_contact), voids, profit, running,
             remarks,
           ]));
     }
@@ -793,7 +789,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
         : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
     }
 
-    const rangeEnd = colCount === 18 ? "R" : "O";
+    const rangeEnd = colCount === 16 ? "P" : "M";
     valuesPayload.push({
       range: `${quoteSheet(tabName)}!A1:${rangeEnd}${Math.max(20, specific.length)}`,
       values: specific.map(padRow),
@@ -803,10 +799,10 @@ export async function syncAirlineAccountsSheet(revision: number) {
       title: tabName,
       columnCount: colCount,
       dataEndRow: specific.length,
-      numericColumnIndexes: isForeign ? [5, 8, 10, 13, 14, 15] : [5, 8, 9, 11, 12, 13],
+      numericColumnIndexes: isForeign ? [5, 6, 8, 11, 12, 13] : [5, 6, 7, 9, 10, 11],
       // Foreign-currency columns (Debit In CUR, Credit From CUR, Balance in CUR)
       // always render with two decimal places; PKR columns stay whole-rupee.
-      decimalColumnIndexes: isForeign ? [9, 11, 16] : [],
+      decimalColumnIndexes: isForeign ? [7, 9, 14] : [],
       dateColumnIndexes: [0],
       isServiceOnly: false,
     });

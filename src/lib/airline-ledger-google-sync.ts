@@ -183,12 +183,16 @@ async function replaceAirlineTabs(
 
     // Foreign-currency airlines get three extra FX columns (Debit In, Credit From, running
     // Balance in the airline's currency) so every row reads in both PKR and that currency.
+    // Airline statement columns are airline-account fields only. Passenger-level
+    // receivables (Received / Passenger Remaining) deliberately stay out of the
+    // airline tabs — they are reported on the Agent Ledger and Sales Category
+    // sheets instead, per the unified posting specification.
     const headerRow: unknown[] = isForeign
-      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Received", "Passenger Remaining", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
-      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Received", "Passenger Remaining", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
+      ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Remarks"]
+      : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"];
     const openingRow: unknown[] = isForeign
-      ? [air.opening_balance_date, "", "", "", "", 0, "", "", "", "", "", 0, 0, running, runningForeign, "OPENING BALANCE"]
-      : [air.opening_balance_date, "", "", "", "", 0, "", "", "", 0, 0, running, "OPENING BALANCE"];
+      ? [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "OPENING BALANCE"]
+      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, running, "OPENING BALANCE"];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
@@ -217,19 +221,15 @@ async function replaceAirlineTabs(
 
       const debitFx = isBalanceIncrease ? txForeignCr : "";
       const creditFx = isBalanceIncrease ? "" : txForeignCr;
-      // Agent / counter sale breakdown (blank Received for legacy rows).
-      const agentRecvRaw = r.agent_received;
-      const agentRecv = agentRecvRaw === "" || agentRecvRaw === null || agentRecvRaw === undefined ? "" : (Number(agentRecvRaw) || "");
-      const agentRem = agentRecv === "" ? "" : (Number(r.ticket_sales) || 0) - agentRecv;
       values.push(isForeign
         ? [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-            sales, agentRecv, agentRem, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
+            sales, displayedDebit, debitFx, displayedCredit, creditFx, voids, profit, running, runningForeign,
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
           ]
         : [
             r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
-            sales, agentRecv, agentRem, displayedDebit, displayedCredit, voids, profit, running,
+            sales, displayedDebit, displayedCredit, voids, profit, running,
             [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
           ]);
     }

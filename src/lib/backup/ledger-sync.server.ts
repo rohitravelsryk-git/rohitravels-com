@@ -29,6 +29,45 @@ export async function ensureMasterLedgerSheet(): Promise<{ id: string; url: stri
 export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
   const spreadsheet = await ensureMasterLedgerSheet();
   const spreadsheetId = spreadsheet.id;
+
+  // Passenger receivable reporting (Ticket Sales / Received / Passenger
+  // Remaining) is derived only from the authoritative airline transactions in
+  // Supabase. A row is enriched only when its ledger line carries a valid
+  // "Ref: AIRLINE-TX-<id>" link to a committed airline transaction; rows from
+  // bookings, manual entries, or vendors stay untouched.
+  const airlineTxById = new Map<string, { sales: number; recv: number | ""; rem: number | "" }>();
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: airlineTx, error: airlineTxErr } = await (supabaseAdmin as any)
+      .from("airline_ledger_transactions")
+      .select("id, ticket_sales, agent_received");
+    if (airlineTxErr) throw new Error(airlineTxErr.message);
+    for (const t of airlineTx ?? []) {
+      const id = String(t.id || "");
+      if (!id) continue;
+      const sales = Number(t.ticket_sales) || 0;
+      const rawRecv = t.agent_received;
+      const recv = rawRecv === "" || rawRecv === null || rawRecv === undefined
+        ? "" as const
+        : (Number(rawRecv) || 0);
+      const rem = recv === "" ? "" as const : sales - recv;
+      airlineTxById.set(id, { sales, recv, rem });
+    }
+  } catch (enrichErr) {
+    console.warn("[ledger-sync] Could not load airline transactions for passenger columns:", enrichErr);
+  }
+
+  const airlineRefOf = (details: any): string | null => {
+    const m = String(details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
+    return m && m[1] ? m[1] : null;
+  };
+  const emptyPax = { sales: "", recv: "", rem: "" } as const;
+  const paxColsFor = (details: any) => {
+    const ref = airlineRefOf(details);
+    const tx = ref ? airlineTxById.get(ref) : null;
+    if (!tx) return emptyPax;
+    return { sales: tx.sales, recv: tx.recv, rem: tx.rem };
+  };
   
   const info = await getSpreadsheet(spreadsheetId);
   const existingSheets = new Map<string, number>(
@@ -163,6 +202,9 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     "Agent Name",
     "PNR",
     "Type",
+    "Ticket Sales (PKR)",
+    "Received (PKR)",
+    "Passenger Remaining (PKR)",
     "Debit (PKR)",
     "Credit (PKR)",
     "Balance (PKR)",
@@ -182,12 +224,16 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
     const pnrMatch = String(t.details || "").match(/PNR[:\s]+([A-Z0-9]+)/i);
     const pnr = pnrMatch ? pnrMatch[1] : "—";
     const type = (Number(t.debit) || 0) > 0 ? "Booking / Debit" : "Payment / Credit";
+    const paxCols = paxColsFor(t.details);
     txValues.push([
       String(t.tx_id || "—").slice(0, 18),
       rawDate,
       String(t.agent_name || "—"),
       pnr,
       type,
+      paxCols.sales,
+      paxCols.recv,
+      paxCols.rem,
       Number(t.debit) || 0,
       Number(t.credit) || 0,
       Number(t.balance) || 0,
@@ -207,7 +253,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
       await applyRohiExportFormatting(spreadsheetId, txSheetId, {
         columnCount: txHeaders.length,
         dataEndRow: txValues.length,
-        numericColumnIndexes: [5, 6, 7],
+        numericColumnIndexes: [5, 6, 7, 8, 9, 10],
         dateColumnIndexes: [1],
       });
     } catch (fmtErr) {
@@ -227,7 +273,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
       if (tabSheetId !== null) existingSheets.set(tabName, tabSheetId);
     }
 
-    const ledgerHeaders = ["Date", "Details / Particulars", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
+    const ledgerHeaders = ["Date", "Details / Particulars", "Ticket Sales (PKR)", "Received (PKR)", "Passenger Remaining (PKR)", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
     const agentValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
@@ -238,6 +284,10 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
 
     let agentDebits = 0;
     let agentCredits = 0;
+    let totalSales = 0;
+    let totalRecv = 0;
+    let totalRem = 0;
+    let hasPaxCols = false;
 
     for (const l of agent.ledger || []) {
       const rawDate = l.date ? String(l.date).slice(0, 10) : "—";
@@ -246,19 +296,34 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
       agentDebits += d;
       agentCredits += c;
 
+      const paxCols = paxColsFor(l.details);
+      if (typeof paxCols.sales === "number") {
+        hasPaxCols = true;
+        totalSales += paxCols.sales;
+        if (typeof paxCols.recv === "number") totalRecv += paxCols.recv;
+        if (typeof paxCols.rem === "number") totalRem += paxCols.rem;
+      }
+
       agentValues.push([
         rawDate,
         String(l.details || "—"),
+        paxCols.sales,
+        paxCols.recv,
+        paxCols.rem,
         d,
         c,
         Number(l.balance) || 0,
       ]);
     }
 
-    // Totals row
+    // Totals row. Passenger totals are shown only when at least one row is a
+    // linked airline transaction, so manual-only statements stay clean.
     agentValues.push([
       "TOTALS",
       "Statement Summary",
+      hasPaxCols ? totalSales : "",
+      hasPaxCols ? totalRecv : "",
+      hasPaxCols ? totalRem : "",
       agentDebits,
       agentCredits,
       Number(agent.balance) || 0,
@@ -276,7 +341,7 @@ export async function syncMasterLedger(data: any[], allTransactions?: any[]) {
         await applyRohiExportFormatting(spreadsheetId, tabSheetId, {
           columnCount: ledgerHeaders.length,
           dataEndRow: agentValues.length,
-          numericColumnIndexes: [2, 3, 4],
+          numericColumnIndexes: [2, 3, 4, 5, 6, 7],
           dateColumnIndexes: [0],
           hasTotalRow: true,
           totalRowIndex: agentValues.length - 1,

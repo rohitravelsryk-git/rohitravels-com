@@ -80,7 +80,9 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: null, tabs: [{ id: "cashbook", label: "Cash Book" }] },
   { header: null, tabs: [{ id: "bank", label: "Banks & Wallets" }] },
   { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
-  { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
+  // "Sales Accounts" tab removed from navigation per the unified posting spec —
+  // sales live in their own category accounts (Settings > Sales Accounts manages
+  // the categories); all historical sales data and reports are untouched.
   { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
   { header: null, tabs: [{ id: "reports", label: "Profit & Loss" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
@@ -90,10 +92,10 @@ const TAB_NUMBERS: Record<TabId, string> = {
   cashbook: "02",
   bank: "03",
   expenses: "04",
-  sales: "05",
-  cashcount: "06",
-  reports: "07",
-  settings: "08",
+  sales: "05", // retired from navigation — kept so legacy references stay valid
+  cashcount: "05",
+  reports: "06",
+  settings: "07",
 };
 
 const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v5";
@@ -1906,7 +1908,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
                               style={{ cursor: "pointer" }}
                               onClick={() => {
                                 if (row.entry_type === "expense") { setTab("expenses"); setExpSel(catName); }
-                                else if (row.entry_type === "sale") { setTab("sales"); setSalesSel(catName); }
+                                else if (row.entry_type === "sale") { setTab("reports"); }
                               }}
                               title="Click to view category"
                             >
@@ -2037,90 +2039,7 @@ export function AccountsBookClone({ initialTab }: { initialTab?: TabId } = {}) {
             </>
           )}
 
-          {tab === "sales" && (
-            <>
-              <div className="page-head">
-                <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
-              </div>
-              <DraggablePills
-                items={salesCatRows.map((row) => ({ id: row.name, label: row.name }))}
-                activeId={activeSalesCat}
-                onSelect={setSalesSel}
-                storageKey="accounts-book-pills-sales"
-                onReorder={(names) => {
-                  const real = names.map((n) => salesCatRows.find((r) => r.name === n)?.id).filter((id): id is string => Boolean(id));
-                  if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
-                }}
-              />
-              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button></div>
-              {(() => {
-                const rows = byDate(saleRows.filter((r) => r.category === activeSalesCat));
-                const totalSale = rows.reduce((a, r) => a + Number(r.amount), 0);
-                const totalCost = rows.reduce((a, r) => a + Number(r.direct_cost), 0);
-                return (
-                  <>
-                    <div className="cards">
-                      <Card label="Total Sale" value={totalSale} />
-                      <Card label="Total Cost" value={totalCost} />
-                      <Card label="Profit" value={totalSale - totalCost} tone={totalSale - totalCost >= 0 ? "pos" : "neg"} />
-                      <Card label="Entries" value={rows.length} raw />
-                    </div>
-                    <Panel title={activeSalesCat ?? "Sales"}>
-                      <div className="table-responsive" style={{ overflowX: "auto" }}>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th style={{ width: 44, textAlign: "center" }}>SR #</th>
-                              <th>Date</th>
-                              <th>Country</th>
-                              <th>Agent</th>
-                              <th>Pax Name</th>
-                              <th>Contact No.</th>
-                              <th>Vendor</th>
-                              <th className="num">Sale</th>
-                              <th className="num">Purchase</th>
-                              <th className="num">Profit</th>
-                              <th>Received</th>
-                              <th />
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {rows.map((row, idx) => {
-                              const parsed = parseSaleDetails(row.description, row.party);
-                              const profit = Number(row.amount) - Number(row.direct_cost);
-                              return (
-                                <tr key={row.id}>
-                                  <td style={{ textAlign: "center", fontWeight: 700, color: "var(--ink-soft)" }}>{idx + 1}</td>
-                                  <td>{formatDateShort(row.entry_date)}</td>
-                                  <td>{parsed.country || "—"}</td>
-                                  <td>{parsed.agent || row.party || "—"}</td>
-                                  <td style={{ fontWeight: 600 }}>{parsed.pax_name || cleanSaleDescriptionDisplay(row.description) || "—"}</td>
-                                  <td>{parsed.contact_no || "—"}</td>
-                                  <td>{parsed.vendor || "—"}</td>
-                                  <td className="num">{fmt(row.amount)}</td>
-                                  <td className="num">{fmt(row.direct_cost)}</td>
-                                  <td className="num" style={{ fontWeight: 600, color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(profit)}</td>
-                                  <td>{accountName(row.account_id)}</td>
-                                  <td>
-                                    <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
-                                    <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                            {rows.length === 0 && <tr className="empty-row"><td colSpan={12}>No entries yet for {activeSalesCat ?? "this category"}.</td></tr>}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Panel>
-                  </>
-                );
-              })()}
-            </>
-          )}
-
-          {tab === "expenses" && (
+                    {tab === "expenses" && (
             <>
               <div className="page-head">
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
