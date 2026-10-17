@@ -620,9 +620,14 @@ export async function syncAirlineTransactionsToAgentLedgers(
       if (scopeSet) touchedPartyNames.push(String(matchedAgent.agency_name || matchedAgent.user_id || "").trim());
 
       const airlineName = airlineMap.get(tx.airline_id) || "Airline";
-      const isRefund = tx.transaction_type === "Cancel/Refund" || ticketSales < 0;
-      const debit = isRefund ? 0 : Math.max(ticketSales, 0);
-      const credit = isRefund ? Math.abs(ticketSales) : 0;
+      // The agent ledger sale amount must include VOID Charges as part of the
+      // total ticket value. Keep the source fields separate in Airline Accounts;
+      // only the linked ledger posting uses their sum.
+      const voidCharges = Number(tx.void_charges) || 0;
+      const ledgerSalesAmount = ticketSales + voidCharges;
+      const isRefund = String(tx.transaction_type || "").trim().toLowerCase() === "cancel/refund" || ledgerSalesAmount < 0;
+      const debit = isRefund ? 0 : Math.max(ledgerSalesAmount, 0);
+      const credit = isRefund ? Math.abs(ledgerSalesAmount) : 0;
       const date = tx.date ? new Date(tx.date).toISOString() : new Date().toISOString();
 
       const details = `Airline Ticket (${airlineName}) - ${tx.pax_name || "Pax"}${tx.pnr ? ` • PNR: ${tx.pnr}` : ""}${tx.sector ? ` • ${tx.sector}` : ""}${tx.transaction_type && tx.transaction_type !== "Add Transaction" ? ` • ${tx.transaction_type}` : ""} • Ref: AIRLINE-TX-${txId}`;
