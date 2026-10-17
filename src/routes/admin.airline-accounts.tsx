@@ -1432,6 +1432,7 @@ function AirlineLedgerApp() {
           <main style={styles.main}>
             {activeTab === "dashboard" ? (
               <Dashboard
+                view="dashboard"
                 airlines={airlines}
                 perAirlineSummary={perAirlineSummary}
                 grandTotals={grandTotals}
@@ -1457,6 +1458,16 @@ function AirlineLedgerApp() {
               <AirlineContactDetailsTable
                 sheetSyncStatus={sheetSyncStatus === "synced" ? "success" : sheetSyncStatus === "error" ? "error" : "idle"}
               />
+            ) : activeTab === "sales" || activeTab === "profit-loss" ? (
+              <Dashboard view={activeTab} airlines={airlines} perAirlineSummary={perAirlineSummary} grandTotals={grandTotals}
+                monthlySummary={monthlySummary} yearlySummary={yearlySummary} dashboardScope={dashboardScope}
+                setDashboardScope={setDashboardScope} onExportAllCSV={exportAllCSV} onExportAllExcel={exportAllExcel}
+                onExportAllPDF={exportAllPDF} syncError={syncError} sheetSyncStatus={sheetSyncStatus}
+                sheetSyncError={sheetSyncError} onEditAirline={setActiveTab} onRemoveAirline={removeAirline}
+                saving={saving} onOpenCurrencySettings={(airlineId: string) => {
+                  const airline = perAirlineSummary.find((a: any) => a.id === airlineId);
+                  if (airline) setCurrencySettingsAirline(airline);
+                }} />
             ) : (
               <LedgerTable
                 airline={activeAirline}
@@ -1564,6 +1575,8 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
     <nav style={styles.tabStrip} aria-label="Airline navigation">
       <TabStub active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} code={<LayoutDashboard size={15} />} label="Dashboard" />
       <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={15} />} label="Airline Contact Details" />
+      <TabStub active={activeTab === "sales"} onClick={() => setActiveTab("sales")} code={<TrendingUp size={15} />} label="Total Sales per Airline" />
+      <TabStub active={activeTab === "profit-loss"} onClick={() => setActiveTab("profit-loss")} code={<FileText size={15} />} label="Profit & Loss" />
       <div style={styles.tabDivider} />
       {airlines.map((a: any) => {
         const rows = transactions?.[a.id] ?? [];
@@ -2861,18 +2874,20 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
 }
 
 function Dashboard({
+  view = "dashboard",
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
   syncError, sheetSyncStatus, sheetSyncError,
   onEditAirline, onRemoveAirline, saving, onOpenCurrencySettings,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
+  const [salesSearch, setSalesSearch] = useState("");
 
   return (
     <div>
       <div style={styles.panelHeader}>
         <div>
-          <AdminPageHeading icon={Building2} label="Airline Balance Dashboard" count={airlines.length} countLabel="Airlines tracked" />
+          <AdminPageHeading icon={view === "sales" ? TrendingUp : view === "profit-loss" ? FileText : Building2} label={view === "sales" ? "Total Sales per Airline" : view === "profit-loss" ? "Profit & Loss & Yearly Summary" : "Airline Balance Dashboard"} count={airlines.length} countLabel="Airlines tracked" />
           <div style={styles.panelMeta}>Multi-Airlines Accounts Overview</div>
         </div>
         <div style={styles.panelActions}>
@@ -2885,14 +2900,16 @@ function Dashboard({
         )}
       </div>
 
-      <div style={styles.metricGrid}>
+      {view === "dashboard" && <div style={styles.metricGrid}>
         <AdminStatCard icon={Wallet} label="Combined balance (PKR)" value={fmt(grandTotals.totalBalance)} tone="navy" />
         <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
         <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
         <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
       </div>
 
-      <section style={styles.balanceCardsSection}>
+      </div>}
+
+      {view === "dashboard" && <section style={styles.balanceCardsSection}>
         <div style={styles.sectionHeaderRow}>
           <div>
             <h3 style={styles.sectionTitle}>Current Balance By Airline</h3>
@@ -2953,8 +2970,12 @@ function Dashboard({
         </div>
       </section>
 
-      <section style={styles.section}>
-        <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Total Sales per Airline</h3>
+      {view === "sales" && <section style={styles.section}>
+        <div style={styles.sectionHeaderRow}>
+          <h3 style={styles.sectionTitle}>Total Sales per Airline</h3>
+          <div style={styles.panelMeta}>Search airline, IATA code, sales, profit and balance</div>
+        </div>
+        <input aria-label="Search airlines" placeholder="Search airline or IATA code…" value={salesSearch} onChange={(e) => setSalesSearch(e.target.value)} style={{ ...styles.input, maxWidth: 360, marginBottom: 12 }} />
         <div style={styles.tableWrap}>
           <table style={styles.table}>
             <thead>
@@ -2970,7 +2991,7 @@ function Dashboard({
               </tr>
             </thead>
             <tbody>
-              {perAirlineSummary.map((a: any) => (
+              {perAirlineSummary.filter((a: any) => `${a.name} ${a.code}`.toLowerCase().includes(salesSearch.trim().toLowerCase())).map((a: any) => (
                 <tr key={a.id} style={styles.tr}>
                   <td style={styles.td}>
                     {a.name}
@@ -3005,9 +3026,9 @@ function Dashboard({
         </div>
       </section>
 
-      <section style={styles.section}>
+      {view === "profit-loss" && <section style={styles.section}>
         <div style={styles.sectionHeaderRow}>
-          <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800, margin: 0 }}>Profit &amp; Loss</h3>
+          <h3 style={styles.sectionTitle}>Profit &amp; Loss</h3>
           <select value={dashboardScope} onChange={(e) => setDashboardScope(e.target.value)} style={styles.select}>
             <option value="all">All airlines</option>
             {airlines.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -3059,7 +3080,8 @@ function Dashboard({
             </table>
           </div>
         )}
-      </section>
+      </section>}
+
 
       {removeConfirm && (
         <ConfirmDialog
