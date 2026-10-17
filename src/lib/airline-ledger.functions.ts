@@ -60,6 +60,13 @@ export type AirlineLedgerData = {
   agents: string[];
   transactions: Record<string, AirlineLedgerRow[]>;
   revision: number;
+  agentReconcile?: {
+    checked: number;
+    missing: number;
+    orphaned: number;
+    linked: number;
+    errors: string[];
+  };
 };
 
 const rowSchema = z.object({
@@ -125,10 +132,12 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
   // Self-healing reconcile: opening Airline Accounts also repairs any agent
   // ledger postings that a killed save left behind, so the ledger backfills
   // without the user having to visit the Agent Ledger page first. Never
-  // throws — a failed reconcile must not break loading airline data.
+  // throws — a failed reconcile must not break loading airline data, and its
+  // result is returned so the UI can surface any posting that still failed.
+  let agentReconcile: AirlineLedgerData["agentReconcile"] = undefined;
   try {
     const { reconcileMissingAgentPostings } = await import("@/lib/ledger-admin.functions");
-    await reconcileMissingAgentPostings();
+    agentReconcile = await reconcileMissingAgentPostings();
   } catch (reconcileErr) {
     console.warn("[airline-ledger] Agent posting reconcile failed (page still loads):", reconcileErr);
   }
@@ -256,6 +265,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     agents,
     transactions,
     revision: Number(revisionRes.data?.revision ?? 1),
+    agentReconcile,
   };
 });
 

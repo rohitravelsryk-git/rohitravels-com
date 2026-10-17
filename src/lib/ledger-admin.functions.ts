@@ -466,7 +466,8 @@ export async function unlinkAgentLedgerEntries(sourceId: string): Promise<{ ok: 
 export async function syncAirlineTransactionsToAgentLedgers(
   transactions: any[],
   airlines: any[] = []
-): Promise<{ processed: number; linked: number }> {
+): Promise<{ processed: number; linked: number; errors: string[] }> {
+  const errors: string[] = [];
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -476,7 +477,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
 
     if (agentsError || !allAgents || allAgents.length === 0) {
       console.warn("[airline-to-agent-ledger] No registered agents found in database:", agentsError?.message);
-      return { processed: 0, linked: 0 };
+      return { processed: 0, linked: 0, errors: [agentsError?.message || "no registered agents found in database"] };
     }
 
     const airlineMap = new Map<string, string>();
@@ -551,7 +552,9 @@ export async function syncAirlineTransactionsToAgentLedgers(
       }
 
       if (!matchedAgent) {
-        console.info(`[airline-to-agent-ledger] Agent "${rawAgent}" not found in registered agents for airline tx ${txId}`);
+        const msg = `Transaction ${txId}: agent "${rawAgent}" not found in registered agents — ledger posting skipped.`;
+        console.warn(`[airline-to-agent-ledger] ${msg}`);
+        errors.push(msg);
         continue;
       }
 
@@ -571,7 +574,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
           Number(existing.credit) !== credit ||
           existing.details !== details
         ) {
-          await supabaseAdmin
+          const upd = await supabaseAdmin
             .from("ledger_manual_entries")
             .update({
               agent_user_id: matchedAgent.user_id,
@@ -580,17 +583,31 @@ export async function syncAirlineTransactionsToAgentLedgers(
               debit,
               credit,
             })
-            .eq("id", existing.id);
+            .eq("id", existing.id)
+            .select("id");
+          if (upd.error) {
+            const msg = `Transaction ${txId}: updating ledger entry failed — ${upd.error.message}`;
+            console.warn(`[airline-to-agent-ledger] ${msg}`);
+            errors.push(msg);
+          }
         }
         existingByTxId.delete(txId);
       } else {
-        await supabaseAdmin.from("ledger_manual_entries").insert({
-          agent_user_id: matchedAgent.user_id,
-          date,
-          details,
-          debit,
-          credit,
-        });
+        const ins = await supabaseAdmin
+          .from("ledger_manual_entries")
+          .insert({
+            agent_user_id: matchedAgent.user_id,
+            date,
+            details,
+            debit,
+            credit,
+          })
+          .select("id");
+        if (ins.error) {
+          const msg = `Transaction ${txId}: inserting ledger entry failed — ${ins.error.message}`;
+          console.warn(`[airline-to-agent-ledger] ${msg}`);
+          errors.push(msg);
+        }
       }
       linkedCount++;
     }
@@ -610,7 +627,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
     return { processed: transactions.length, linked: linkedCount };
   } catch (err) {
     console.warn("[airline-to-agent-ledger] syncAirlineTransactionsToAgentLedgers error:", err);
-    return { processed: 0, linked: 0 };
+    return { processed: 0, linked: 0, errors: [String(err instanceof Error ? err.message : err)] };
   }
 }
 
@@ -618,30 +635,34 @@ export async function syncAirlineTransactionsToAgentLedgers(
  * Self-healing reconcile for agent ledger postings: compares every committed
  * airline sale against the "Ref: AIRLINE-TX" links in ledger_manual_entries and
  * runs the idempotent posting sync when anything is missing or orphaned.
- * Never throws — failures are logged so pages can still load from committed data.
+ * Never throws — failures are returned so pages can still load from committed data.
  */
-export async function reconcileMissingAgentPostings(): Promise<void> {
-// Self-healing reconcile: whenever the Agent Ledger page opens, first make
-// sure every committed airline sale actually has its agent-ledger posting.
-// A lost/killed save-time posting used to leave the ledger silently missing
-// entries. The check is a cheap id comparison against the Ref: AIRLINE-TX
-// links; the full idempotent posting sync only runs when something is
-// genuinely missing or orphaned, so steady-state page loads stay fast.
-// Reconciliation must never block the page: any failure is logged and the
-// page still renders from committed data.
-try {
-  const [txRes, entryRes] = await Promise.all([
-    (supabaseAdmin as any)
-      .from("airline_ledger_transactions")
-      .select("id, transaction_type, ticket_sales, pnr")
-      .order("date", { ascending: true })
-      .order("sort_order", { ascending: true }),
-    (supabaseAdmin as any)
-      .from("ledger_manual_entries")
-      .select("id, details")
-      .ilike("details", "%Ref: AIRLINE-TX-%"),
-  ]);
-  if (!txRes.error && !entryRes.error) {
+export async function reconcileMissingAgentPostings(): Promise<{
+  checked: number;
+  missing: number;
+  orphaned: number;
+  linked: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [txRes, entryRes] = await Promise.all([
+      (supabaseAdmin as any)
+        .from("airline_ledger_transactions")
+        .select("id, transaction_type, ticket_sales, pnr")
+        .order("date", { ascending: true })
+        .order("sort_order", { ascending: true }),
+      (supabaseAdmin as any)
+        .from("ledger_manual_entries")
+        .select("id, details")
+        .ilike("details", "%Ref: AIRLINE-TX-%"),
+    ]);
+    if (txRes.error || entryRes.error) {
+      errors.push(txRes.error?.message || entryRes.error?.message || "reconcile check failed");
+      return { checked: 0, missing: 0, orphaned: 0, linked: 0, errors };
+    }
+
     const txById = new Map<string, any>();
     for (const t of txRes.data ?? []) {
       if (t.id) txById.set(String(t.id), t);
@@ -662,30 +683,31 @@ try {
       if (ticketSales === 0 && !t.pnr) return false;
       return !postedTxIds.has(String(t.id || ""));
     });
+
+    let linked = 0;
     if (missingSales.length > 0 || orphanedEntries.length > 0) {
       console.warn(
-        `[agent-ledger] Reconciling agent ledger postings on page load: ${missingSales.length} missing, ${orphanedEntries.length} orphaned.`,
+        `[agent-ledger] Reconciling agent ledger postings: ${missingSales.length} missing, ${orphanedEntries.length} orphaned.`,
       );
       const airlinesRes = await (supabaseAdmin as any)
         .from("airline_ledger_airlines")
         .select("*")
         .order("sort_order", { ascending: true });
       if (!airlinesRes.error) {
-        await syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []);
+        const syncResult = await syncAirlineTransactionsToAgentLedgers(txRes.data ?? [], airlinesRes.data ?? []);
+        linked = syncResult.linked ?? 0;
+        if (syncResult.errors?.length) errors.push(...syncResult.errors);
       } else {
+        errors.push(`airlines unavailable: ${airlinesRes.error.message}`);
         console.warn("[agent-ledger] Reconcile skipped, airlines unavailable:", airlinesRes.error.message);
       }
     }
-  } else {
-    console.warn(
-      "[agent-ledger] Reconcile check skipped:",
-      txRes.error?.message || entryRes.error?.message,
-    );
+    return { checked: txById.size, missing: missingSales.length, orphaned: orphanedEntries.length, linked, errors };
+  } catch (reconcileErr) {
+    console.warn("[agent-ledger] Reconcile check failed (page still loads):", reconcileErr);
+    errors.push(String(reconcileErr instanceof Error ? reconcileErr.message : reconcileErr));
+    return { checked: 0, missing: 0, orphaned: 0, linked: 0, errors };
   }
-} catch (reconcileErr) {
-  console.warn("[agent-ledger] Reconcile check failed (page still loads):", reconcileErr);
-}
-
 }
 
 export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(async () => {

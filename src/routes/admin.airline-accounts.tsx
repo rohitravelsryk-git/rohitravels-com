@@ -526,6 +526,7 @@ function AirlineLedgerApp() {
     }
   };
   const [loaded, setLoaded] = useState(false);
+  const [ledgerRepairIssue, setLedgerRepairIssue] = useState<string | null>(null);
   const [modal, setModal] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [addAirlineOpen, setAddAirlineOpen] = useState(false);
@@ -637,6 +638,16 @@ function AirlineLedgerApp() {
         };
         lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
         setSyncError(null);
+        // Surface the self-healing ledger reconcile result: a posting that
+        // still failed after repair must be visible, never silent.
+        const rec = data.agentReconcile;
+        if (rec && Array.isArray(rec.errors) && rec.errors.length > 0) {
+          setLedgerRepairIssue(`Agent ledger repair problem: ${rec.errors.slice(0, 3).join(" | ")}`);
+        } else if (rec && Number(rec.missing) > Number(rec.linked ?? 0)) {
+          setLedgerRepairIssue(`Agent ledger repair incomplete: ${Number(rec.missing) - Number(rec.linked ?? 0)} posting(s) still pending.`);
+        } else {
+          setLedgerRepairIssue(null);
+        }
         setLoaded(true);
         // Refresh the Google Sheet from the current Supabase order on page open.
         // This also catches safe admin-side ordering/configuration changes that
@@ -1331,6 +1342,28 @@ function AirlineLedgerApp() {
 
   return (
     <div style={styles.app}>
+      {ledgerRepairIssue && (
+        <div
+          role="alert"
+          style={{
+            background: "#D97757",
+            color: "#FAF9F5",
+            padding: "10px 16px",
+            fontSize: 13,
+            fontWeight: 600,
+            textAlign: "center",
+            wordBreak: "break-word",
+          }}
+        >
+          {ledgerRepairIssue}
+          <button
+            onClick={() => setLedgerRepairIssue(null)}
+            style={{ marginLeft: 12, background: "transparent", border: "1px solid #FAF9F5", color: "#FAF9F5", borderRadius: 6, padding: "2px 8px", cursor: "pointer", fontSize: 11 }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <style>{`
         .airline-ledger * { box-sizing: border-box; }
         .airline-ledger input, .airline-ledger select { font-family: var(--font-sans); }
