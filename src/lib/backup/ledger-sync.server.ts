@@ -30,58 +30,52 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
   const spreadsheet = await ensureMasterLedgerSheet();
   const spreadsheetId = spreadsheet.id;
 
-  // Passenger receivable reporting (Ticket Sales / Received / Passenger
-  // Remaining) is derived only from the authoritative airline transactions in
-  // Supabase. A row is enriched only when its ledger line carries a valid
-  // "Ref: AIRLINE-TX-<id>" link to a committed airline transaction; rows from
-  // bookings, manual entries, or vendors stay untouched.
-  const airlineTxById = new Map<string, { sales: number; recv: number | ""; rem: number | "" }>();
+  // The Description column mirrors the website's "Ledger Entry" text for
+  // airline-linked rows: "Pax - Sector - PNR - Airline Code", composed exactly
+  // as the Airline Accounts page composes it. Only rows carrying a valid
+  // "Ref: AIRLINE-TX-<id>" link are rewritten; bookings, manual entries, and
+  // vendor rows keep their existing details text. The details text stored in
+  // Supabase is never modified — this is presentation only in the mirror.
+  const airlineEntryById = new Map<string, string>();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let airlineTx: any[] | undefined;
-    const withReceived = await (supabaseAdmin as any)
-      .from("airline_ledger_transactions")
-      .select("id, ticket_sales, agent_received");
-    if (withReceived.error) {
-      // A database without the agent_received column (migration not yet
-      // applied) must not blank the whole passenger block: fall back so
-      // Ticket Sales still fills in and Received/Remaining stay empty.
-      console.warn("[ledger-sync] agent_received column unavailable, enriching Ticket Sales only:", withReceived.error.message);
-      const fallback = await (supabaseAdmin as any)
+    const [txRes, airlineRes] = await Promise.all([
+      (supabaseAdmin as any)
         .from("airline_ledger_transactions")
-        .select("id, ticket_sales");
-      if (fallback.error) throw new Error(fallback.error.message);
-      airlineTx = (fallback.data ?? []).map((t: any) => ({ ...t, agent_received: null }));
-    } else {
-      airlineTx = withReceived.data;
+        .select("id, pax_name, pnr, sector, airline_id"),
+      (supabaseAdmin as any)
+        .from("airline_ledger_airlines")
+        .select("id, code, name"),
+    ]);
+    if (txRes.error) throw new Error(txRes.error.message);
+    if (airlineRes.error) throw new Error(airlineRes.error.message);
+    const codeById = new Map<string, string>();
+    for (const a of airlineRes.data ?? []) {
+      const label = String(a.code || "").trim() || String(a.name || "").trim();
+      if (a.id && label) codeById.set(String(a.id), label);
     }
-    for (const t of airlineTx ?? []) {
+    for (const t of txRes.data ?? []) {
       const id = String(t.id || "");
       if (!id) continue;
-      const sales = Number(t.ticket_sales) || 0;
-      const rawRecv = t.agent_received;
-      const recv = rawRecv === "" || rawRecv === null || rawRecv === undefined
-        ? "" as const
-        : (Number(rawRecv) || 0);
-      const rem = recv === "" ? "" as const : sales - recv;
-      airlineTxById.set(id, { sales, recv, rem });
+      const entry = [t.pax_name, t.sector, t.pnr, codeById.get(String(t.airline_id || ""))]
+        .map((v: any) => String(v || "").trim())
+        .filter(Boolean)
+        .join(" - ");
+      airlineEntryById.set(id, entry);
     }
   } catch (enrichErr) {
-    console.warn("[ledger-sync] Could not load airline transactions for passenger columns:", enrichErr);
+    console.warn("[ledger-sync] Could not load airline transactions for Ledger Entry text:", enrichErr);
   }
 
   const airlineRefOf = (details: any): string | null => {
     const m = String(details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
     return m && m[1] ? m[1] : null;
   };
-  const emptyPax = { sales: "", recv: "", rem: "" } as const;
-  const paxColsFor = (details: any) => {
+  const ledgerEntryFor = (details: any): string | null => {
     const ref = airlineRefOf(details);
-    const tx = ref ? airlineTxById.get(ref) : null;
-    if (!tx) return emptyPax;
-    return { sales: tx.sales, recv: tx.recv, rem: tx.rem };
+    return ref ? (airlineEntryById.get(ref) ?? null) : null;
   };
-  
+
   const info = await getSpreadsheet(spreadsheetId);
   const existingSheets = new Map<string, number>(
     (info.sheets ?? []).map((s: any) => [s.properties.title, s.properties.sheetId])
@@ -195,21 +189,17 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
       if (tabSheetId !== null) existingSheets.set(tabName, tabSheetId);
     }
 
-    const ledgerHeaders = ["Date", "Details / Particulars", "Ticket Sales (PKR)", "Received (PKR)", "Passenger Remaining (PKR)", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
+    const ledgerHeaders = ["Date", "Description", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"];
     const agentValues: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS"],
       ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
-      [`PARTY STATEMENT - ${agent.agency_name.toUpperCase()}${agent.party_type ? ` (${agent.party_type.toUpperCase()})` : ""}`],
+      [`${agent.agency_name.toUpperCase()}`],
       [`Current Outstanding Balance: Rs ${Number(agent.balance || 0).toLocaleString()}  •  ${(agent.ledger || []).length} entries`],
       ledgerHeaders,
     ];
 
     let agentDebits = 0;
     let agentCredits = 0;
-    let totalSales = 0;
-    let totalRecv = 0;
-    let totalRem = 0;
-    let hasPaxCols = false;
 
     for (const l of agent.ledger || []) {
       const rawDate = l.date ? String(l.date).slice(0, 10) : "—";
@@ -218,20 +208,13 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
       agentDebits += d;
       agentCredits += c;
 
-      const paxCols = paxColsFor(l.details);
-      if (typeof paxCols.sales === "number") {
-        hasPaxCols = true;
-        totalSales += paxCols.sales;
-        if (typeof paxCols.recv === "number") totalRecv += paxCols.recv;
-        if (typeof paxCols.rem === "number") totalRem += paxCols.rem;
-      }
+      // Airline-linked rows show the website's Ledger Entry text; everything
+      // else keeps its stored details text.
+      const description = ledgerEntryFor(l.details) ?? String(l.details || "—");
 
       agentValues.push([
         rawDate,
-        String(l.details || "—"),
-        paxCols.sales,
-        paxCols.recv,
-        paxCols.rem,
+        description,
         d,
         c,
         Number(l.balance) || 0,
@@ -243,9 +226,6 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
     agentValues.push([
       "TOTALS",
       "Statement Summary",
-      hasPaxCols ? totalSales : "",
-      hasPaxCols ? totalRecv : "",
-      hasPaxCols ? totalRem : "",
       agentDebits,
       agentCredits,
       Number(agent.balance) || 0,
@@ -263,7 +243,7 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
         await applyRohiExportFormatting(spreadsheetId, tabSheetId, {
           columnCount: ledgerHeaders.length,
           dataEndRow: agentValues.length,
-          numericColumnIndexes: [2, 3, 4, 5, 6, 7],
+          numericColumnIndexes: [2, 3, 4],
           dateColumnIndexes: [0],
           hasTotalRow: true,
           totalRowIndex: agentValues.length - 1,
