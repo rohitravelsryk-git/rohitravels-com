@@ -771,6 +771,13 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
     const newRevision = Number(meta?.revision ?? 1);
 
+    // Declared outside the sync runner's try so the response below can always
+    // read them, even when the runner itself throws (fixes
+    // "agentPosting is not defined" crashing every successful save).
+    let agentPosting: { linked: number; errors: string[] } | null = null;
+    let sheetSynced = true;
+    let sheetSyncError: string | null = null;
+
     // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
     try {
       const [airlinesRes, txRes] = await Promise.all([
@@ -780,9 +787,6 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
-      // Outcome of the agent-ledger postings, returned to the UI so a failed
-      // posting is visible the moment the save finishes, not on the next load.
-      let agentPosting: { linked: number; errors: string[] } | null = null;
 
       // The financial postings (Agent Ledger, Accounts Book receipts, Counter
       // Sales) are AWAITED: a detached background promise can be killed by the
@@ -828,8 +832,6 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       // path (only this airline's tab + the small summary tab) so the wait is
       // a few seconds, not a full 14-tab rebuild. The full rebuild remains the
       // caller's fallback and the page-open catch-up.
-      let sheetSynced = true;
-      let sheetSyncError: string | null = null;
       await Promise.allSettled([
         (async () => {
           try {
