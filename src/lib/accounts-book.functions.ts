@@ -427,7 +427,7 @@ export const syncAccountsBookAccountSettingsToSheets = createServerFn({ method: 
 export const createAccountsBookAccount = createServerFn({ method: "POST" }).validator((data: unknown) => accountInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  let { data: row, error } = await supabaseAdmin.from("accounts_book_accounts").insert(data).select().single();
+  let { data: row, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("accounts_book_accounts").insert(data).select().single();
   if (error && mentionsLogoColumn(error.message)) {
     if (data.logo_url) throw new Error(LOGO_COLUMN_HELP);
     const { logo_url: _unused, ...withoutLogo } = data;
