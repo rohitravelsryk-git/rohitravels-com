@@ -199,16 +199,15 @@ async function replaceAirlineTabs(
 
     // Foreign-currency airlines get three extra FX columns (Debit In, Credit From, running
     // Balance in the airline's currency) so every row reads in both PKR and that currency.
-    // Airline statement columns are airline-account fields only. Passenger-level
-    // receivables (Received / Passenger Remaining) deliberately stay out of the
-    // airline tabs — they are reported on the Agent Ledger and Sales Category
-    // sheets instead, per the unified posting specification.
+    // Passenger-level receivables stay in their dedicated ledgers. Received Via is
+    // included as a separate final reference column for traceability; it does not
+    // create a second posting to cash or bank.
     const headerRow: unknown[] = isForeign
       ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Agent/Pax Contact #", "Remarks", "Received Via"]
       : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Agent/Pax Contact #", "Remarks", "Received Via"];
     const openingRow: unknown[] = isForeign
       ? [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "", "OPENING BALANCE", ""]
-      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, running, "", "OPENING BALANCE", ""];
+      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, running, "", "OPENING BALANCE", ""];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
