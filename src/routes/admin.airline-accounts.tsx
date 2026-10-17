@@ -39,21 +39,21 @@ export const Route = createFileRoute("/admin/airline-accounts")({
 const DEFAULT_AGENTS: string[] = [];
 
 const COLUMNS: any[] = [
-  { key: "date", label: "Date", type: "date", width: 130, computed: false },
-  { key: "transactionType", label: "Transaction Type", type: "transactionType", width: 150, computed: false },
-  { key: "agentName", label: "Agent Name", type: "select", width: 140, computed: false },
-  { key: "paxName", label: "Pax Name", type: "text", width: 140, computed: false },
-  { key: "sector", label: "Sector", type: "text", width: 90, computed: false },
-  { key: "pnr", label: "PNR", type: "text", width: 90, computed: false },
-  { key: "ticketSales", label: "Ticket Sales", type: "number", width: 110, computed: false },
-  { key: "receivedVia", label: "Received Via", type: "receivedVia", width: 130, computed: false },
+  { key: "date", label: "Date", type: "date", width: 118, computed: false },
+  { key: "transactionType", label: "Transaction Type", type: "transactionType", width: 142, computed: false },
+  { key: "agentName", label: "Agent Name", type: "select", width: 150, computed: false },
+  { key: "paxName", label: "Pax Name", type: "text", width: 150, computed: false },
+  { key: "sector", label: "Sector", type: "text", width: 82, computed: false },
+  { key: "pnr", label: "PNR", type: "text", width: 82, computed: false },
+  { key: "ticketSales", label: "Ticket Sales", type: "number", width: 100, computed: false },
   { key: "debitInId", label: "Debit In ID", type: "text", width: 100, computed: false },
-  { key: "creditFromId", label: "Credit From ID", type: "number", width: 120, computed: false },
-  { key: "balance", label: "Balance", type: "number", width: 110, computed: true },
-  { key: "paxContact", label: "Pax Contact #", type: "text", width: 130, computed: false },
-  { key: "voidCharges", label: "VOID Charges", type: "number", width: 110, computed: false },
-  { key: "profit", label: "Profit", type: "number", width: 100, computed: true },
-  { key: "ledgerEntry", label: "Ledger Entry", type: "text", width: 190, computed: true },
+  { key: "creditFromId", label: "Credit From ID", type: "number", width: 112, computed: false },
+  { key: "voidCharges", label: "VOID Charges", type: "number", width: 105, computed: false },
+  { key: "balance", label: "Balance", type: "number", width: 105, computed: true },
+  { key: "paxContact", label: "Agent/Pax Contact #", type: "text", width: 150, computed: false },
+  { key: "profit", label: "Profit", type: "number", width: 90, computed: true },
+  { key: "ledgerEntry", label: "Ledger Entry", type: "text", width: 180, computed: true },
+  { key: "receivedVia", label: "Received Via", type: "receivedVia", width: 135, computed: false },
 ];
 
 // For foreign-currency airlines the statement headers spell out both currencies so every
@@ -2096,9 +2096,13 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
-    // Only the self agent's counter sales carry a Received split; switching to any
-    // other agent drops a stale Received value so the entry saves as before.
-    if (value.trim().toLowerCase() !== "abdul razzaq") update("agentReceived", "");
+    const isSelfAccount = value.trim().toLowerCase() === "abdul razzaq";
+    if (!isSelfAccount) update("agentReceived", "");
+    if (isSelfAccount) {
+      update("paxContact", "");
+      setAgentNotice("Enter the passenger's original contact number for Abdul Razzaq entries.");
+      return;
+    }
     const resolved = resolveAgentContact(value);
     update("paxContact", resolved.contact);
     setAgentNotice(resolved.notice);
@@ -2113,7 +2117,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     if (!(agentDirectory ?? []).length) return;
     paxContactAutoFilledRef.current = true;
     const name = String(form.agentName || "").trim();
-    if (!name) return;
+    if (!name || name.toLowerCase() === "abdul razzaq") return;
     const current = String(form.paxContact ?? "").trim();
     if (current && current !== "0") return;
     const resolved = resolveAgentContact(name);
@@ -2342,8 +2346,8 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
   const editableCols = isTopUp
     ? [
         COLUMNS.find((c) => c.key === "date"),
-        { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details (e.g. Bank to Air Arabia)" },
-        { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID / Amount (PKR)", type: "number" },
+        { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details" },
+        { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In / Amount (" + (isForeignAirline ? (airline?.currency || "FX") : "PKR") + ")", type: "number" },
       ].filter(Boolean)
     : isCancelRefund
       ? [
@@ -2396,7 +2400,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             <div style={styles.modalGrid}>
               <div style={styles.field}>
                 <label style={styles.label}>Opening balance date</label>
-                <input type="date" value={form.openingBalanceDate ?? new Date().toISOString().slice(0, 10)} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
+                <input type="date" value={form.openingBalanceDate ?? "2026-10-17"} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
               </div>
               {isForeignAirline ? (
                 <>
@@ -2464,7 +2468,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                   )}
                 </span>
               </div>
-              <div style={styles.previewItem}><span style={styles.previewLabel}>Effective date</span><span style={styles.previewValue}>{form.openingBalanceDate || "—"}</span></div>
+              <div style={styles.previewItem}><span style={styles.previewLabel}>Effective date</span><span style={styles.previewValue}>{formatDisplayDate(form.openingBalanceDate || "2026-10-17")}</span></div>
             </div>
             {error && <div style={styles.errorNote}><AlertCircle size={15} /> {error}</div>}
             <div style={styles.modalFooter}>
@@ -2485,7 +2489,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         ) : (
         <>
-        {isForeignAirline && (
+        {isForeignAirline && !isTopUp && (
           <div style={{
             background: "rgba(217, 119, 87, 0.08)",
             border: "1px solid var(--accent-clay, #d97757)",
@@ -2597,7 +2601,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
         <div style={styles.modalGrid}>
           {editableCols.map((c: any) => (
             <div key={c.key} style={styles.field}>
-              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : c.key === "paxContact" ? "Pax Contact # (agent or office number — edit if the passenger's own differs)" : c.label}</label>
+              <label style={styles.label}>{c.key === "paxContact" ? "Agent/Pax Contact # (auto-filled from agent; edit for passenger's own number)" : c.label}</label>
               {c.type === "select" ? (
                 <>
                   <AgentNameField
@@ -2658,6 +2662,21 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                     </optgroup>
                   )}
                 </select>
+              ) : c.key === "debitInId" && isTopUp && isForeignAirline ? (
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={form.foreignAmount ?? ""}
+                  placeholder={"Amount in " + airline.currency}
+                  onChange={(e) => {
+                    const amount = e.target.value;
+                    const roe = Number(form.roe || airline?.roe || defaultRoe || 1);
+                    update("foreignAmount", amount);
+                    update("debitInId", amount !== "" && Number.isFinite(Number(amount)) && roe > 0 ? String(Math.round(Number(amount) * roe)) : "");
+                  }}
+                  style={styles.input}
+                />
               ) : c.key === "foreignAmount" ? (
                 <input
                   type="number"
@@ -2720,7 +2739,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           </div>
         )}
         {/* 1 Single Atomic Entry (No Double Counting) Posting Breakdown */}
-        <div style={{ ...styles.previewBox, flexDirection: "column", gap: 10, padding: 14 }}>
+        <div style={{ ...styles.previewBox, flexDirection: "column", gap: 6, padding: "8px 10px", marginTop: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
               1 Single Atomic Entry (No Double Counting)
@@ -2730,7 +2749,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
             </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 6 }}>
             <div style={styles.previewItem}>
               <span style={styles.previewLabel}>{airline?.name} Portal</span>
               <span className="num" style={{ ...styles.previewValue, color: preview.isIncrease ? "var(--success)" : "var(--foreground)" }}>
@@ -2817,7 +2836,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
                 setError("");
                 setForm((f: any) => ({
                   ...f,
-                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
+                  openingBalanceDate: airline?.openingBalanceDate ?? "2026-10-17",
                   openingBalance: Number(airline?.openingBalance ?? 0),
                   openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
                 }));
@@ -3437,10 +3456,10 @@ const styles: Record<string, React.CSSProperties> = {
   modal: {
     background: "var(--card)",
     borderRadius: 14,
-    padding: 22,
+    padding: 18,
     width: "100%",
-    maxWidth: 640,
-    maxHeight: "calc(100vh - 72px)",
+    maxWidth: 760,
+    maxHeight: "calc(100vh - 48px)",
     overflowY: "auto",
     boxShadow: "0 24px 60px rgba(20, 20, 19, 0.35), 0 4px 16px rgba(0, 0, 0, 0.12)",
     border: "1px solid var(--border)",
@@ -3449,9 +3468,9 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "0 auto",
   },
   modalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
-  modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
+  modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 9, alignItems: "start" },
   modalTitle: { fontFamily: 'var(--font-sans)', fontSize: 18, margin: 0, color: "var(--foreground)" },
-  field: { display: "flex", flexDirection: "column", gap: 5 },
+  field: { display: "flex", flexDirection: "column", gap: 5, minWidth: 0 },
   radioGroup: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, padding: "2px 0" },
   radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "var(--foreground)" },
   label: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--muted-foreground)" },
