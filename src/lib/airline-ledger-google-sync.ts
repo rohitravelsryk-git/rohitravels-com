@@ -214,12 +214,12 @@ async function replaceAirlineTabs(
       ? ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", `Debit In (${curr})`, "Credit From ID", `Credit From (${curr})`, "Void Charges", "Profit", "Running Balance", `Balance in (${curr})`, "Agent/Pax Contact #", "Remarks", "Received Via"]
       : ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Debit In ID", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Agent/Pax Contact #", "Remarks", "Received Via"];
     const openingRow: unknown[] = isForeign
-      ? [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "", "OPENING BALANCE", ""]
-      : [air.opening_balance_date, "", "", "", "", 0, 0, 0, 0, 0, running, "", "OPENING BALANCE", ""];
+      ? [air.opening_balance_date || "2026-10-17", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, running, runningForeign, "", "OPENING BALANCE", ""]
+      : [air.opening_balance_date || "2026-10-17", "", "", "", "", 0, 0, 0, 0, 0, running, "", "OPENING BALANCE", ""];
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
-      ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date, "Entries", rows.length, "Current Balance", running],
+      ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date || "2026-10-17", "Entries", rows.length, "Current Balance", running],
       [],
       headerRow,
       openingRow,
@@ -349,7 +349,7 @@ export async function syncAirlineLedgerToGoogleSheet(
     ["SYNCED AT", new Date().toISOString()],
     [],
     ["ID", "AIRLINE", "CODE", "OPENING BALANCE", "OPENING BALANCE DATE", "SORT ORDER"],
-    ...snapshot.airlines.map((a) => [a.id, a.name, a.code, a.opening_balance, a.opening_balance_date, a.sort_order]),
+    ...snapshot.airlines.map((a) => [a.id, a.name, a.code, a.opening_balance, a.opening_balance_date || "2026-10-17", a.sort_order]),
   ];
   const agents = [
     ["AGENTS"],
