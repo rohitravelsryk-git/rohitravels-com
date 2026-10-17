@@ -726,19 +726,39 @@ export async function reconcileMissingAgentPostings(): Promise<{
   }
 }
 
+let reconcileInFlight = false;
+
+/**
+ * Starts the self-healing reconcile without awaiting it, so page loads are
+ * instant while the backfill continues in the background. A module-level
+ * guard prevents concurrent loads from piling up duplicate reconciles.
+ */
+export function startAgentPostingReconcileDetached(): void {
+  if (reconcileInFlight) return;
+  reconcileInFlight = true;
+  reconcileMissingAgentPostings()
+    .then((result) => {
+      if (result.errors && result.errors.length > 0) {
+        console.warn("[agent-ledger] Background reconcile finished with errors:", result.errors);
+      }
+    })
+    .catch((e) => {
+      console.warn("[agent-ledger] Background reconcile failed:", e);
+    })
+    .finally(() => {
+      reconcileInFlight = false;
+    });
+}
+
 export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // Self-healing reconcile on page load: ensures every committed airline sale
-  // has its agent-ledger posting before the page reads the ledger. Bounded so
-  // a long first backfill (or a stuck Sheet rebuild) delays but never hangs
-  // this page; the backfill continues in the background either way.
-  try {
-    await withBackgroundTimeout(reconcileMissingAgentPostings(), 45000);
-  } catch (reconcileErr) {
-    console.warn("[agent-ledger] Reconcile failed or timed out (page still loads):", reconcileErr);
-  }
+  // has its agent-ledger posting. It starts detached so the page loads
+  // instantly with committed data; the backfill continues in the background
+  // and a refresh afterwards shows the completed result.
+  startAgentPostingReconcileDetached();
 
 
   const { masterData } = await getUnifiedPartyLedgers(supabaseAdmin);

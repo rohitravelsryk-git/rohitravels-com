@@ -131,28 +131,14 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
 
   // Self-healing reconcile: opening Airline Accounts also repairs any agent
   // ledger postings that a killed save left behind, so the ledger backfills
-  // without the user having to visit the Agent Ledger page first. Never
-  // throws — a failed reconcile must not break loading airline data, and its
-  // result is returned so the UI can surface any posting that still failed.
-  let agentReconcile: AirlineLedgerData["agentReconcile"] = undefined;
+  // without the user having to visit the Agent Ledger page first. It starts
+  // detached so the page loads instantly with committed data; the backfill
+  // continues in the background and a refresh afterwards shows the result.
   try {
-    const { reconcileMissingAgentPostings } = await import("@/lib/ledger-admin.functions");
-    // The reconcile can post every historical transaction on its first run
-    // (e.g. right after the ledger table was created) plus a Sheet rebuild.
-    // Bound it so the page always loads: the backfill keeps running in the
-    // background and a refresh moments later shows the completed result.
-    agentReconcile = await withTimeout(reconcileMissingAgentPostings(), 45000, "Agent ledger reconcile");
+    const { startAgentPostingReconcileDetached } = await import("@/lib/ledger-admin.functions");
+    startAgentPostingReconcileDetached();
   } catch (reconcileErr) {
-    console.warn("[airline-ledger] Agent posting reconcile failed (page still loads):", reconcileErr);
-    agentReconcile = {
-      checked: 0,
-      missing: 0,
-      orphaned: 0,
-      linked: 0,
-      errors: [
-        `Agent ledger backfill is still running in the background (${String(reconcileErr instanceof Error ? reconcileErr.message : reconcileErr)}). Refresh in a minute to see the completed result.`,
-      ],
-    };
+    console.warn("[airline-ledger] Detached agent posting reconcile failed to start:", reconcileErr);
   }
 
   // The four tables are read separately, so a save committing mid-read could
@@ -278,7 +264,6 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     agents,
     transactions,
     revision: Number(revisionRes.data?.revision ?? 1),
-    agentReconcile,
   };
 });
 
