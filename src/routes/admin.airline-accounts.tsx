@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend,
+  Tooltip, Legend, LabelList,
 } from "recharts";
 import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
@@ -1659,8 +1659,8 @@ function LedgerTable({
     <div>
       <div style={styles.panelHeader}>
         <div>
-          <h2 style={{ ...styles.panelTitle, fontWeight: 850, fontSize: 26, letterSpacing: "-0.02em" }}>{airline?.name}</h2>
-          <div style={{ ...styles.panelMeta, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ fontSize: 12, fontWeight: 800, color: "var(--foreground)" }}>{airline?.name}</span><span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".05em", padding: "2px 7px", borderRadius: 5, border: "1px solid var(--border)", background: "var(--card)", color: "var(--accent-clay, #d97757)" }}>{airline?.code}</span><span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Airline Account Statement · {rawCount} transaction{rawCount === 1 ? "" : "s"}</span></div>
+          <h2 style={{ ...styles.panelTitle, fontWeight: 900, fontSize: 29, letterSpacing: "-0.025em", lineHeight: 1.1 }}>{airline?.name} <span style={{ fontSize: 14, fontWeight: 800, color: "var(--accent-clay, #d97757)", verticalAlign: "middle" }}>• {airline?.code}</span></h2>
+          <div style={{ ...styles.panelMeta, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Airline Account Statement · {rawCount} transaction{rawCount === 1 ? "" : "s"}</span></div>
         </div>
         <div style={styles.panelActions}>
           {!/other\s*service\s*providers/i.test(airline?.name) && (
@@ -2873,7 +2873,7 @@ function Dashboard({
       <div style={styles.panelHeader}>
         <div>
           <AdminPageHeading icon={Building2} label="Airline Balance Dashboard" count={airlines.length} countLabel="Airlines tracked" />
-          <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
+          <div style={styles.panelMeta}>Multi-Airlines Accounts Overview</div>
         </div>
         <div style={styles.panelActions}>
           <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
@@ -2954,7 +2954,7 @@ function Dashboard({
       </section>
 
       <section style={styles.section}>
-        <h3 style={styles.sectionTitle}>Account Balances By Airline</h3>
+        <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Total Sales per Airline</h3>
         <div style={styles.tableWrap}>
           <table style={styles.table}>
             <thead>
@@ -3007,7 +3007,7 @@ function Dashboard({
 
       <section style={styles.section}>
         <div style={styles.sectionHeaderRow}>
-          <h3 style={styles.sectionTitle}>Monthly profit / loss</h3>
+          <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800, margin: 0 }}>Profit &amp; Loss</h3>
           <select value={dashboardScope} onChange={(e) => setDashboardScope(e.target.value)} style={styles.select}>
             <option value="all">All airlines</option>
             {airlines.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -3024,8 +3024,7 @@ function Dashboard({
                 <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} />
                 <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="profit" name="Profit" fill="var(--success)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="voidCharges" name="VOID charges" fill="var(--error)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill="var(--success)" radius={[3, 3, 0, 0]}><LabelList dataKey="profit" position="top" formatter={(value: any) => fmt(value)} style={{ fontSize: 10, fill: "var(--foreground)", fontWeight: 700 }} /></Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -3033,7 +3032,7 @@ function Dashboard({
       </section>
 
       <section style={styles.section}>
-        <h3 style={styles.sectionTitle}>Yearly summary</h3>
+        <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Yearly summary</h3>
         {yearlySummary.length === 0 ? (
           <div style={styles.emptyBlock}>No dated transactions yet.</div>
         ) : (
