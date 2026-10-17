@@ -771,6 +771,9 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
+      // Outcome of the agent-ledger postings, returned to the UI so a failed
+      // posting is visible the moment the save finishes, not on the next load.
+      let agentPosting: { linked: number; errors: string[] } | null = null;
 
       // The financial postings (Agent Ledger, Accounts Book receipts, Counter
       // Sales) are AWAITED: a detached background promise can be killed by the
@@ -783,8 +786,10 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-            await withTimeout(syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines), 20000, "Agent ledger sync");
+            const agentResult = await withTimeout(syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines), 20000, "Agent ledger sync");
+            agentPosting = { linked: Number(agentResult?.linked ?? 0), errors: agentResult?.errors ?? [] };
           } catch (e) {
+            agentPosting = { linked: 0, errors: [String(e instanceof Error ? e.message : e)] };
             console.warn("[airline-atomic] Agent ledger sync:", e);
           }
         })(),
@@ -849,6 +854,7 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
     return {
       success: true,
       revision: newRevision,
+      agentPosting,
       row: {
         id: rowId,
         date,

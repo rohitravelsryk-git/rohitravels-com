@@ -1022,12 +1022,35 @@ function AirlineLedgerApp() {
   const deleteTransactionAtomicFn = useServerFn(deleteAirlineTransactionAtomic);
 
   const savingTxRef = useRef(false);
+  const savingTxStartedAtRef = useRef(0);
+  // A save whose response was lost used to leave this guard set forever, and
+  // every later Add Record then silently did nothing: the modal closed, no
+  // toast appeared, and the entry never reached the website or Google Sheets.
+  const SAVE_GUARD_STALE_MS = 90000;
+  const acquireSaveGuard = (): boolean => {
+    if (!savingTxRef.current) {
+      savingTxRef.current = true;
+      savingTxStartedAtRef.current = Date.now();
+      return true;
+    }
+    if (Date.now() - savingTxStartedAtRef.current < SAVE_GUARD_STALE_MS) {
+      toast.error("Another save is still running. Wait for it to finish (or refresh the page) before the next transaction.");
+      return false;
+    }
+    // The in-flight save is implausibly old — its response was likely lost.
+    // Reload so the authoritative database state (and the self-healing ledger
+    // reconcile that runs on load) replaces whatever this tab shows.
+    savingTxRef.current = false;
+    console.warn("[airline-accounts] Save guard stuck for >90s; reloading authoritative ledger state.");
+    toast.error("A previous save never finished responding. Reloading the ledger to make sure nothing was lost…");
+    setTimeout(() => window.location.reload(), 1200);
+    return false;
+  };
 
   const saveRow = async (airlineId: string, row: any) => {
     // One save at a time: a double click on Save used to create two rows with
     // different temp ids, which showed up as duplicate ledger entries.
-    if (savingTxRef.current) return false;
-    savingTxRef.current = true;
+    if (!acquireSaveGuard()) return false;
     const tempId = row.id || `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const optimisticRow = {
       ...row,
@@ -1081,6 +1104,20 @@ function AirlineLedgerApp() {
           return next;
         });
       }
+      // Surface agent-ledger posting results immediately instead of waiting
+      // for the next page load's reconcile.
+      const ap = res?.agentPosting;
+      if (ap && Array.isArray(ap.errors) && ap.errors.length > 0) {
+        setLedgerRepairIssue(`Agent ledger posting problem: ${ap.errors.slice(0, 3).join(" | ")}`);
+      } else {
+        const t = String(row.transactionType || "").toLowerCase();
+        const isRefundOrTopUp = t.includes("refund") || t.includes("cancel") || t.includes("top up");
+        if (ap && !isRefundOrTopUp && String(row.agentName || "").trim() && Number(ap?.linked) === 0) {
+          setLedgerRepairIssue("Agent ledger posting is still pending — it retries automatically on the next page load.");
+        } else if (ap) {
+          setLedgerRepairIssue(null);
+        }
+      }
       toast.success("Transaction saved & Google Sheets synced", { id: toastId });
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 3000);
@@ -1102,8 +1139,7 @@ function AirlineLedgerApp() {
     // One mutation at a time. While this is set, the full-snapshot autosave
     // effect skips, so it can never race the atomic delete with a whole-ledger
     // save (that race used to end in a revision conflict or a resurrection).
-    if (savingTxRef.current) return false;
-    savingTxRef.current = true;
+    if (!acquireSaveGuard()) return false;
     const previousTransactions = transactions;
     const nextTransactions = {
       ...transactions,
