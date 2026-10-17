@@ -1944,7 +1944,9 @@ function AgentNameField({ value, search, options, onSearch, onSelect }: {
       {open && matches.length > 0 ? (
         <div
           style={{
-            position: "absolute", zIndex: 70, top: "100%", left: 0, right: 0,
+            // Rendered in normal flow (not absolutely positioned) so the open
+            // list pushes the fields below down instead of covering them —
+            // Pax Name and the other fields stay visible while searching.
             maxHeight: 220, overflowY: "auto", marginTop: 4,
             background: "var(--card, #FAF9F5)", border: "1px solid var(--border, #E7E5E4)",
             borderRadius: 8, boxShadow: "0 12px 30px rgba(20,20,19,0.16)",
@@ -2329,7 +2331,10 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           COLUMNS.find((c) => c.key === "paxContact"),
           COLUMNS.find((c) => c.key === "voidCharges"),
         ].filter(Boolean)
-      : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
+      // Debit In only carries meaning when money moves INTO the airline portal
+      // (Top Up) or when a refund is processed. A plain Add Transaction (and
+      // Exchange) returns value from the portal, so that field is hidden.
+      : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType" && c.key !== "debitInId");
 
   return (
     <Overlay onClose={onClose}>
@@ -2538,7 +2543,7 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
           <div style={{ ...styles.radioGroup, gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, width: "100%" }}>
             {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
               <label key={type} style={{ ...styles.radioOption, justifyContent: "center", border: (form.transactionType || "Add Transaction") === type ? "1px solid var(--accent-ink)" : "1px solid var(--border)", borderRadius: 8, padding: "7px 6px", background: (form.transactionType || "Add Transaction") === type ? "rgba(217, 119, 87, 0.10)" : "var(--card)", fontWeight: (form.transactionType || "Add Transaction") === type ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap" }}>
-                <input type="radio" name="transactionType" value={type} checked={(form.transactionType || "Add Transaction") === type} onChange={() => update("transactionType", type)} />
+                <input type="radio" name="transactionType" value={type} checked={(form.transactionType || "Add Transaction") === type} onChange={() => { update("transactionType", type); if (type === "Add Transaction" || type === "Exchange") update("debitInId", ""); }} />
                 <span>{type}</span>
               </label>
             ))}
