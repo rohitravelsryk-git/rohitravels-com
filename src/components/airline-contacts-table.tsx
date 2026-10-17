@@ -403,36 +403,21 @@ export function AirlineContactDetailsTable({
                       </div>
                     </td>
 
-                    {/* Contact Person */}
+                    {/* Airline Contact Person & Number */}
                     <td style={tdStyle}>
-                      {item.contact_person ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <User size={13} style={{ color: "#D97757", flexShrink: 0 }} />
-                          <span style={{ fontWeight: 600, color: "#1C1917", fontSize: 12 }}>{item.contact_person}</span>
-                        </div>
-                      ) : (
-                        <span style={emptyFieldStyle}>—</span>
-                      )}
-                    </td>
-
-                    {/* Contact Number */}
-                    <td style={tdStyle}>
-                      {item.contact_number ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <Phone size={13} style={{ color: "#D97757", flexShrink: 0 }} />
-                          <span style={phoneTextStyle}>{item.contact_number}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(item.contact_number, `p-${item.id}`)}
-                            style={copyBtnStyle}
-                            title="Copy phone"
-                          >
-                            {copiedId === `p-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={emptyFieldStyle}>—</span>
-                      )}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        {item.contact_person ? <span style={{ fontWeight: 600, color: "#1C1917", fontSize: 12 }}>{item.contact_person}</span> : null}
+                        {item.contact_number ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <Phone size={13} style={{ color: "#D97757", flexShrink: 0 }} />
+                            <span style={phoneTextStyle}>{item.contact_number}</span>
+                            <button type="button" onClick={() => handleCopy(item.contact_number, `p-${item.id}`)} style={copyBtnStyle} title="Copy phone">
+                              {copiedId === `p-${item.id}` ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        ) : null}
+                        {!item.contact_person && !item.contact_number ? <span style={emptyFieldStyle}>—</span> : null}
+                      </div>
                     </td>
 
                     {/* Sales Support */}
@@ -495,23 +480,13 @@ export function AirlineContactDetailsTable({
                       )}
                     </td>
 
-                    {/* Bank Name & Account Title */}
+                    {/* Bank Name */}
                     <td style={tdStyle}>
-                      {item.bank_name || item.account_title ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          {item.bank_name ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                              <Building size={12} style={{ color: "#D97757", flexShrink: 0 }} />
-                              <span style={{ fontWeight: 600, color: "#1C1917", fontSize: 11.5 }}>{item.bank_name}</span>
-                            </div>
-                          ) : null}
-                          {item.account_title ? (
-                            <span style={{ color: "#78716C", fontSize: 11 }}>Title: {item.account_title}</span>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span style={emptyFieldStyle}>—</span>
-                      )}
+                      {item.bank_name ? <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Building size={12} style={{ color: "#D97757", flexShrink: 0 }} /><span style={{ fontWeight: 600, color: "#1C1917", fontSize: 11.5 }}>{item.bank_name}</span></div> : <span style={emptyFieldStyle}>—</span>}
+                    </td>
+                    {/* Account Title */}
+                    <td style={tdStyle}>
+                      {item.account_title ? <span style={{ color: "#1C1917", fontSize: 11.5, fontWeight: 600 }}>{item.account_title}</span> : <span style={emptyFieldStyle}>—</span>}
                     </td>
 
                     {/* IBAN */}
