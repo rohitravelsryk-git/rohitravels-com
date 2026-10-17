@@ -2968,7 +2968,7 @@ function Dashboard({
             </button>
           ))}
         </div>
-      </section>
+      </section>}
 
       {view === "sales" && <section style={styles.section}>
         <div style={styles.sectionHeaderRow}>
