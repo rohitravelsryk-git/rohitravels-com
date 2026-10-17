@@ -733,7 +733,11 @@ export const saveAirlineTransactionAtomic = createServerFn({ method: "POST" })
       received_via: receivedVia,
       received_via_account_id: receivedViaAccountId,
     };
-    if (isNewRow) recordToUpsert.sort_order = Date.now();
+    // sort_order is an int column, so it cannot hold a millisecond timestamp.
+    // Epoch seconds fit comfortably (int4 allows up to 2147483647, i.e. the
+    // year 2038) and still increase with every entry, keeping same-date
+    // entries in the exact order they were entered.
+    if (isNewRow) recordToUpsert.sort_order = Math.floor(Date.now() / 1000);
     if (agentReceived !== null && await airlineTxSupportsAgentReceived(supabaseAdmin)) {
       recordToUpsert.agent_received = agentReceived;
     }
