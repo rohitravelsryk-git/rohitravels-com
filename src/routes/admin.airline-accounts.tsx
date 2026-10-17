@@ -2259,8 +2259,24 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
     };
 
     setError("");
-    onClose();
-    void onSave(modal.airlineId, payload);
+    // The modal used to close BEFORE the save finished, so any failed or busy
+    // save looked like the entry had vanished. Now the modal stays open with
+    // the entry on screen until the server confirms the save; only a confirmed
+    // save closes it.
+    setSavingRecord(true);
+    try {
+      const ok = await onSave(modal.airlineId, payload);
+      if (ok === false) {
+        // Save never started (another save is still running). The entry stays
+        // on screen; the toast already explains why.
+        setSavingRecord(false);
+        return;
+      }
+      onClose();
+    } catch (e: any) {
+      setSavingRecord(false);
+      setError(String(e?.message || "Save failed. The entry is still on screen — try again."));
+    }
   };
 
   const handleDelete = async () => {
