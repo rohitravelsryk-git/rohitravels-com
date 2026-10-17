@@ -173,10 +173,13 @@ function computeLedgerRows(rows: any[], airline: any) {
     return sortedRows.map((r) => {
       const credit = parseCleanNum(r.creditFromId);
       const profit = parseCleanNum(r.ticketSales) - credit;
-      const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
+      const ledgerEntryBase = [r.paxName, r.sector, r.pnr, airline?.code]
         .map((v) => (v || "").toString().trim())
         .filter(Boolean)
         .join(" - ");
+      const ledgerEntry = parseCleanNum(r.voidCharges) > 0
+        ? `${ledgerEntryBase}${ledgerEntryBase ? " " : ""}+VOID`
+        : ledgerEntryBase;
       return {
         ...r,
         balance: 0,
@@ -222,10 +225,13 @@ function computeLedgerRows(rows: any[], airline: any) {
 
     runningForeign = runningForeign + (isIncrease ? txForeignCredit : -txForeignCredit);
 
-    const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
+    const ledgerEntryBase = [r.paxName, r.sector, r.pnr, airline?.code]
       .map((v) => (v || "").toString().trim())
       .filter(Boolean)
       .join(" - ");
+    const ledgerEntry = parseCleanNum(r.voidCharges) > 0
+      ? `${ledgerEntryBase}${ledgerEntryBase ? " " : ""}+VOID`
+      : ledgerEntryBase;
 
     return {
       ...r,
