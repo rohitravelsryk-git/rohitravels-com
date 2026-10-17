@@ -365,13 +365,13 @@ export async function syncAirlineLedgerToGoogleSheet(
     ["REVISION", revision],
     ["SYNCED AT", new Date().toISOString()],
     [],
-    ["ID", "AIRLINE ID", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "AGENT RECEIVED", "PASSENGER REMAINING", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "SORT ORDER"],
+    ["ID", "AIRLINE ID", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "AGENT RECEIVED", "PASSENGER REMAINING", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "SORT ORDER", "RECEIVED VIA"],
     ...snapshot.transactions.map((t: any) => [
       cellValue(t.id), cellValue(t.airline_id), cellValue(t.date), cellValue(t.agent_name),
       cellValue(t.pax_name), cellValue(t.sector), cellValue(t.pnr), cellValue(t.ticket_sales),
       cellValue(t.agent_received), cellValue(agentRemainingOf(t)), cellValue(t.debit_in_id),
       cellValue(t.credit_from_id), cellValue(t.pax_contact),
-      cellValue(t.void_charges), cellValue(t.sort_order),
+      cellValue(t.void_charges), cellValue(t.sort_order), cellValue(t.received_via),
     ]),
   ];
 
