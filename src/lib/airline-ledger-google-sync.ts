@@ -190,6 +190,14 @@ async function replaceAirlineTabs(
     const title = clean(air.name);
     const props = byTitle.get(title);
     if (!props?.sheetId) continue;
+    if (props.sheetId) {
+      requests.push({
+        updateSheetProperties: {
+          properties: { sheetId: props.sheetId, gridProperties: { columnCount: 20 } },
+          fields: "gridProperties.columnCount",
+        },
+      });
+    }
     const rows = transactions.filter((r: any) => r.airline_id === air.id);
     let running = Number(air.opening_balance) || 0;
     const isForeign = air.currency && air.currency !== "PKR";
