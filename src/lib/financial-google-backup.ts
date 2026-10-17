@@ -184,17 +184,17 @@ export async function syncRohiFinancialBackup(snapshot: {
 
   const airlineRows = snapshot.airlines.flatMap((a) => {
     const tx = snapshot.airlineTransactions.filter((t) => t.airline_id === a.id);
-    if (!tx.length) return [[a.name, a.code, a.opening_balance, a.opening_balance_date, "", "", "", "", "", "", "", "", "", "", ""]];
+    if (!tx.length) return [[a.name, a.code, a.opening_balance, a.opening_balance_date, "", "", "", "", "", "", "", "", "", "", "", ""]];
     return tx.map((t) => [
       a.name, a.code, a.opening_balance, a.opening_balance_date, t.date, t.agent_name,
       t.pax_name, t.sector, t.pnr, t.ticket_sales, t.debit_in_id, t.credit_from_id,
-      t.pax_contact, t.void_charges, t.id,
+      t.pax_contact, t.void_charges, t.id, t.received_via,
     ]);
   });
 
   const ledgerRows = snapshot.airlineTransactions.map((t) => [
     t.date, t.agent_name, t.airline_id, t.pnr, t.pax_name, t.sector,
-    t.ticket_sales, t.debit_in_id, t.credit_from_id, t.void_charges, t.pax_contact, t.id,
+    t.ticket_sales, t.debit_in_id, t.credit_from_id, t.void_charges, t.pax_contact, t.id, t.received_via,
   ]);
 
   const saleRows = snapshot.accountTransactions
@@ -237,7 +237,7 @@ export async function syncRohiFinancialBackup(snapshot: {
         ["BACKUP REVISION", revision],
         ["LAST SYNC", syncedAt],
         [],
-        ["AIRLINE", "IATA", "OPENING BALANCE", "OPENING BALANCE DATE", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "TRANSACTION ID"],
+        ["AIRLINE", "IATA", "OPENING BALANCE", "OPENING BALANCE DATE", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "TRANSACTION ID", "RECEIVED VIA"],
         ...airlineRows,
       ],
     },
@@ -249,7 +249,7 @@ export async function syncRohiFinancialBackup(snapshot: {
         ["BACKUP REVISION", revision],
         ["LAST SYNC", syncedAt],
         [],
-        ["DATE", "AGENT", "AIRLINE ID", "PNR", "PASSENGER", "SECTOR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "VOID CHARGES", "CONTACT", "TRANSACTION ID"],
+        ["DATE", "AGENT", "AIRLINE ID", "PNR", "PASSENGER", "SECTOR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "VOID CHARGES", "CONTACT", "TRANSACTION ID", "RECEIVED VIA"],
         ...ledgerRows,
       ],
     },
