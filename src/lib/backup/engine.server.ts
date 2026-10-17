@@ -1166,6 +1166,26 @@ export async function reconcileSalesAccountsToSheets() {
       }
     }
 
+    // Prune category tabs whose category no longer exists (e.g. consolidated or
+    // renamed categories). This workbook is dedicated to Sales Accounts, so any
+    // tab that is neither the master journal nor a current category tab is a
+    // stale mirror and is removed. Supabase remains the source of truth, so the
+    // removed rows are recoverable from the authoritative tables.
+    const currentCategoryTabs = new Set(categorySheetData.map((item) => item.sheet.toLowerCase()));
+    for (const [title, sId] of existingSheets.entries()) {
+      if (sId === undefined) continue;
+      const lower = title.toLowerCase().trim();
+      if (lower === "sales accounts") continue; // master journal tab
+      if (lower === "readme" || lower === "_data" || lower === "balances overview") continue;
+      if (currentCategoryTabs.has(lower)) continue;
+      try {
+        await deleteSheet(target.id, sId);
+        console.info("[backup] Deleted obsolete Sales Accounts category tab:", title);
+      } catch (e) {
+        console.warn("[backup] Could not delete obsolete Sales Accounts tab:", title, e);
+      }
+    }
+
     outcomes.push({
       table: "accounts_book_transactions",
       sheet: "Sales Accounts",

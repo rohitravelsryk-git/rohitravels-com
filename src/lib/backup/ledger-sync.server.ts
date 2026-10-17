@@ -38,10 +38,23 @@ export async function syncMasterLedger(data: any[], _allTransactions?: any[]) {
   const airlineTxById = new Map<string, { sales: number; recv: number | ""; rem: number | "" }>();
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: airlineTx, error: airlineTxErr } = await (supabaseAdmin as any)
+    let airlineTx: any[] | undefined;
+    const withReceived = await (supabaseAdmin as any)
       .from("airline_ledger_transactions")
       .select("id, ticket_sales, agent_received");
-    if (airlineTxErr) throw new Error(airlineTxErr.message);
+    if (withReceived.error) {
+      // A database without the agent_received column (migration not yet
+      // applied) must not blank the whole passenger block: fall back so
+      // Ticket Sales still fills in and Received/Remaining stay empty.
+      console.warn("[ledger-sync] agent_received column unavailable, enriching Ticket Sales only:", withReceived.error.message);
+      const fallback = await (supabaseAdmin as any)
+        .from("airline_ledger_transactions")
+        .select("id, ticket_sales");
+      if (fallback.error) throw new Error(fallback.error.message);
+      airlineTx = (fallback.data ?? []).map((t: any) => ({ ...t, agent_received: null }));
+    } else {
+      airlineTx = withReceived.data;
+    }
     for (const t of airlineTx ?? []) {
       const id = String(t.id || "");
       if (!id) continue;

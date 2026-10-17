@@ -218,7 +218,7 @@ export async function syncAirlineTransactionsToAccountsBook(
       // skipped the Google Sheet write for the Banks/Wallets and Daily Cash
       // tabs. Waiting here keeps the mirror write inside the request, exactly
       // like the other airline ledger sync steps.
-      await triggerLiveAccountsSync(true, ["banks", "cash"]);
+      await triggerLiveAccountsSync(true, ["banks", "cash", "sales"]);
       } catch (sheetSyncErr) {
         console.warn("[airline-accounts-sync] Live accounts sheet sync failed:", sheetSyncErr);
       }
