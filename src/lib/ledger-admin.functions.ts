@@ -504,16 +504,48 @@ export async function syncAirlineTransactionsToAgentLedgers(
       if (a.id) airlineMap.set(a.id, a.name || a.code || "Airline");
     }
 
-    const { data: existingAirlineEntries } = await supabaseAdmin
-      .from("ledger_manual_entries")
-      .select("id, details, debit, credit, date, agent_user_id")
-      .ilike("details", "%Ref: AIRLINE-TX-%");
+    const [ticketEntriesRes, receiptEntriesRes] = await Promise.all([
+      supabaseAdmin
+        .from("ledger_manual_entries")
+        .select("id, details, debit, credit, date, agent_user_id")
+        .ilike("details", "%Ref: AIRLINE-TX-%"),
+      supabaseAdmin
+        .from("ledger_manual_entries")
+        .select("id, details, debit, credit, date, agent_user_id")
+        .ilike("details", "%Ref: AIRLINE-RCV-%"),
+    ]);
+    const existingAirlineEntries = ticketEntriesRes.data;
+    if (ticketEntriesRes.error || receiptEntriesRes.error) {
+      console.warn(
+        "[airline-to-agent-ledger] Could not read existing airline postings:",
+        ticketEntriesRes.error?.message || receiptEntriesRes.error?.message,
+      );
+    }
 
     const existingByTxId = new Map<string, any>();
     for (const entry of existingAirlineEntries || []) {
       const match = String(entry.details || "").match(/Ref:\s*AIRLINE-TX-([^\s•]+)/);
       if (match && match[1]) {
         existingByTxId.set(match[1], entry);
+      }
+    }
+
+    // Receipt postings ("Jazz Cash Received" style) carry their own link tag
+    // (Ref: AIRLINE-RCV-<txId>) so they never collide with the ticket posting
+    // of the same transaction. One transaction still drives both entries.
+    const existingRcvByTxId = new Map<string, any>();
+    const rcvExtrasByTxId = new Map<string, any[]>();
+    for (const entry of receiptEntriesRes.data || []) {
+      const match = String(entry.details || "").match(/Ref:\s*AIRLINE-RCV-([^\s•]+)/);
+      if (match && match[1]) {
+        const txKey = match[1];
+        if (existingRcvByTxId.has(txKey)) {
+          const extras = rcvExtrasByTxId.get(txKey) || [];
+          extras.push(entry);
+          rcvExtrasByTxId.set(txKey, extras);
+        } else {
+          existingRcvByTxId.set(txKey, entry);
+        }
       }
     }
 
@@ -544,6 +576,11 @@ export async function syncAirlineTransactionsToAgentLedgers(
             }
             await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", existing.id);
             existingByTxId.delete(txId);
+          }
+          const staleRcv = txId ? existingRcvByTxId.get(txId) : null;
+          if (staleRcv) {
+            await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", staleRcv.id);
+            existingRcvByTxId.delete(txId);
           }
         }
         continue;
@@ -590,6 +627,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
 
       const details = `Airline Ticket (${airlineName}) - ${tx.pax_name || "Pax"}${tx.pnr ? ` • PNR: ${tx.pnr}` : ""}${tx.sector ? ` • ${tx.sector}` : ""}${tx.transaction_type && tx.transaction_type !== "Add Transaction" ? ` • ${tx.transaction_type}` : ""} • Ref: AIRLINE-TX-${txId}`;
 
+      let ticketInserted = false;
       const existing = existingByTxId.get(txId);
       if (existing) {
         if (
@@ -617,6 +655,7 @@ export async function syncAirlineTransactionsToAgentLedgers(
         }
         existingByTxId.delete(txId);
       } else {
+        ticketInserted = true;
         const ins = await supabaseAdmin
           .from("ledger_manual_entries")
           .insert({
@@ -633,6 +672,85 @@ export async function syncAirlineTransactionsToAgentLedgers(
           errors.push(msg);
         }
       }
+
+      // Receipt posting: when the agent actually paid part of the ticket at
+      // save time (Received Via selected and an amount received), the agent
+      // ledger gets a SECOND, separately linked entry so the statement reads
+      // as two clear lines — the ticket sale (Debit) and the payment received
+      // (Credit, e.g. "Jazz Cash Received"). The transaction itself remains a
+      // single atomic record in Supabase; both lines are derived and stay
+      // idempotently linked, so edits, deletions and reconciles keep them in
+      // step without duplicates or orphans.
+      const agentReceived = Math.max(Number(tx.agent_received) || 0, 0);
+      const receivedVia = String(tx.received_via || "").trim();
+      const wantsReceipt =
+        !isRefund && agentReceived > 0 && receivedVia.length > 0 && receivedVia.toLowerCase() !== "none";
+      const receiptDetails = `${receivedVia} Received - ${tx.pax_name || "Pax"} • Rs ${agentReceived.toLocaleString("en-US")} • Ref: AIRLINE-RCV-${txId}`;
+
+      const existingRcv = existingRcvByTxId.get(txId);
+      if (wantsReceipt) {
+        if (existingRcv && !ticketInserted) {
+          if (
+            existingRcv.agent_user_id !== matchedAgent.user_id ||
+            Number(existingRcv.debit) !== 0 ||
+            Number(existingRcv.credit) !== agentReceived ||
+            existingRcv.details !== receiptDetails
+          ) {
+            const updRcv = await supabaseAdmin
+              .from("ledger_manual_entries")
+              .update({
+                agent_user_id: matchedAgent.user_id,
+                date,
+                details: receiptDetails,
+                debit: 0,
+                credit: agentReceived,
+              })
+              .eq("id", existingRcv.id)
+              .select("id");
+            if (updRcv.error) {
+              const msg = `Transaction ${txId}: updating receipt ledger entry failed — ${updRcv.error.message}`;
+              console.warn(`[airline-to-agent-ledger] ${msg}`);
+              errors.push(msg);
+            }
+          }
+        } else {
+          // A freshly inserted ticket line must stay FIRST in the statement:
+          // drop any stale receipt line so the new one is created after the
+          // ticket line and sorts after it by creation time.
+          if (existingRcv) {
+            await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", existingRcv.id);
+          }
+          const insRcv = await supabaseAdmin
+            .from("ledger_manual_entries")
+            .insert({
+              agent_user_id: matchedAgent.user_id,
+              date,
+              details: receiptDetails,
+              debit: 0,
+              credit: agentReceived,
+            })
+            .select("id");
+          if (insRcv.error) {
+            const msg = `Transaction ${txId}: inserting receipt ledger entry failed — ${insRcv.error.message}`;
+            console.warn(`[airline-to-agent-ledger] ${msg}`);
+            errors.push(msg);
+          }
+        }
+      } else if (existingRcv) {
+        // Received amount or Received Via was cleared on edit: the receipt
+        // line must disappear so the statement never shows a stale payment.
+        const delRcv = await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", existingRcv.id);
+        if (delRcv.error) {
+          const msg = `Transaction ${txId}: removing stale receipt ledger entry failed — ${delRcv.error.message}`;
+          console.warn(`[airline-to-agent-ledger] ${msg}`);
+          errors.push(msg);
+        }
+      }
+      // Prune duplicate receipt lines left behind by older bugs.
+      for (const extra of rcvExtrasByTxId.get(txId) || []) {
+        await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", extra.id);
+      }
+      existingRcvByTxId.delete(txId);
       linkedCount++;
     }
 
@@ -642,6 +760,18 @@ export async function syncAirlineTransactionsToAgentLedgers(
       if (scopeSet && !scopeSet.has(orphanedTxId)) continue;
       if (!currentTxIdsWithAgent.has(orphanedTxId)) {
         await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", orphanedEntry.id);
+      }
+    }
+
+    for (const [orphanedRcvTxId, orphanedRcvEntry] of existingRcvByTxId.entries()) {
+      if (scopeSet && !scopeSet.has(orphanedRcvTxId)) continue;
+      if (!currentTxIdsWithAgent.has(orphanedRcvTxId)) {
+        await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", orphanedRcvEntry.id);
+      }
+    }
+    for (const extras of rcvExtrasByTxId.values()) {
+      for (const extra of extras) {
+        await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", extra.id);
       }
     }
 
@@ -690,7 +820,7 @@ export async function reconcileMissingAgentPostings(): Promise<{
   const errors: string[] = [];
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const [txRes, entryRes] = await Promise.all([
+    const [txRes, entryRes, rcvEntryRes] = await Promise.all([
       (supabaseAdmin as any)
         .from("airline_ledger_transactions")
         .select("id, transaction_type, ticket_sales, pnr")
@@ -700,10 +830,31 @@ export async function reconcileMissingAgentPostings(): Promise<{
         .from("ledger_manual_entries")
         .select("id, details")
         .ilike("details", "%Ref: AIRLINE-TX-%"),
+      (supabaseAdmin as any)
+        .from("ledger_manual_entries")
+        .select("id, details")
+        .ilike("details", "%Ref: AIRLINE-RCV-%"),
     ]);
-    if (txRes.error || entryRes.error) {
-      errors.push(txRes.error?.message || entryRes.error?.message || "reconcile check failed");
+    if (txRes.error || entryRes.error || rcvEntryRes.error) {
+      errors.push(txRes.error?.message || entryRes.error?.message || rcvEntryRes.error?.message || "reconcile check failed");
       return { checked: 0, missing: 0, orphaned: 0, linked: 0, errors };
+    }
+
+    // Receipt metadata (agent_received / received_via) only exists after
+    // migration 20261016154500; skip receipt checks gracefully when absent.
+    let receiptMeta: Map<string, { agent_received: any; received_via: any }> | null = null;
+    try {
+      const metaRes = await (supabaseAdmin as any)
+        .from("airline_ledger_transactions")
+        .select("id, agent_received, received_via");
+      if (!metaRes.error) {
+        receiptMeta = new Map<string, any>();
+        for (const m of metaRes.data ?? []) {
+          if (m?.id) receiptMeta.set(String(m.id), m);
+        }
+      }
+    } catch {
+      receiptMeta = null;
     }
 
     const txById = new Map<string, any>();
@@ -718,6 +869,14 @@ export async function reconcileMissingAgentPostings(): Promise<{
       if (txById.has(m[1])) postedTxIds.add(m[1]);
       else orphanedEntries.push(e);
     }
+    const postedRcvTxIds = new Set<string>();
+    const orphanedRcvEntries: any[] = [];
+    for (const e of rcvEntryRes.data ?? []) {
+      const m = String(e.details || "").match(/Ref:\s*AIRLINE-RCV-([^\s•]+)/);
+      if (!m || !m[1]) continue;
+      if (txById.has(m[1])) postedRcvTxIds.add(m[1]);
+      else orphanedRcvEntries.push(e);
+    }
     const missingSales = (txRes.data ?? []).filter((t: any) => {
       const type = String(t.transaction_type || "").trim().toLowerCase();
       const isRefundOrTopUp = type === "cancel/refund" || type === "refund" || type === "top up";
@@ -726,11 +885,23 @@ export async function reconcileMissingAgentPostings(): Promise<{
       if (ticketSales === 0 && !t.pnr) return false;
       return !postedTxIds.has(String(t.id || ""));
     });
+    const wantsReceiptFor = (t: any): boolean => {
+      const type = String(t.transaction_type || "").trim().toLowerCase();
+      if (type === "cancel/refund" || type === "refund" || type === "top up") return false;
+      if (!receiptMeta) return false;
+      const meta = receiptMeta.get(String(t.id || ""));
+      const received = Math.max(Number(meta?.agent_received) || 0, 0);
+      const via = String(meta?.received_via || "").trim();
+      return received > 0 && via.length > 0 && via.toLowerCase() !== "none";
+    };
+    const missingReceipts = (txRes.data ?? []).filter(
+      (t: any) => wantsReceiptFor(t) && !postedRcvTxIds.has(String(t.id || "")),
+    );
 
     let linked = 0;
-    if (missingSales.length > 0 || orphanedEntries.length > 0) {
+    if (missingSales.length > 0 || missingReceipts.length > 0 || orphanedEntries.length > 0 || orphanedRcvEntries.length > 0) {
       console.warn(
-        `[agent-ledger] Reconciling agent ledger postings: ${missingSales.length} missing, ${orphanedEntries.length} orphaned.`,
+        `[agent-ledger] Reconciling agent ledger postings: ${missingSales.length} missing ticket, ${missingReceipts.length} missing receipt, ${orphanedEntries.length + orphanedRcvEntries.length} orphaned.`,
       );
       const airlinesRes = await (supabaseAdmin as any)
         .from("airline_ledger_airlines")
@@ -748,7 +919,13 @@ export async function reconcileMissingAgentPostings(): Promise<{
         console.warn("[agent-ledger] Reconcile skipped, airlines unavailable:", airlinesRes.error.message);
       }
     }
-    return { checked: txById.size, missing: missingSales.length, orphaned: orphanedEntries.length, linked, errors };
+    return {
+      checked: txById.size,
+      missing: missingSales.length + missingReceipts.length,
+      orphaned: orphanedEntries.length + orphanedRcvEntries.length,
+      linked,
+      errors,
+    };
   } catch (reconcileErr) {
     console.warn("[agent-ledger] Reconcile check failed (page still loads):", reconcileErr);
     errors.push(String(reconcileErr instanceof Error ? reconcileErr.message : reconcileErr));
