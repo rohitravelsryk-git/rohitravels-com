@@ -1040,18 +1040,19 @@ const tableStyle: React.CSSProperties = {
 };
 
 const theadRowStyle: React.CSSProperties = {
-  backgroundColor: "#141413",
+  backgroundColor: "#173B63",
 };
 
 const thStyle: React.CSSProperties = {
-  padding: "10px 8px",
-  color: "#FAF9F5",
-  fontSize: 10.5,
-  fontWeight: 700,
-  letterSpacing: "0.04em",
+  padding: "12px 9px",
+  color: "#FFFFFF",
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.045em",
   textAlign: "left",
-  borderBottom: "1px solid #141413",
+  borderBottom: "2px solid #D99B32",
   whiteSpace: "nowrap",
+  textShadow: "0 1px 1px rgba(0,0,0,0.18)",
 };
 
 const trStyle: React.CSSProperties = {
