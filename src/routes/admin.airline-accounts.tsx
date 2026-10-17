@@ -1805,6 +1805,102 @@ function LedgerTable({
 // so the field always shows a callable number, even with an empty directory.
 const ROHI_OFFICE_CONTACT = "0305 6622988";
 
+// Custom searchable agent dropdown (replaces the old <datalist> input, which
+// could not be re-opened or changed once a name was already present):
+// - Focusing the field clears the box and opens the FULL agent list, so another
+//   agent can be searched even when a name is already filled in. The previous
+//   selection stays saved on the entry until a new one is picked.
+// - Typing filters the list; picking an option replaces the previous name.
+// - Leaving without a pick restores the previous name in the box; the x button
+//   removes the agent name entirely.
+function AgentNameField({ value, search, options, onSearch, onSelect }: {
+  value: string;
+  search: string;
+  options: string[];
+  onSearch: (v: string) => void;
+  onSelect: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const query = search.trim().toLowerCase();
+  const matches = (options ?? [])
+    .filter((a: string) => !query || a.toLowerCase().includes(query))
+    .slice(0, 12);
+
+  useEffect(() => {
+    const onDocDown = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, []);
+
+  return (
+    <div ref={boxRef} style={{ position: "relative" }}>
+      <div style={{ position: "relative" }}>
+        <input
+          style={{ ...styles.input, paddingRight: value ? 30 : 10 }}
+          value={search}
+          placeholder="Search agency name"
+          autoComplete="off"
+          onChange={(e) => { onSelect(e.target.value); setOpen(true); }}
+          onFocus={() => {
+            // Reselecting to search another agent starts a fresh search.
+            onSearch("");
+            setOpen(true);
+          }}
+          onBlur={() => {
+            // Left without picking: put the current name back so the entry
+            // never appears to have lost its agent.
+            if (!search.trim() && value.trim()) onSearch(value);
+            setOpen(false);
+          }}
+        />
+        {value ? (
+          <button
+            type="button"
+            aria-label="Clear agent name"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { onSelect(""); }}
+            style={{
+              position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+              border: "none", background: "transparent", cursor: "pointer",
+              color: "var(--muted-foreground, #78716C)", padding: 2, display: "flex", alignItems: "center",
+            }}
+          >
+            <X size={14} />
+          </button>
+        ) : null}
+      </div>
+      {open && matches.length > 0 ? (
+        <div
+          style={{
+            position: "absolute", zIndex: 70, top: "100%", left: 0, right: 0,
+            maxHeight: 220, overflowY: "auto", marginTop: 4,
+            background: "var(--card, #FAF9F5)", border: "1px solid var(--border, #E7E5E4)",
+            borderRadius: 8, boxShadow: "0 12px 30px rgba(20,20,19,0.16)",
+          }}
+        >
+          {matches.map((a: string) => (
+            <button
+              key={a}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); onSelect(a); setOpen(false); }}
+              style={{
+                display: "block", width: "100%", textAlign: "left", padding: "8px 10px",
+                fontSize: 13, border: "none", borderBottom: "1px solid var(--border, #E7E5E4)",
+                background: "transparent", cursor: "pointer", color: "var(--foreground, #1C1917)",
+              }}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], airline, priorRows, onClose, onSave, onDelete, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
   // The ROE prefills from the airline's own currency & ROE settings (gear icon on the
@@ -2405,18 +2501,13 @@ function RowModal({ modal, agents, agentDirectory = [], paymentAccounts = [], ai
               <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details (e.g. Bank to Air Arabia)" : c.key === "paxContact" ? "Pax Contact # (agent or office number — edit if the passenger's own differs)" : c.label}</label>
               {c.type === "select" ? (
                 <>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      style={styles.input}
-                      value={agentSearch}
-                      placeholder="Search agency name"
-                      onChange={(e) => selectAgent(e.target.value)}
-                      list="registered-agency-names"
-                    />
-                    <datalist id="registered-agency-names">
-                      {agents.map((a: string) => <option key={a} value={a} />)}
-                    </datalist>
-                  </div>
+                  <AgentNameField
+                    value={String(form.agentName || "")}
+                    search={agentSearch}
+                    options={agents}
+                    onSearch={setAgentSearch}
+                    onSelect={selectAgent}
+                  />
                   {c.key === "agentName" && agentNotice ? (
                     <p style={{ margin: "5px 0 0", fontSize: 11, color: "var(--warning, #b45309)" }}>{agentNotice}</p>
                   ) : null}

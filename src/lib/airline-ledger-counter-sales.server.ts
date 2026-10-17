@@ -228,7 +228,12 @@ export async function syncAirlineCounterSalesToSalesAccounts(
 
     if (linked || updated || removed) {
       try {
-        await triggerLiveAccountsSync(false, ["banks", "cash", "sales"]);
+        // Awaited (not queued): a detached background promise can be terminated by
+      // the serverless runtime after the response, silently skipping the
+      // Banks/Wallets, Daily Cash and Sales Accounts sheet writes. Waiting
+      // here keeps the mirror write inside the request, like the other sync
+      // steps in the airline save flow.
+      await triggerLiveAccountsSync(true, ["banks", "cash", "sales"]);
       } catch (syncErr) {
         console.warn("[airline-counter-sales] Live sheet sync failed:", syncErr);
       }

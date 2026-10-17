@@ -213,7 +213,12 @@ export async function syncAirlineTransactionsToAccountsBook(
     // 6. Trigger live Google Sheets sync if any changes occurred
     if (linkedCount > 0 || updatedCount > 0 || removedCount > 0) {
       try {
-        await triggerLiveAccountsSync(false, ["banks", "cash"]);
+        // Awaited (not queued): the serverless runtime can terminate a detached
+      // background promise as soon as this response returns, which silently
+      // skipped the Google Sheet write for the Banks/Wallets and Daily Cash
+      // tabs. Waiting here keeps the mirror write inside the request, exactly
+      // like the other airline ledger sync steps.
+      await triggerLiveAccountsSync(true, ["banks", "cash"]);
       } catch (sheetSyncErr) {
         console.warn("[airline-accounts-sync] Live accounts sheet sync failed:", sheetSyncErr);
       }
