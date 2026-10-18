@@ -479,14 +479,20 @@ export async function unlinkAgentLedgerEntries(sourceId: string): Promise<{ ok: 
 export async function syncAirlineTransactionsToAgentLedgers(
   transactions: any[],
   airlines: any[] = [],
-  options?: { onlyTxIds?: string[] }
+  options?: { onlyTxIds?: string[]; affectedPartyNames?: string[] }
 ): Promise<{ processed: number; linked: number; errors: string[]; partyNames?: string[] }> {
   const errors: string[] = [];
   // Scoped mode (Add Record save path): post ONLY these transactions instead of
   // re-running the whole history, and mirror only the affected party tabs.
   // The unscoped full sync remains the reconcile/backfill path.
+  // affectedPartyNames: on the delete path the scoped transaction is already
+  // gone, so nothing is processed and no party gets auto-collected — the
+  // caller supplies the deleted row's agent name so the targeted party-tab
+  // mirror still runs instead of the slow full workbook rebuild.
   const scopeSet = options?.onlyTxIds?.length ? new Set(options.onlyTxIds.map(String)) : null;
-  const touchedPartyNames: string[] = [];
+  const touchedPartyNames: string[] = (options?.affectedPartyNames ?? [])
+    .map((n) => String(n || "").trim())
+    .filter(Boolean);
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

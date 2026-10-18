@@ -951,6 +951,16 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Capture the row before it is gone: the scoped downstream syncs need the
+    // agent name so the affected party's ledger tab can be mirrored without a
+    // full workbook rebuild (on delete no scoped transaction is processed, so
+    // the sync would otherwise fall back to the slow full rebuild).
+    const { data: preDeleteRow } = await supabaseAdmin
+      .from("airline_ledger_transactions")
+      .select("id, agent_name")
+      .eq("id", data.transactionId)
+      .maybeSingle();
+
     const { data: deletedRows, error: delErr } = await supabaseAdmin
       .from("airline_ledger_transactions")
       .delete()
@@ -980,7 +990,23 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
     // Declared outside the try so the sheet outcome below can read it even when
     // the runner throws (this also fixes the CI typecheck error).
     let settledDelete: PromiseSettledResult<unknown>[] = [];
-    // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Airline Google Sheet, Financial Backup
+    // Whether the removed transaction's financial postings (Agent Ledger,
+    // Accounts Book receipts, Counter Sales) actually changed — only then does
+    // the delete need the Banks/Wallets + Daily Cash + Sales mirror.
+    let postingsChanged = false;
+    // Run downstream syncs in parallel: Agent ledgers, Accounts Book, Counter
+    // Sales, then the Google Sheet mirrors. Mirrors complete BEFORE the
+    // response returns (Accounts Book pattern): a detached background promise
+    // can be killed by the serverless runtime once the response is sent, which
+    // silently skipped the Google Sheet write after deletes. Individual
+    // timeouts keep the wait bounded. Like the save path, the financial
+    // postings are SCOPED to the deleted transaction id — the old full-history
+    // re-run of every ledger, book and sales reconcile is what made deletes
+    // hang for tens of seconds. The deleted row no longer exists in
+    // allTransactions, so the scoped sync's orphan cleanup is exactly what
+    // removes its linked postings, and affectedPartyNames keeps the affected
+    // agent's ledger tab on the fast targeted mirror instead of a full
+    // workbook rebuild.
     try {
       const [airlinesRes, txRes] = await Promise.all([
         supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
@@ -989,18 +1015,20 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
 
       const allAirlines = airlinesRes.data || [];
       const allTransactions = txRes.data || [];
+      const deletedTxId = String(data.transactionId);
 
-      // Downstream mirrors complete BEFORE the response returns (Accounts Book
-      // pattern). A detached background promise can be killed by the serverless
-      // runtime once the response is sent, which silently skipped the Google
-      // Sheet write after deletes. Individual timeouts keep the wait bounded.
-      // settledDelete is declared above the try so the sheet outcome stays
-      // readable even when the runner throws (also fixes the CI typecheck error).
-      settledDelete = await Promise.allSettled([
+      await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineTransactionsToAgentLedgers } = await import("@/lib/ledger-admin.functions");
-            await syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines);
+            await withTimeout(
+              syncAirlineTransactionsToAgentLedgers(allTransactions, allAirlines, {
+                onlyTxIds: [deletedTxId],
+                affectedPartyNames: preDeleteRow?.agent_name ? [String(preDeleteRow.agent_name)] : [],
+              }),
+              20000,
+              "Agent ledger sync",
+            );
           } catch (e) {
             console.warn("[airline-atomic-delete] Agent ledger sync:", e);
           }
@@ -1008,7 +1036,15 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineTransactionsToAccountsBook } = await import("@/lib/airline-ledger-accounts-sync.server");
-            await syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines);
+            const accountsResult = await withTimeout(
+              syncAirlineTransactionsToAccountsBook(allTransactions, allAirlines, { onlyTxIds: [deletedTxId], skipSheetSync: true }),
+              30000,
+              "Accounts Book receipt sync",
+            );
+            postingsChanged = postingsChanged ||
+              Number(accountsResult?.linked ?? 0) > 0 ||
+              Number(accountsResult?.updated ?? 0) > 0 ||
+              Number(accountsResult?.removed ?? 0) > 0;
           } catch (e) {
             console.warn("[airline-atomic-delete] Accounts book sync:", e);
           }
@@ -1016,11 +1052,40 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
         (async () => {
           try {
             const { syncAirlineCounterSalesToSalesAccounts } = await import("@/lib/airline-ledger-counter-sales.server");
-            await syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines);
+            const counterResult = await withTimeout(
+              syncAirlineCounterSalesToSalesAccounts(allTransactions, allAirlines, { onlyTxIds: [deletedTxId], skipSheetSync: true }),
+              30000,
+              "Counter sales sync",
+            );
+            postingsChanged = postingsChanged ||
+              Number(counterResult?.linked ?? 0) > 0 ||
+              Number(counterResult?.updated ?? 0) > 0 ||
+              Number(counterResult?.removed ?? 0) > 0;
           } catch (e) {
             console.warn("[airline-atomic-delete] Counter sales sync:", e);
           }
         })(),
+      ]);
+
+      // ONE combined Banks/Wallets + Daily Cash + Sales Accounts mirror round
+      // for the whole delete, only when the removed transaction actually had
+      // linked postings (same pattern as the save path; the two duplicate full
+      // reconciles per delete were also part of the slowness).
+      if (postingsChanged) {
+        try {
+          const { triggerLiveAccountsSync } = await import("@/lib/accounts-book.functions");
+          await withTimeout(triggerLiveAccountsSync(true, ["banks", "cash", "sales"]), 30000, "Banks/Cash/Sales sheet sync");
+        } catch (combinedErr) {
+          console.warn("[airline-atomic-delete] Combined accounts sheet sync:", combinedErr);
+        }
+      }
+
+      // Downstream mirrors complete BEFORE the response returns (Accounts Book
+      // pattern). A detached background promise can be killed by the serverless
+      // runtime once the response is sent, which silently skipped the Google
+      // Sheet write after deletes. settledDelete is declared above the try so
+      // the sheet outcome stays readable even when the runner throws.
+      settledDelete = await Promise.allSettled([
         (async () => {
           try {
             const { syncAirlineLedgerGoogleSheetTabsNow } = await import("@/lib/airline-ledger-google-sync");
@@ -1046,13 +1111,13 @@ export const deleteAirlineTransactionAtomic = createServerFn({ method: "POST" })
               supabaseAdmin.from("accounts_book_transactions").select("*"),
               supabaseAdmin.from("accounts_book_services").select("*"),
             ]);
-            await syncRohiFinancialBackup({
+            await withTimeout(syncRohiFinancialBackup({
               airlines: allAirlines,
               airlineTransactions: allTransactions,
               accounts: accounts.data || [],
               accountTransactions: accountTransactions.data || [],
               services: services.data || [],
-            }, newRevision);
+            }, newRevision), 25000, "Financial Google backup sync");
           } catch (e) {
             console.warn("[airline-atomic-delete] Financial backup sync:", e);
           }
