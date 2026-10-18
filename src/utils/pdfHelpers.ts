@@ -1,34 +1,54 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import type * as pdfjsTypes from 'pdfjs-dist';
+
+// PDF.js is loaded lazily (dynamic import) instead of at module scope.
+// Its canvas module evaluates DOMMatrix-dependent code when the bundle runs,
+// which crashes SSR / dev-server (Node) contexts where DOMMatrix does not
+// exist and blank-screens the page. All browser-only work now happens on
+// first call, always from the client.
 
 // PDF.js 6 uses this new Map proposal. Chromium versions without it need a
 // small standards-compatible fallback before a page is rendered.
-const mapPrototype = Map.prototype as Map<unknown, unknown> & {
-  getOrInsertComputed?: (key: unknown, callback: (key: unknown) => unknown) => unknown;
-};
-if (!mapPrototype.getOrInsertComputed) {
-  mapPrototype.getOrInsertComputed = function (key, callback) {
-    if (this.has(key)) return this.get(key);
-    const value = callback(key);
-    this.set(key, value);
-    return value;
+function ensureMapGetOrInsertComputed() {
+  const mapPrototype = Map.prototype as Map<unknown, unknown> & {
+    getOrInsertComputed?: (key: unknown, callback: (key: unknown) => unknown) => unknown;
   };
+  if (!mapPrototype.getOrInsertComputed) {
+    mapPrototype.getOrInsertComputed = function (key, callback) {
+      if (this.has(key)) return this.get(key);
+      const value = callback(key);
+      this.set(key, value);
+      return value;
+    };
+  }
 }
 
-// Configure worker source for pdfjs-dist
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  // Use cdnjs / unpkg matching worker for browser client side
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+let pdfjsPromise: Promise<typeof pdfjsTypes> | null = null;
+
+/** Lazily loads and configures pdfjs-dist. Call and await at the top of every helper. */
+export function getPdfjs(): Promise<typeof pdfjsTypes> {
+  if (!pdfjsPromise) {
+    ensureMapGetOrInsertComputed();
+    pdfjsPromise = import('pdfjs-dist').then((lib) => {
+      if (typeof window !== 'undefined' && !lib.GlobalWorkerOptions.workerSrc) {
+        // Use cdnjs matching worker for browser client side
+        lib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${lib.version || '4.10.38'}/pdf.worker.min.mjs`;
+      }
+      return lib;
+    });
+  }
+  return pdfjsPromise;
 }
 
 export interface RenderPageOptions {
-  pdfDoc: pdfjsLib.PDFDocumentProxy;
+  pdfDoc: pdfjsTypes.PDFDocumentProxy;
   pageIndex: number; // 0-based
   canvas: HTMLCanvasElement;
   scale?: number;
   rotation?: number;
 }
 
-export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): Promise<pdfjsLib.PDFDocumentProxy> {
+export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): Promise<pdfjsTypes.PDFDocumentProxy> {
+  const pdfjsLib = await getPdfjs();
   if (typeof data === 'string') {
     const loadingTask = pdfjsLib.getDocument({ url: data });
     return loadingTask.promise;
@@ -47,6 +67,7 @@ export async function renderPDFPageCanvas({
   scale = 1.5,
   rotation = 0,
 }: RenderPageOptions): Promise<{ width: number; height: number }> {
+  await getPdfjs();
   const page = await pdfDoc.getPage(pageIndex + 1);
   const viewport = page.getViewport({ scale, rotation });
 
@@ -81,12 +102,13 @@ export async function renderPDFPageTextLayer({
   scale = 1.5,
   rotation = 0,
 }: {
-  pdfDoc: pdfjsLib.PDFDocumentProxy;
+  pdfDoc: pdfjsTypes.PDFDocumentProxy;
   pageIndex: number;
   container: HTMLDivElement;
   scale?: number;
   rotation?: number;
 }): Promise<void> {
+  const pdfjsLib = await getPdfjs();
   container.innerHTML = '';
   try {
     const page = await pdfDoc.getPage(pageIndex + 1);
@@ -113,10 +135,11 @@ export async function renderPDFPageTextLayer({
 }
 
 export async function generateThumbnailDataUrl(
-  pdfDoc: pdfjsLib.PDFDocumentProxy,
+  pdfDoc: pdfjsTypes.PDFDocumentProxy,
   pageIndex: number,
   thumbScale = 0.3
 ): Promise<string> {
+  await getPdfjs();
   const page = await pdfDoc.getPage(pageIndex + 1);
   const viewport = page.getViewport({ scale: thumbScale });
 
@@ -138,7 +161,7 @@ export interface SearchResult {
 }
 
 export async function searchPDFText(
-  pdfDoc: pdfjsLib.PDFDocumentProxy,
+  pdfDoc: pdfjsTypes.PDFDocumentProxy,
   query: string
 ): Promise<SearchResult[]> {
   if (!query || !query.trim()) return [];
