@@ -1430,6 +1430,16 @@ function AirlineLedgerApp() {
           />
 
           <main style={styles.main}>
+            <div style={styles.panelHeader}>
+              <div>
+                <AdminPageHeading icon={LayoutDashboard} label="Airline Accounts Dashboard" count={airlines.length} countLabel="Airlines tracked" />
+                <div style={styles.panelMeta}>Manage airline contacts, sales performance, and profit &amp; loss from one dashboard.</div>
+              </div>
+              <div style={styles.panelActions}>
+                <ExportMenu label="Export all" onExcel={exportAllExcel} onSheets={exportAllCSV} onPDF={exportAllPDF} />
+              </div>
+              {syncError && <div style={{ ...styles.errorNote, marginTop: 8, justifyContent: "flex-end" }}><AlertCircle size={14} /> {syncError}</div>}
+            </div>
             {activeTab === "dashboard" ? (
               <Dashboard
                 view="dashboard"
@@ -2885,21 +2895,6 @@ function Dashboard({
 
   return (
     <div>
-      <div style={styles.panelHeader}>
-        <div>
-          <AdminPageHeading icon={view === "sales" ? TrendingUp : view === "profit-loss" ? FileText : Building2} label={view === "sales" ? "Total Sales per Airline" : view === "profit-loss" ? "Profit & Loss & Yearly Summary" : "Airline Balance Dashboard"} count={airlines.length} countLabel="Airlines tracked" />
-          <div style={styles.panelMeta}>Multi-Airlines Accounts Overview</div>
-        </div>
-        <div style={styles.panelActions}>
-          <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
-        </div>
-        {syncError && (
-          <div style={{ ...styles.errorNote, marginTop: 8, justifyContent: "flex-end" }}>
-            <AlertCircle size={14} /> {syncError}
-          </div>
-        )}
-      </div>
-
       {view === "dashboard" && <div style={styles.metricGrid}>
         <AdminStatCard icon={Wallet} label="Combined balance (PKR)" value={fmt(grandTotals.totalBalance)} tone="navy" />
         <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
