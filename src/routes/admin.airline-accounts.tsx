@@ -2905,8 +2905,6 @@ function Dashboard({
         <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
         <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
         <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
-      </div>
-
       </div>}
 
       {view === "dashboard" && <section style={styles.balanceCardsSection}>
@@ -3024,7 +3022,7 @@ function Dashboard({
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
 
       {view === "profit-loss" && <section style={styles.section}>
         <div style={styles.sectionHeaderRow}>
@@ -3050,7 +3048,7 @@ function Dashboard({
             </ResponsiveContainer>
           </div>
         )}
-      </section>
+      </section>}
 
       <section style={styles.section}>
         <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Yearly summary</h3>
@@ -3080,8 +3078,7 @@ function Dashboard({
             </table>
           </div>
         )}
-      </section>}
-
+      </section>
 
       {removeConfirm && (
         <ConfirmDialog
