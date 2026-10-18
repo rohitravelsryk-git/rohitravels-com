@@ -835,6 +835,47 @@ export async function reconcileBanksWalletsToSheets() {
     ];
     await batchWrite(target.id, writeData, "USER_ENTERED");
 
+    // USER_ENTERED can reinterpret "10-OCT-26" as a date serial and render it
+    // in the spreadsheet locale (for example, "10-Oct-26"). Re-write date cells
+    // as literal strings after the batch write so the required DD-MMM-YY format
+    // stays uppercase on the master tab and every individual bank/wallet tab.
+    const dateTextRequests: any[] = [];
+    const isRohiDateText = (value: unknown): value is string =>
+      typeof value === "string" && /^\\d{2}-[A-Z]{3}-\\d{2}$/.test(value);
+
+    for (let rowIndex = 5; rowIndex < masterRows.length; rowIndex++) {
+      const dateText = masterRows[rowIndex]?.[4];
+      if (isRohiDateText(dateText)) {
+        dateTextRequests.push({
+          updateCells: {
+            start: { sheetId: existingSheets.get("Banks & Wallets"), rowIndex, columnIndex: 4 },
+            rows: [{ values: [{ userEnteredValue: { stringValue: dateText } }] }],
+            fields: "userEnteredValue",
+          },
+        });
+      }
+    }
+
+    for (const item of accountSheetData) {
+      const sheetId = existingSheets.get(item.sheet);
+      if (sheetId === undefined) continue;
+      for (let rowIndex = 5; rowIndex < item.rows.length; rowIndex++) {
+        const dateText = item.rows[rowIndex]?.[0];
+        if (isRohiDateText(dateText)) {
+          dateTextRequests.push({
+            updateCells: {
+              start: { sheetId, rowIndex, columnIndex: 0 },
+              rows: [{ values: [{ userEnteredValue: { stringValue: dateText } }] }],
+              fields: "userEnteredValue",
+            },
+          });
+        }
+      }
+    }
+    if (dateTextRequests.length) {
+      await batchUpdateSpreadsheet(target.id, dateTextRequests);
+    }
+
     // 5. Batch format and reorder all tabs at once (single API call)
     const allFormattingRequests: any[] = [];
     const masterSheetId = existingSheets.get("Banks & Wallets");
