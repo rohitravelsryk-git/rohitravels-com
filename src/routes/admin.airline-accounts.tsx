@@ -1280,6 +1280,7 @@ function AirlineLedgerApp() {
       const list = computeLedgerRows(transactions[a.id] || [], a);
       const totalProfit = list.reduce((s, r) => s + (Number(r.profit) || 0), 0);
       const totalSales = list.reduce((s, r) => s + (Number(r.ticketSales) || 0), 0);
+      const totalPurchase = list.reduce((s, r) => s + (Number(r.creditFromId) || 0), 0);
       const totalVoid = list.reduce((s, r) => s + (Number(r.voidCharges) || 0), 0);
       const currentBalance = list.length ? list[list.length - 1].balance : (Number(a.openingBalance) || 0);
       const resolved = resolveCarrierCurrency(a.code, a.name, a.currency, a.roe, a.openingBalanceForeign);
@@ -1298,6 +1299,7 @@ function AirlineLedgerApp() {
         count: list.length,
         totalProfit,
         totalSales,
+        totalPurchase,
         totalVoid,
         currentBalance,
         currentForeignBalance,
@@ -2979,6 +2981,7 @@ function Dashboard({
                 <th style={styles.th}>Code</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>Records</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>Ticket sales</th>
+                <th style={{ ...styles.th, textAlign: "right" }}>Total Purchase</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>VOID charges</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>Profit</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>Current balance</th>
@@ -2999,6 +3002,7 @@ function Dashboard({
                   <td style={styles.tdMuted}>{a.code}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{a.count}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalSales)}</td>
+                  <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalPurchase)}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalVoid)}</td>
                   <td style={{ ...styles.td, ...styles.numCell, color: a.totalProfit >= 0 ? "var(--success)" : "var(--error)" }} className="num">{fmt(a.totalProfit)}</td>
                   <td style={{ ...styles.td, ...styles.numCell, fontWeight: 600 }} className="num">
