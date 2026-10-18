@@ -1420,15 +1420,6 @@ function AirlineLedgerApp() {
 
       <div className="airline-ledger">
         <div style={styles.body}>
-          <TabStrip
-            airlines={airlines}
-            transactions={transactions}
-            activeTab={activeTab}
-            setActiveTab={handleSelectTab}
-            onAddAirline={() => setAddAirlineOpen(true)}
-            onReorder={reorderAirlines}
-          />
-
           <main style={styles.main}>
             <div style={styles.panelHeader}>
               <div>
@@ -1440,6 +1431,14 @@ function AirlineLedgerApp() {
               </div>
               {syncError && <div style={{ ...styles.errorNote, marginTop: 8, justifyContent: "flex-end" }}><AlertCircle size={14} /> {syncError}</div>}
             </div>
+            <TabStrip
+              airlines={airlines}
+              transactions={transactions}
+              activeTab={activeTab}
+              setActiveTab={handleSelectTab}
+              onAddAirline={() => setAddAirlineOpen(true)}
+              onReorder={reorderAirlines}
+            />
             {activeTab === "dashboard" ? (
               <Dashboard
                 view="dashboard"
@@ -1583,11 +1582,6 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
 
   return (
     <div style={styles.dashboardNavigation}>
-      <nav style={styles.dashboardTabs} aria-label="Airline dashboard views" role="tablist">
-        <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={16} />} label="Airline Contact Details" />
-        <TabStub active={activeTab === "sales"} onClick={() => setActiveTab("sales")} code={<TrendingUp size={16} />} label="Total Sales per Airline" />
-        <TabStub active={activeTab === "profit-loss"} onClick={() => setActiveTab("profit-loss")} code={<FileText size={16} />} label="Profit & Loss" />
-      </nav>
       <nav style={styles.airlineTabs} aria-label="Individual airline accounts">
       {airlines.map((a: any) => {
         const rows = transactions?.[a.id] ?? [];
@@ -1633,6 +1627,7 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
               transform: dragOverId === a.id ? "translateY(-2px)" : "none",
               transition: "transform 120ms ease, opacity 120ms ease",
               cursor: "grab",
+              minWidth: 0,
             }}
           >
             <TabStub
@@ -1649,6 +1644,11 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
         );
       })}
       <button style={styles.addTabBtn} onClick={onAddAirline}><Plus size={16} /> Airline</button>
+      </nav>
+      <nav style={styles.dashboardTabs} aria-label="Airline dashboard views" role="tablist">
+        <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={16} />} label="Airline Contact Details" />
+        <TabStub active={activeTab === "sales"} onClick={() => setActiveTab("sales")} code={<TrendingUp size={16} />} label="Total Sales per Airline" />
+        <TabStub active={activeTab === "profit-loss"} onClick={() => setActiveTab("profit-loss")} code={<FileText size={16} />} label="Profit & Loss" />
       </nav>
     </div>
   );
@@ -3313,17 +3313,17 @@ const styles: Record<string, React.CSSProperties> = {
   savedDot: { width: 6, height: 6, borderRadius: "50%", background: "var(--success)", transition: "opacity .3s" },
   body: { display: "flex", flexDirection: "column", maxWidth: 1400, margin: "0 auto", width: "100%" },
   dashboardNavigation: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 22, width: "100%" },
-  dashboardTabs: { display: "flex", flexDirection: "row", alignItems: "stretch", gap: 8, padding: 6, border: "1px solid var(--border)", borderRadius: 14, background: "var(--card)", boxShadow: "0 4px 14px rgba(15,27,45,0.05)", overflowX: "auto", scrollbarWidth: "thin" },
-  airlineTabs: { display: "flex", flexDirection: "row", alignItems: "stretch", gap: 6, padding: "4px 0 10px", overflowX: "auto", borderBottom: "1px solid var(--border)", scrollbarWidth: "thin" },
+  dashboardTabs: { display: "flex", flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: 8, padding: 6, border: "1px solid var(--border)", borderRadius: 14, background: "var(--card)", boxShadow: "0 4px 14px rgba(15,27,45,0.05)", overflow: "visible" },
+  airlineTabs: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 230px), 1fr))", gap: 6, padding: "4px 0 10px", borderBottom: "1px solid var(--border)" },
   tabDivider: { width: 1, background: "var(--border)", margin: "4px 6px", flexShrink: 0 },
-  tabStub: { display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", borderRadius: 10, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--foreground)", flex: "0 0 auto", whiteSpace: "nowrap", transition: "background .16s ease, border-color .16s ease, box-shadow .16s ease" },
+  tabStub: { display: "flex", alignItems: "center", gap: 9, width: "100%", minWidth: 0, boxSizing: "border-box", padding: "9px 12px", borderRadius: 10, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--foreground)", flex: "1 1 180px", whiteSpace: "nowrap", transition: "background .16s ease, border-color .16s ease, box-shadow .16s ease" },
   tabStubActive: { background: "var(--foreground)", color: "var(--background)", borderColor: "var(--foreground)", boxShadow: "0 3px 8px rgba(15,27,45,0.14)" },
   tabCode: { fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "var(--muted)", color: "var(--muted-foreground)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   tabLogoMini: { width: 28, height: 22, borderRadius: 5, background: "#fff", border: "1px solid var(--border)", display: "inline-flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, padding: 2 },
   tabBalanceMini: { marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
   tabCodeActive: { background: "var(--accent-ink)", color: "var(--foreground)" },
-  tabLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  addTabBtn: { marginTop: 10, display: "flex", alignItems: "center", gap: 6, justifyContent: "center", padding: "9px 12px", borderRadius: 8, border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)", fontSize: 13, cursor: "pointer" },
+  tabLabel: { flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  addTabBtn: { display: "flex", alignItems: "center", gap: 6, justifyContent: "center", minHeight: 40, padding: "9px 12px", borderRadius: 8, border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)", fontSize: 13, cursor: "pointer" },
   main: { flex: 1, padding: "20px 24px 60px", minWidth: 0, width: "100%" },
   panelHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 14, flexWrap: "wrap" },
   panelTitle: { fontFamily: 'var(--font-sans)', fontSize: 22, margin: 0, color: "var(--foreground)" },
