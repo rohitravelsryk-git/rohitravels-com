@@ -1582,12 +1582,13 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   return (
-    <nav style={styles.tabStrip} aria-label="Airline navigation">
-      <TabStub active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} code={<LayoutDashboard size={15} />} label="Dashboard" />
-      <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={15} />} label="Airline Contact Details" />
-      <TabStub active={activeTab === "sales"} onClick={() => setActiveTab("sales")} code={<TrendingUp size={15} />} label="Total Sales per Airline" />
-      <TabStub active={activeTab === "profit-loss"} onClick={() => setActiveTab("profit-loss")} code={<FileText size={15} />} label="Profit & Loss" />
-      <div style={styles.tabDivider} />
+    <div style={styles.dashboardNavigation}>
+      <nav style={styles.dashboardTabs} aria-label="Airline dashboard views" role="tablist">
+        <TabStub active={activeTab === "contacts"} onClick={() => setActiveTab("contacts")} code={<Phone size={16} />} label="Airline Contact Details" />
+        <TabStub active={activeTab === "sales"} onClick={() => setActiveTab("sales")} code={<TrendingUp size={16} />} label="Total Sales per Airline" />
+        <TabStub active={activeTab === "profit-loss"} onClick={() => setActiveTab("profit-loss")} code={<FileText size={16} />} label="Profit & Loss" />
+      </nav>
+      <nav style={styles.airlineTabs} aria-label="Individual airline accounts">
       {airlines.map((a: any) => {
         const rows = transactions?.[a.id] ?? [];
         const computed = computeLedgerRows(rows, a);
@@ -1648,7 +1649,8 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
         );
       })}
       <button style={styles.addTabBtn} onClick={onAddAirline}><Plus size={16} /> Airline</button>
-    </nav>
+      </nav>
+    </div>
   );
 }
 function TabStub({ active, onClick, code, label, balance, foreignBalance, isForeign, currency }: any) {
@@ -3045,8 +3047,8 @@ function Dashboard({
         )}
       </section>}
 
-      <section style={styles.section}>
-        <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Yearly summary</h3>
+      {view === "profit-loss" && <section style={styles.section}>
+        <h3 style={{ ...styles.sectionTitle, display: "inline-flex", alignItems: "center", borderRadius: 999, padding: "7px 14px", background: "var(--foreground)", color: "var(--background)", fontSize: 13, fontWeight: 800 }}>Yearly Summary</h3>
         {yearlySummary.length === 0 ? (
           <div style={styles.emptyBlock}>No dated transactions yet.</div>
         ) : (
@@ -3073,7 +3075,7 @@ function Dashboard({
             </table>
           </div>
         )}
-      </section>
+      </section>}
 
       {removeConfirm && (
         <ConfirmDialog
@@ -3309,18 +3311,20 @@ const styles: Record<string, React.CSSProperties> = {
   app: { background: "var(--background)", fontFamily: 'var(--font-sans)', color: "var(--foreground)" },
   savedFooter: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12, color: "var(--muted-foreground)", padding: "14px 0 24px" },
   savedDot: { width: 6, height: 6, borderRadius: "50%", background: "var(--success)", transition: "opacity .3s" },
-  body: { display: "flex", maxWidth: 1400, margin: "0 auto" },
-  tabStrip: { width: 216, flexShrink: 0, padding: "18px 10px", display: "flex", flexDirection: "column", gap: 4, borderRight: "1px dashed var(--border)", minHeight: "calc(100vh - 68px)" },
-  tabDivider: { height: 1, background: "var(--border)", margin: "6px 4px" },
-  tabStub: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--foreground)", width: "100%" },
-  tabStubActive: { background: "var(--foreground)", color: "var(--background)" },
+  body: { display: "flex", flexDirection: "column", maxWidth: 1400, margin: "0 auto", width: "100%" },
+  dashboardNavigation: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 22, width: "100%" },
+  dashboardTabs: { display: "flex", flexDirection: "row", alignItems: "stretch", gap: 8, padding: 6, border: "1px solid var(--border)", borderRadius: 14, background: "var(--card)", boxShadow: "0 4px 14px rgba(15,27,45,0.05)", overflowX: "auto", scrollbarWidth: "thin" },
+  airlineTabs: { display: "flex", flexDirection: "row", alignItems: "stretch", gap: 6, padding: "4px 0 10px", overflowX: "auto", borderBottom: "1px solid var(--border)", scrollbarWidth: "thin" },
+  tabDivider: { width: 1, background: "var(--border)", margin: "4px 6px", flexShrink: 0 },
+  tabStub: { display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", borderRadius: 10, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--foreground)", flex: "0 0 auto", whiteSpace: "nowrap", transition: "background .16s ease, border-color .16s ease, box-shadow .16s ease" },
+  tabStubActive: { background: "var(--foreground)", color: "var(--background)", borderColor: "var(--foreground)", boxShadow: "0 3px 8px rgba(15,27,45,0.14)" },
   tabCode: { fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "var(--muted)", color: "var(--muted-foreground)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   tabLogoMini: { width: 28, height: 22, borderRadius: 5, background: "#fff", border: "1px solid var(--border)", display: "inline-flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, padding: 2 },
   tabBalanceMini: { marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
   tabCodeActive: { background: "var(--accent-ink)", color: "var(--foreground)" },
   tabLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   addTabBtn: { marginTop: 10, display: "flex", alignItems: "center", gap: 6, justifyContent: "center", padding: "9px 12px", borderRadius: 8, border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)", fontSize: 13, cursor: "pointer" },
-  main: { flex: 1, padding: "24px 28px 60px", minWidth: 0 },
+  main: { flex: 1, padding: "20px 24px 60px", minWidth: 0, width: "100%" },
   panelHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 14, flexWrap: "wrap" },
   panelTitle: { fontFamily: 'var(--font-sans)', fontSize: 22, margin: 0, color: "var(--foreground)" },
   panelMeta: { fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 },
