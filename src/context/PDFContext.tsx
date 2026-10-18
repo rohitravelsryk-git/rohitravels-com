@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
+import type * as pdfjsLib from 'pdfjs-dist';
 import {
   ActiveTool,
   NewAnnotation,
