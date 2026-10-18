@@ -2905,8 +2905,6 @@ function Dashboard({
         <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
         <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
         <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
-      </div>
-
       </div>}
 
       {view === "dashboard" && <section style={styles.balanceCardsSection}>
@@ -3024,9 +3022,10 @@ function Dashboard({
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
 
-      {view === "profit-loss" && <section style={styles.section}>
+      {view === "profit-loss" && <>
+      <section style={styles.section}>
         <div style={styles.sectionHeaderRow}>
           <h3 style={styles.sectionTitle}>Profit &amp; Loss</h3>
           <select value={dashboardScope} onChange={(e) => setDashboardScope(e.target.value)} style={styles.select}>
@@ -3080,7 +3079,8 @@ function Dashboard({
             </table>
           </div>
         )}
-      </section>}
+      </section>
+      </>}
 
 
       {removeConfirm && (

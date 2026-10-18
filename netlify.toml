@@ -1,0 +1,3 @@
+[build]
+  # Nitro's Netlify preset writes static client assets to dist/ (not dist/client)
+  publish = "dist"

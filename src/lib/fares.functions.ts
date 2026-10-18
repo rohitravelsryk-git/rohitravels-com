@@ -296,7 +296,12 @@ export const adminUnlock = createServerFn({ method: "POST" })
     } else {
       // Bootstrap: use SITE_PASSWORD env until first change
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
-      if (envPw && (await passwordMatches(data.password, envPw))) {
+      // Without a stored hash or SITE_PASSWORD every password would be rejected,
+      // which looks like a wrong password. Report the real cause instead.
+      if (!envPw) {
+        throw new Error("Admin login is not configured on this server (cannot read admin credentials). Check the Supabase server key and SESSION_SECRET environment variables.");
+      }
+      if (await passwordMatches(data.password, envPw)) {
         ok = true;
         await supabaseAdmin
           .from("admin_credentials")
