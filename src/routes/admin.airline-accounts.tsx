@@ -1426,6 +1426,12 @@ function AirlineLedgerApp() {
             <div style={styles.panelHeader}>
               <div>
                 <AdminPageHeading icon={LayoutDashboard} label="Airline Accounts Dashboard" count={airlines.length} countLabel="Airlines tracked" />
+                <div style={{ ...styles.metricGrid, marginBottom: 12 }}>
+                  <AdminStatCard icon={Wallet} label="Combined balance (PKR)" value={fmt(grandTotals.totalBalance)} tone="navy" />
+                  <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
+                  <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
+                  <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
+                </div>
                 <div style={styles.panelMeta}>Manage airline contacts, sales performance, and profit &amp; loss from one dashboard.</div>
               </div>
               <div style={styles.panelActions}>
@@ -2899,12 +2905,6 @@ function Dashboard({
 
   return (
     <div>
-      {view === "dashboard" && <div style={styles.metricGrid}>
-        <AdminStatCard icon={Wallet} label="Combined balance (PKR)" value={fmt(grandTotals.totalBalance)} tone="navy" />
-        <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
-        <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
-        <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
-      </div>}
 
       {view === "dashboard" && <section style={styles.balanceCardsSection}>
         <div style={styles.sectionHeaderRow}>
