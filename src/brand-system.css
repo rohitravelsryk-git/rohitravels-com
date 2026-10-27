@@ -8,23 +8,23 @@
 :root {
   /* Core surface, text, border, z-index and motion tokens */
   --rohi-surface: #ffffff;
-  --rohi-surface-muted: #FAF9F5;
+  --rohi-surface-muted: #F9F9F7;
   --rohi-surface-strong: #141413;
   --rohi-surface-stronger: #1F1D1A;
   --rohi-surface-tint: #F5F4ED;
   --rohi-overlay: rgba(20, 20, 19, 0.7);
-  --rohi-brand: #C2654A;
-  --rohi-brand-soft: #F7EAE4;
+  --rohi-brand: var(--accent);
+  --rohi-brand-soft: var(--bg-accent-tint);
   --rohi-brand-contrast: #FFFFFF;
   --rohi-brand-info: #5B7FA6;
   --rohi-brand-success: #4C7A5C;
   --rohi-brand-warning: #9A7B3F;
   --rohi-brand-danger: #B04A3A;
-  --rohi-text: #1F1D1A;
-  --rohi-text-muted: #8F8B7E;
+  --rohi-text: #1F1F1F;
+  --rohi-text-muted: #8C8C8C;
   --rohi-text-subtle: #A6A297;
   --rohi-text-inverse: #FAF9F5;
-  --rohi-border: #EBE9DF;
+  --rohi-border: #E5E5E5;
   --rohi-border-strong: #D5D2C5;
   --rohi-radius-sm: 6px;
   --rohi-radius-md: 10px;
@@ -38,16 +38,16 @@
   --duration-base: 250ms;
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --rohi-cream: #FAF9F5;
-  --rohi-cream-soft: #F5F4ED;
-  --rohi-cream-deep: #EBE9DF;
+  --rohi-cream: #F9F9F7;
+  --rohi-cream-soft: var(--bg-tertiary);
+  --rohi-cream-deep: var(--border-default);
   --rohi-onyx: #141413;
-  --rohi-ink: #1F1D1A;
-  --rohi-ink-soft: #514D45;
-  --rohi-muted: #8F8B7E;
-  --rohi-rust: #C2654A;
-  --rohi-rust-dark: #94492F;
-  --rohi-rust-soft: #F7EAE4;
+  --rohi-ink: #1F1F1F;
+  --rohi-ink-soft: #525252;
+  --rohi-muted: #8C8C8C;
+  --rohi-rust: var(--accent);
+  --rohi-rust-dark: var(--accent-hover);
+  --rohi-rust-soft: var(--bg-accent-tint);
   --rohi-success: #4C7A5C;
   --rohi-success-soft: #E6EEE4;
   --rohi-warning: #9A7B3F;
@@ -125,7 +125,7 @@ body {
 .rohi-table th, .rohi-table td { padding: .875rem 1rem; border-bottom: 1px solid var(--rohi-cream-deep); }
 .rohi-table tbody tr:last-child td { border-bottom: 0; }
 .rohi-table tbody tr { transition: background-color 150ms ease; }
-.rohi-table tbody tr:hover { background: var(--rohi-cream-soft); }
+.rohi-table tbody tr:hover { background: var(--accent-subtle); }
 
 /* Prevent dropdowns and menus from visually fighting page content. */
 [data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"], [data-radix-dropdown-menu-content] {
