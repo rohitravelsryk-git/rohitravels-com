@@ -162,3 +162,22 @@ ACTION SEQUENCE: Save this document as DESIGN_SYSTEM.md at repo root → update 
 - The four opt-in primitives (`page-shell.tsx`, `heading.tsx`, `text.tsx`, `empty-state.tsx`) are still adopted in only one file. Retrofitting them onto the ~50 existing routes remains a large, high-risk pass that needs its own visual-QA cycle — not attempted here.
 
 **Standing rule going forward:** every new page or component in this repo uses the existing tokens in `styles.css` (`bg-gold`/`text-gold`/`bg-navy`, the `gray-*` warm-neutral scale, `--radius-*`, `--shadow-*`, the `animate-premium-*`/`animate-fade-*` utilities, `font-sans`/`font-urdu`) by default — no new hex values, no new one-off animations, no new fonts — unless the user explicitly asks for a one-off exception.
+
+---
+
+## CANONICALIZATION — 2026-10-27 (master spec executed)
+
+**Done, with evidence:**
+- ✅ **Canonical token values applied** (user's master spec declared these exact values canonical; the previous near-identical warm values were replaced in `src/styles.css`, `src/brand-system.css`, `src/styles/brand-migration.css`): `--bg-primary #F9F9F7`, `--bg-accent-tint #FFF5F2`, `--text-primary #1F1F1F`, `--text-secondary #525252`, `--text-muted #8C8C8C`, `--accent #DE7356`, `--accent-hover #C25E45`, `--accent-subtle rgba(222,115,86,0.08)`, `--border-default #E5E5E5`, `--border-focus = --accent`. The accent change (`#D97757` → `#DE7356`) intentionally supersedes the earlier `#D97757` standing default per the user's latest master spec; reverting is a one-line change in `:root` if the user asks.
+- ✅ **Accent literals inside the theme files consolidated onto tokens**: `--gradient-gold`, `--shadow-gold`, `--bg-hero-aurora`, `--preview-heritage-accent`, `--preview-monarch-accent`, `--ledger-brown`, `--b2b-header-gold`, `--booking-amber`, `--color-gold-600`, `::selection`, and all `--rohi-*` brand/rust/cream/ink/border/muted aliases now derive from `--accent`/`--accent-hover`/`--bg-tertiary`/`--border-default` instead of repeating hex values.
+- ✅ **`--primary` now resolves to `--accent`** (spec section 6: primary button background = accent; hover = `--accent-hover`), replacing the previous darker `--accent-ink` primary.
+- ✅ **Shared motion utilities added to `src/styles.css`** (global, not per-component): `animate-reveal` (scroll reveal, translateY 16px→0, 500ms), `stagger-children` (~60ms stagger via page-enter), `urdu-text` (Noto Nastaliq Urdu, line-height 2.2, 1.05rem, RTL only for Urdu text). Reduced-motion overrides already global (both styles.css and brand-migration.css) cover all three.
+- ✅ **`src/components/ui/reveal.tsx` created**: shared IntersectionObserver wrapper (threshold 0.15, once per element), zero dependencies, esbuild JSX check passed.
+- ✅ **`page-shell.tsx` aligned to spec**: 1200px max content width, `py-14 lg:py-20` vertical rhythm (was 7xl/`py-10 lg:py-16`).
+- ✅ Commits on `main`: `e4b333e` (styles.css), `922e016` (brand-system.css), `dc1fa10` (brand-migration.css), `5e0724c` (page-shell), `aad8f83` (reveal.tsx).
+
+**Still remaining (unchanged from prior status, plus):**
+- ⬜ Component-level hex sweep: `#D97757` still appears in ~19 files (partial-snapshot grep; archive download truncates at ~1.7MB via API). UI files to migrate in the page-by-page pass: `airline-contacts-table`, `vendors-table`, `admin.accounts-book`, `admin.airline-accounts`, `admin.ledger`, `admin.queries`, `admin.sticky-notes`, `admin.vendors`, `admin.visa-links`, `agent.login`, `agent.reset-password`, `verify-visa`. Email/PDF/Excel/Sheets-export literals stay by exception.
+- ⬜ Full production build (`npm ci` + `vite build`) and `tsc --noEmit` not re-run from this session — token edits are value-only and esbuild JSX checks passed, but the live build result is unverified until the next deploy.
+- ⬜ CSP nonce/hash hardening, dependency audit, image/font performance pass, and route adoption of the primitives — same items as the earlier status section; none attempted in this pass.
+- ⬜ Visual QA of the neutral-gray shift across live pages (bg-primary, borders, and text tones changed sitewide by design).
