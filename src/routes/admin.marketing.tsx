@@ -26,7 +26,7 @@ import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@
 import { airlineBrand } from "@/lib/airline-brand";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 
-const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin(), staleTime: 0, refetchInterval: 2000, refetchIntervalInBackground: true });
+const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin(), staleTime: 0, refetchInterval: 30000, refetchIntervalInBackground: false });
 
 export const Route = createFileRoute("/admin/marketing")({
   ssr: false,
