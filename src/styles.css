@@ -32,7 +32,7 @@
   --color-error: var(--destructive);
   --color-error-strong: #8F3A2D;
   --color-error-soft: #F2E2DD;
-  --color-gold-600: #C2654A;
+  --color-gold-600: var(--accent);
 
   /* Single warm-neutral scale: every Tailwind gray/slate/neutral/chromatic
      utility resolves to these warm-neutral tones or the semantic status set. */
@@ -212,11 +212,11 @@
   --shadow-booking: 0 8px 24px rgb(20 20 19 / 0.14);
 
   --bg-hero-gradient: #141413;
-  --bg-hero-aurora: radial-gradient(ellipse 900px 500px at 15% 0%, rgba(217,119,87,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(217,119,87,0.05) 0%, transparent 65%);
-  --gradient-gold: linear-gradient(135deg, #D97757, #C2654A);
+  --bg-hero-aurora: radial-gradient(ellipse 900px 500px at 15% 0%, rgba(222,115,86,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(222,115,86,0.05) 0%, transparent 65%);
+  --gradient-gold: linear-gradient(135deg, var(--accent), var(--accent-hover));
   --gradient-navy: #141413;
-  --shadow-gold: 0 10px 26px -12px rgb(217 119 87 / 0.45);
+  --shadow-gold: 0 10px 26px -12px rgb(222 115 86 / 0.45);
   --bg-card-cool: #DEDBCE;
   --bg-card-warm: #F7EAE4;
   --bg-card-sage: #E6EEE4;
@@ -234,23 +234,23 @@
 :root {
   /* Rohi brand surface, overlay, z-index, and motion design tokens */
   --rohi-surface: #FAF9F5;
-  --rohi-surface-muted: #FAF9F5;
+  --rohi-surface-muted: #F9F9F7;
   --rohi-surface-strong: #141413;
   --rohi-surface-stronger: #1F1D1A;
   --rohi-surface-tint: #F5F4ED;
   --rohi-overlay: rgba(20, 20, 19, 0.7);
-  --rohi-brand: #C2654A;
-  --rohi-brand-soft: #F7EAE4;
+  --rohi-brand: var(--accent);
+  --rohi-brand-soft: var(--bg-accent-tint);
   --rohi-brand-contrast: #FFFFFF;
   --rohi-brand-info: #5B7FA6;
   --rohi-brand-success: #4C7A5C;
   --rohi-brand-warning: #9A7B3F;
   --rohi-brand-danger: #B04A3A;
-  --rohi-text: #1F1D1A;
-  --rohi-text-muted: #8F8B7E;
+  --rohi-text: #1F1F1F;
+  --rohi-text-muted: #8C8C8C;
   --rohi-text-subtle: #A6A297;
   --rohi-text-inverse: #FAF9F5;
-  --rohi-border: #EBE9DF;
+  --rohi-border: #E5E5E5;
   --rohi-border-strong: #D5D2C5;
   --rohi-radius-sm: 8px;
   --rohi-radius-md: 12px;
@@ -264,20 +264,20 @@
   --duration-base: 250ms;
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --bg-primary: #FAF9F5;
+  --bg-primary: #F9F9F7;
   --bg-secondary: #FFFFFF;
   --bg-tertiary: #F0EFEA;
-  --bg-accent-tint: #F7EAE4;
-  --text-primary: #141413;
-  --text-secondary: #514D45;
-  --text-muted: #8F8B7E;
+  --bg-accent-tint: #FFF5F2;
+  --text-primary: #1F1F1F;
+  --text-secondary: #525252;
+  --text-muted: #8C8C8C;
   --text-inverse: #FFFFFF;
-  --accent: #D97757;
-  --accent-hover: #C2654A;
-  --accent-ink: #B45D40;
-  --accent-subtle: rgba(217, 119, 87, 0.08);
-  --border-default: #E8E6DC;
-  --border-focus: #C2654A;
+  --accent: #DE7356;
+  --accent-hover: #C25E45;
+  --accent-ink: var(--accent-hover);
+  --accent-subtle: rgba(222, 115, 86, 0.08);
+  --border-default: #E5E5E5;
+  --border-focus: var(--accent);
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
   --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
   --shadow-lg: 0 12px 32px -4px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.04);
@@ -302,7 +302,7 @@
   --whatsapp-foreground: #FFFFFF;
   --preview-light: #FFFFFF;
   --preview-heritage: #141413;
-  --preview-heritage-accent: #D97757;
+  --preview-heritage-accent: var(--accent);
   --preview-future: #141413;
   --preview-future-accent: #5B7FA6;
   --preview-organic: #FAF9F5;
@@ -310,14 +310,14 @@
   --preview-organic-border: #E8E6DC;
   --preview-organic-ink: #141413;
   --preview-monarch: #141413;
-  --preview-monarch-accent: #D97757;
+  --preview-monarch-accent: var(--accent);
   --preview-glass: #FFFFFF;
   --preview-glass-accent: #5B7FA6;
   --card: var(--bg-secondary);
   --card-foreground: var(--text-primary);
   --popover: var(--bg-secondary);
   --popover-foreground: var(--text-primary);
-  --primary: var(--accent-ink);
+  --primary: var(--accent);
   --primary-foreground: var(--text-inverse);
   --secondary: var(--bg-tertiary);
   --secondary-foreground: var(--text-primary);
@@ -344,9 +344,9 @@
   --ledger-faded: #8F8B7E;
   --ledger-red: #B04A3A;
   --ledger-green: #4C7A5C;
-  --ledger-brown: #D97757;
+  --ledger-brown: var(--accent);
   --b2b-header-bg: #141413;
-  --b2b-header-gold: #D97757;
+  --b2b-header-gold: var(--accent);
   --b2b-row-even: #FAF9F5;
   --b2b-row-odd: #FFFFFF;
   --booking-canvas: #FAF9F5;
@@ -354,7 +354,7 @@
   --booking-subtle: #8F8B7E;
   --booking-blue: #5B7FA6;
   --booking-blue-soft: #E3EBF2;
-  --booking-amber: #D97757;
+  --booking-amber: var(--accent);
   --booking-amber-soft: #F7EAE4;
   --booking-green: #4C7A5C;
   --booking-green-soft: #E6EEE4;
@@ -392,7 +392,7 @@
   h1 { font-weight: 600; }
   h2, h3, h4 { font-weight: 600; }
   p { line-height: 1.6; }
-  ::selection { background: rgb(217 119 87 / 0.22); color: var(--color-foreground); }
+  ::selection { background: var(--accent-subtle); color: var(--color-foreground); }
   a, button, [role="button"], input, textarea, select { transition: color var(--duration-base) var(--ease-premium), background-color var(--duration-base) var(--ease-premium), border-color var(--duration-base) var(--ease-premium), box-shadow var(--duration-base) var(--ease-premium), opacity var(--duration-base) var(--ease-premium), transform var(--duration-fast) var(--ease-premium); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 }
@@ -526,6 +526,31 @@
 @keyframes hero-work-orbit-reverse { to { transform: rotate(-360deg); } }
 @utility hero-work-orbit { animation: hero-work-orbit 24s linear infinite; }
 @utility hero-work-orbit-reverse { animation: hero-work-orbit-reverse 18s linear infinite; }
+
+
+/* Scroll-reveal and staggered entrance (shared motion primitives). */
+@keyframes reveal-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@utility animate-reveal { animation: reveal-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@utility stagger-children {
+  & > * { animation: page-enter var(--duration-slow) var(--ease-premium) both; }
+  & > *:nth-child(1) { animation-delay: 0ms; }
+  & > *:nth-child(2) { animation-delay: 60ms; }
+  & > *:nth-child(3) { animation-delay: 120ms; }
+  & > *:nth-child(4) { animation-delay: 180ms; }
+  & > *:nth-child(5) { animation-delay: 240ms; }
+  & > *:nth-child(6) { animation-delay: 300ms; }
+  & > *:nth-child(7) { animation-delay: 360ms; }
+  & > *:nth-child(8) { animation-delay: 420ms; }
+}
+
+/* Urdu typography primitive (English text must never get RTL from this). */
+@utility urdu-text {
+  font-family: var(--font-urdu);
+  line-height: 2.2;
+  font-size: 1.05rem;
+  direction: rtl;
+  text-align: right;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-page-enter,
