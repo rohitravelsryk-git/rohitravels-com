@@ -107,7 +107,7 @@ begin
     perform cron.unschedule('airline-sheet-sync-catchup');
     perform cron.schedule(
       'airline-sheet-sync-catchup',
-      '* * * * *',
+      '0 * * * *',
       $cron$
       do $job$
       begin
