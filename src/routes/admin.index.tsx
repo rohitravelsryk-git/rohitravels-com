@@ -965,7 +965,7 @@ function AdminPanel({
       is_featured: false,
       sort_order: 0,
       group_type: d.group_type,
-      pnr: d.pnr || null,
+      pnr: d.group_type === "party" ? null : (d.pnr ? d.pnr.trim().toUpperCase() : null),
       hide_fare_after_2h: d.hide_fare_after_2h,
       auto_hide_hours: d.auto_hide_hours,
     };
@@ -1215,10 +1215,21 @@ function AdminPanel({
               <div className="max-h-[72vh] overflow-y-auto bg-secondary/20 px-7 py-6">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
                   <Field label="Group Type">
-                    <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
-                      <option value="party">Party Group</option><option value="self">Self Group</option>
+                    <select
+                      value={draft.group_type}
+                      onChange={(e) => {
+                        const nextType = e.target.value as "self" | "party";
+                        setDraft({
+                          ...draft,
+                          group_type: nextType,
+                          pnr: nextType === "party" ? "" : draft.pnr,
+                        });
+                      }}
+                      className={inputBase}
+                    >
+                      <option value="party">Party Group</option>
+                      <option value="self">Self Group</option>
                     </select>
-
                   </Field>
 
                   <Field label="Airline" hint="Logo preview">
@@ -1372,14 +1383,15 @@ function AdminPanel({
 
                   <Field 
                     label="PNR" 
-                    hint={draft.group_type === "self" ? "Required for Self Group" : "Optional"}
+                    hint={draft.group_type === "self" ? "Required for Self Group" : "Disabled for Party Group"}
                   >
-                    <div className={shellBase}>
+                    <div className={`${shellBase} ${draft.group_type === "party" ? "opacity-60 bg-muted/20 cursor-not-allowed" : ""}`}>
                       <div className="min-w-0 flex-1">
                         <Cell 
-                          value={draft.pnr} 
+                          value={draft.group_type === "party" ? "" : draft.pnr} 
                           onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
-                          placeholder={draft.group_type === "self" ? "PNR IS MANDATORY" : "Enter PNR code"} 
+                          placeholder={draft.group_type === "self" ? "PNR IS MANDATORY" : "Disabled (Party Group has no PNR)"} 
+                          disabled={draft.group_type === "party"}
                         />
                       </div>
                     </div>
