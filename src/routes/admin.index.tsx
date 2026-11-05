@@ -1381,21 +1381,22 @@ function AdminPanel({
                     )}
                   </div>
 
-                  <Field 
-                    label="PNR" 
-                    hint={draft.group_type === "self" ? "Required for Self Group" : "Disabled for Party Group"}
-                  >
-                    <div className={`${shellBase} ${draft.group_type === "party" ? "opacity-60 bg-muted/20 cursor-not-allowed" : ""}`}>
-                      <div className="min-w-0 flex-1">
-                        <Cell 
-                          value={draft.group_type === "party" ? "" : draft.pnr} 
-                          onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
-                          placeholder={draft.group_type === "self" ? "PNR IS MANDATORY" : "Disabled (Party Group has no PNR)"} 
-                          disabled={draft.group_type === "party"}
-                        />
+                  {draft.group_type === "self" && (
+                    <Field 
+                      label="PNR" 
+                      hint="Required for Self Group"
+                    >
+                      <div className={shellBase}>
+                        <div className="min-w-0 flex-1">
+                          <Cell 
+                            value={draft.pnr} 
+                            onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
+                            placeholder="PNR IS MANDATORY" 
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </Field>
+                    </Field>
+                  )}
 
 
                   <Field label="Vendor Fare" hint="Internal only">
