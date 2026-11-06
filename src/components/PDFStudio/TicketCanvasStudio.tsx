@@ -1446,7 +1446,8 @@ export default function TicketCanvasStudio({
                     }}
                     onPointerDown={(e) => onPointerDown(e, info)}
                     onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
+                    onPointerUp={(e) => finishDrag(e, info)}
+                    onPointerCancel={(e) => finishDrag(e, info)}
                     onDoubleClick={(e) => onDoubleClick(e, info)}
                   >
                     {headerEnabled && (headerScope === "all" || info.index === 1) && (
