@@ -1637,10 +1637,11 @@ function PrintFormatPage() {
                 setIsFoxitEditorOpen(false);
               }}
               profile={{
-                agencyName: displayName,
-                phone: displayPhone,
-                address: displayAddress,
-                tagline: displayTagline,
+                agencyName: agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME),
+                phone: phone.trim() || (agentPortal ? "" : DEFAULT_PHONE),
+                address: address.trim() || (agentPortal ? "" : DEFAULT_ADDRESS),
+                tagline: tagline.trim() || (agentPortal ? "" : DEFAULT_TAGLINE),
+                logoUrl: logoDataUrl || undefined,
               }}
             />
 
