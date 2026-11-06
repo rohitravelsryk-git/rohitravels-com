@@ -10,7 +10,7 @@ import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { AgentTopBar } from "@/components/AgentTopBar";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
-import { SejdaEditor } from "@/components/PDFEditor/SejdaEditor";
+import TicketCanvasStudio from "@/components/PDFStudio/TicketCanvasStudio";
 
 export const Route = createFileRoute("/pdf-tools")({
   head: () => ({
@@ -485,12 +485,12 @@ function EditTool({ onBack, userRole }: { onBack: () => void; userRole: "admin" 
   if (file && bytes) {
     return (
       <div className="fixed inset-0 z-50 bg-background">
-        <SejdaEditor
+        <TicketCanvasStudio
+          portal={userRole === "admin" ? "Admin PDF Studio" : "Agent PDF Studio"}
           isOpen
           onClose={() => { setFile(null); setBytes(null); }}
-          pdfBytes={bytes}
+          initialPdfBytes={bytes}
           fileName={file.name}
-          userRole={userRole}
         />
       </div>
     );

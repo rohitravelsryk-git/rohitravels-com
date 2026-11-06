@@ -1526,16 +1526,16 @@ function PrintFormatPage() {
   }
 
   async function openTicketEditor() {
-    if (!source && !editorPdfBytes) return;
     setBuilding(true);
     try {
-      const bytes = editorPdfBytes ?? (source?.kind === "pdf" ? source.bytes : await buildPdf());
-      if (!bytes) return;
-      setEditorPdfBytes(bytes);
+      const bytes = editorPdfBytes ?? (source?.kind === "pdf" ? source.bytes : (source ? await buildPdf() : null));
+      if (bytes) {
+        setEditorPdfBytes(bytes);
+      }
       setIsFoxitEditorOpen(true);
     } catch (error) {
-      console.error(error);
-      alert("Failed to prepare the ticket for editing.");
+      console.error("Failed to prepare ticket for editing:", error);
+      setIsFoxitEditorOpen(true);
     } finally {
       setBuilding(false);
     }
@@ -1619,10 +1619,10 @@ function PrintFormatPage() {
             <button
               type="button"
               onClick={() => void openTicketEditor()}
-              disabled={(!source && !editorPdfBytes) || building}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500] disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={building}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#DE7356] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket PDF Editor
+              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket Canvas Studio &amp; Print
             </button>
 
             <TicketPDFEditorModal
@@ -1631,6 +1631,17 @@ function PrintFormatPage() {
               pdfBytes={editorPdfBytes}
               bookingRef={fileName.replace(/\.[^.]+$/, "") || "TICKET"}
               userRole="admin"
+              onSaveToBooking={async (edited) => {
+                setPdfBytes(edited);
+                setEditorPdfBytes(edited);
+                setIsFoxitEditorOpen(false);
+              }}
+              profile={{
+                agencyName: displayName,
+                phone: displayPhone,
+                address: displayAddress,
+                tagline: displayTagline,
+              }}
             />
 
             {fileName && !loading && (
