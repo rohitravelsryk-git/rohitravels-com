@@ -1599,22 +1599,35 @@ function PrintFormatPage() {
           </p>
 
           <div className="mt-6 space-y-4">
-            <label className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-4 py-3 text-sm font-bold text-navy hover:bg-navy/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,application/pdf,.pdf,.jpg,.jpeg"
-                className="sr-only"
-                disabled={loading}
-                onChange={(event) => void onFile(event.target.files?.[0])}
-              />
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {loading
-                ? "Processing…"
-                : source
-                  ? "Replace Ticket"
-                  : "Upload Ticket (JPEG, PDF)"}
-            </label>
+            <div className="flex items-center gap-2">
+              <label className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-4 py-3 text-sm font-bold text-navy hover:bg-navy/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/jpeg,application/pdf,.pdf,.jpg,.jpeg"
+                  className="sr-only"
+                  disabled={loading}
+                  onChange={(event) => void onFile(event.target.files?.[0])}
+                />
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {loading
+                  ? "Processing…"
+                  : source
+                    ? "Replace Ticket"
+                    : "Upload Ticket (JPEG, PDF)"}
+              </label>
+              {source && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="rounded-lg border border-border bg-white p-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  title="Remove ticket and start over"
+                  aria-label="Remove ticket"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
 
             <button
               type="button"
@@ -1827,8 +1840,7 @@ function PrintFormatPage() {
             </div>
 
             {source && (
-              <>
-                <button
+              <button
                   type="button"
                   onClick={downloadPdf}
                   disabled={building}
@@ -1837,214 +1849,7 @@ function PrintFormatPage() {
                   {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   {building ? "Building PDF…" : "Download"}
                 </button>
-                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/40 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setEraseMode(false)}
-                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-                      !eraseMode ? "bg-white text-navy shadow-sm" : "text-muted-foreground hover:text-navy"
-                    }`}
-                  >
-                    Edit Text
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEraseMode(true)}
-                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-                      eraseMode ? "bg-destructive text-destructive-foreground shadow-sm" : "text-muted-foreground hover:text-navy"
-                    }`}
-                  >
-                    Erase / Delete
-                  </button>
-                </div>
-                <p className="text-[10px] leading-snug text-muted-foreground">
-                  {eraseMode
-                    ? "Erase mode: drag over any text, image, logo or shape to remove it — a clean white patch covers that spot."
-                    : "Click any text on the ticket to edit it — size, font and color stay the same automatically. Switch to Erase / Delete to remove any text, image or shape."}
-                  {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
-                </p>
 
-                {!eraseMode && focusedIdx !== null && source?.kind === "pdf" && (() => {
-                  const item = source.textItems[focusedIdx];
-                  if (!item) return null;
-                  const style = textStyles[focusedIdx] ?? {};
-                  const setStyle = (patch: Partial<NonNullable<typeof style>>) =>
-                    setTextStyles((prev) => ({ ...prev, [focusedIdx]: { ...(prev[focusedIdx] ?? {}), ...patch } }));
-                  const size = Math.round((style.size ?? item.fontHeightPts) * 10) / 10;
-                  const toggleCls = (on: boolean) =>
-                    `rounded-md border px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-                      on ? "border-navy bg-navy text-white" : "border-border bg-white text-navy hover:bg-secondary/60"
-                    }`;
-                  return (
-                    <div className="space-y-2 rounded-xl border border-border bg-secondary/20 p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[11px] font-black uppercase tracking-widest text-navy">Format</p>
-                        <button
-                          type="button"
-                          onClick={() => setTextStyles((prev) => {
-                            const next = { ...prev };
-                            delete next[focusedIdx];
-                            return next;
-                          })}
-                          className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-navy"
-                          title="Reset this line to the ticket's original look"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Size</label>
-                        <input
-                          type="number"
-                          min={4}
-                          max={72}
-                          step={0.5}
-                          value={size}
-                          onChange={(e) => setStyle({ size: Math.max(4, Math.min(72, Number(e.target.value) || size)) })}
-                          className="h-8 w-20 rounded-md border border-border bg-white px-2 text-xs font-bold text-navy outline-none focus:ring-2 focus:ring-gold/30"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button type="button" className={toggleCls(!!style.bold)} onClick={() => setStyle({ bold: !style.bold })} title="Bold">B</button>
-                        <button type="button" className={`${toggleCls(!!style.italic)} italic`} onClick={() => setStyle({ italic: !style.italic })} title="Italic">I</button>
-                        <button type="button" className={`${toggleCls(!!style.underline)} underline`} onClick={() => setStyle({ underline: !style.underline })} title="Underline">U</button>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Colour</label>
-                        <input
-                          type="color"
-                          value={style.color ?? "#000000"}
-                          onChange={(e) => setStyle({ color: e.target.value })}
-                          className="h-8 w-14 cursor-pointer rounded-md border border-border bg-white p-0.5"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Font</label>
-                        <select
-                          value={style.family ?? "helv"}
-                          onChange={(e) => setStyle({ family: e.target.value as "helv" | "times" | "courier" })}
-                          className="h-8 rounded-md border border-border bg-white px-2 text-xs font-bold text-navy outline-none focus:ring-2 focus:ring-gold/30"
-                        >
-                          <option value="helv">Helvetica</option>
-                          <option value="times">Times</option>
-                          <option value="courier">Courier</option>
-                        </select>
-                      </div>
-                      <p className="text-[10px] leading-snug text-muted-foreground">
-                        Formatting applies to the line you last clicked on the ticket.
-                      </p>
-                    </div>
-                  );
-                })()}
-
-
-                <div className="space-y-2 rounded-xl border border-border bg-secondary/20 p-3">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-navy">Shapes</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button type="button" onClick={() => insertShape("rect")}
-                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
-                      title="Insert a rectangle">
-                      <span className="h-4 w-6 rounded-[2px] border-2 border-navy" /> Rect
-                    </button>
-                    <button type="button" onClick={() => insertShape("ellipse")}
-                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
-                      title="Insert an ellipse">
-                      <span className="h-4 w-6 rounded-full border-2 border-navy" /> Ellipse
-                    </button>
-                    <button type="button" onClick={() => insertShape("line")}
-                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
-                      title="Insert a line">
-                      <span className="h-0.5 w-6 bg-navy" /> Line
-                    </button>
-                  </div>
-
-                  {selectedPastedIds.size >= 2 && (() => {
-                    const pageSize = source?.kind === "pdf" ? source.pageSizes[currentPage] : null;
-                    const align = (mode: "left" | "hcenter" | "right" | "top" | "vcenter" | "bottom") => {
-                      pushHistory();
-                      const sel = pastedItems.filter((p) => selectedPastedIds.has(p.id));
-                      if (sel.length < 2) return;
-                      const wOf = (p: PastedItem) => (p.kind && p.kind !== "text" ? (p.wPct ?? 10) : Math.max(2, p.text.length * (p.size / (pageSize?.w || 500)) * 55));
-                      const hOf = (p: PastedItem) => (p.kind && p.kind !== "text" ? (p.hPct ?? 5) : (p.size / (pageSize?.w || 500)) * 115);
-                      let target = 0;
-                      if (mode === "left") target = Math.min(...sel.map((p) => p.xPct));
-                      if (mode === "right") target = Math.max(...sel.map((p) => p.xPct + wOf(p)));
-                      if (mode === "hcenter") target = (Math.min(...sel.map((p) => p.xPct)) + Math.max(...sel.map((p) => p.xPct + wOf(p)))) / 2;
-                      if (mode === "top") target = Math.min(...sel.map((p) => p.yPct));
-                      if (mode === "bottom") target = Math.max(...sel.map((p) => p.yPct + hOf(p)));
-                      if (mode === "vcenter") target = (Math.min(...sel.map((p) => p.yPct)) + Math.max(...sel.map((p) => p.yPct + hOf(p)))) / 2;
-                      setPastedItems((prev) => prev.map((p) => {
-                        if (!selectedPastedIds.has(p.id)) return p;
-                        if (mode === "left") return { ...p, xPct: target };
-                        if (mode === "right") return { ...p, xPct: target - wOf(p) };
-                        if (mode === "hcenter") return { ...p, xPct: target - wOf(p) / 2 };
-                        if (mode === "top") return { ...p, yPct: target };
-                        if (mode === "bottom") return { ...p, yPct: target - hOf(p) };
-                        return { ...p, yPct: target - hOf(p) / 2 };
-                      }));
-                    };
-                    return (
-                      <div className="border-t border-border pt-2">
-                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-navy/70">Align {selectedPastedIds.size} selected</p>
-                        <div className="grid grid-cols-6 gap-1">
-                          <button type="button" onClick={() => align("left")} title="Align left" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊢</button>
-                          <button type="button" onClick={() => align("hcenter")} title="Align center (horizontal)" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊣⊢</button>
-                          <button type="button" onClick={() => align("right")} title="Align right" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊣</button>
-                          <button type="button" onClick={() => align("top")} title="Align top" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊤</button>
-                          <button type="button" onClick={() => align("vcenter")} title="Align middle (vertical)" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊥⊤</button>
-                          <button type="button" onClick={() => align("bottom")} title="Align bottom" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊥</button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {selectedPastedIds.size >= 1 && (() => {
-                    const sel = pastedItems.filter((p) => selectedPastedIds.has(p.id));
-                    const cur = Math.round((sel[0]?.opacity ?? 1) * 100);
-                    return (
-                      <div className="border-t border-border pt-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Opacity</label>
-                          <span className="text-[10px] font-bold text-navy">{cur}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={cur}
-                          onChange={(e) => {
-                            const v = Number(e.target.value) / 100;
-                            setPastedItems((prev) => prev.map((p) => selectedPastedIds.has(p.id) ? { ...p, opacity: v } : p));
-                          }}
-                          className="mt-1 w-full accent-gold"
-                        />
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      pushHistory();
-                      setEraseRects((prev) => [...prev.filter((r) => r.pageIndex !== currentPage), { pageIndex: currentPage, x: 0, y: 0, w: 1, h: 1 }]);
-                    }}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-red-700 hover:bg-red-100"
-                    title="Wipe the ticket content on the current page to blank white, keeping the page and any header/footer"
-                  >
-                    <X className="h-3.5 w-3.5" /> Delete Background
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearAll}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
-                    title="Remove the uploaded file and start over"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" /> Remove File
-                  </button>
-                </div>
-              </>
             )}
           </div>
         </div>
