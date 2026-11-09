@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { LayoutTemplate, X as CloseIcon, FileEdit, Upload, RotateCcw, Stamp, Plane, Phone, MessageCircle } from "lucide-react";
+import { LayoutTemplate, X as CloseIcon, FileEdit, Upload, RotateCcw } from "lucide-react";
 
 
 // Worker setup with CDN fallback
@@ -28,16 +28,157 @@ if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
   }
 }
 
-function StampCorners() {
-  const c = "absolute size-1.5 border-red-600";
-  return (
-    <>
-      <span className={`${c} -top-0.5 -left-0.5 border-t border-l`} />
-      <span className={`${c} -top-0.5 -right-0.5 border-t border-r`} />
-      <span className={`${c} -bottom-0.5 -left-0.5 border-b border-l`} />
-      <span className={`${c} -bottom-0.5 -right-0.5 border-b border-r`} />
-    </>
-  );
+type Box = { x: number; y: number; w: number; h: number };
+type RGB = { r: number; g: number; b: number };
+type TextItem = Box & {
+  str: string;
+  size: number;
+  fontFamily: string;
+  bold: boolean;
+  italic: boolean;
+  origBold?: boolean | undefined;
+  origItalic?: boolean | undefined;
+  fontKey?: string | undefined;
+};
+
+type EmbeddedFont = { data: Uint8Array; css: string };
+
+type Edit =
+  | { kind: "erase"; page: number; box: Box; background?: RGB | undefined; parts?: Array<{ box: Box; background?: RGB | undefined }> }
+  | { kind: "highlight"; page: number; box: Box; parts?: Box[] }
+  | {
+      kind: "text";
+      page: number;
+      x: number;
+      y: number;
+      size: number;
+      value: string;
+      fontFamily: string;
+      bold: boolean;
+      italic: boolean;
+      color: RGB;
+      background: RGB;
+      fontKey?: string | undefined;
+      origBold?: boolean | undefined;
+      origItalic?: boolean | undefined;
+      cover?: Box;
+      original?: string;
+      width?: number;
+    }
+  | { kind: "image"; page: number; box: Box; data: Uint8Array; type: "png" | "jpg"; url: string }
+  | { kind: "rotate"; page: number; delta: number }
+  | { kind: "removePage"; page: number };
+
+type PageInfo = { index: number; width: number; height: number; items: TextItem[] };
+
+type Tool = "select" | "highlight";
+
+type CharRange = { item: number; start: number; end: number };
+type Selection = { page: number; ranges: CharRange[]; area?: Box };
+const NO_SEL: Selection = { page: -1, ranges: [] };
+
+const DEFAULT_COLOR: RGB = { r: 0.08, g: 0.08, b: 0.07 };
+
+function intersects(a: Box, b: Box) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// Per-character x offsets inside a text run, measured with the run's own font
+// and scaled to the run's real width in the PDF. Enables single-letter selection.
+const offsetCache = new WeakMap<TextItem, number[]>();
+let measureCtx: CanvasRenderingContext2D | null = null;
+function charOffsets(it: TextItem): number[] {
+  const cached = offsetCache.get(it);
+  if (cached) return cached;
+  const n = it.str.length;
+  if (!measureCtx && typeof document !== "undefined") measureCtx = document.createElement("canvas").getContext("2d");
+  const raw = [0];
+  if (measureCtx) {
+    measureCtx.font = `${it.italic ? "italic " : ""}${it.bold ? 700 : 400} 100px ${it.fontFamily}`;
+    for (let i = 1; i <= n; i++) raw.push(measureCtx.measureText(it.str.slice(0, i)).width);
+  } else for (let i = 1; i <= n; i++) raw.push(i);
+  const total = raw[n] || 1;
+  const out = raw.map((v) => (v / total) * it.w);
+  offsetCache.set(it, out);
+  return out;
+}
+
+function rangeBox(it: TextItem, start: number, end: number): Box {
+  const o = charOffsets(it);
+  return { x: it.x + o[start]!, y: it.y, w: Math.max(0.5, o[end]! - o[start]!), h: it.h };
+}
+
+// Reading-order (flow) selection like desktop PDF editors: first line from the
+// start point, whole middle lines, last line up to the end point.
+function computeRanges(info: PageInfo, d: { x0: number; y0: number; x1: number; y1: number }): CharRange[] {
+  const box = { x: Math.min(d.x0, d.x1), y: Math.min(d.y0, d.y1), w: Math.abs(d.x1 - d.x0), h: Math.abs(d.y1 - d.y0) };
+  if (box.w < 2 && box.h < 2) return [];
+  const top = d.y0 <= d.y1 ? { x: d.x0, y: d.y0 } : { x: d.x1, y: d.y1 };
+  const bot = d.y0 <= d.y1 ? { x: d.x1, y: d.y1 } : { x: d.x0, y: d.y0 };
+  const direct = info.items.filter((it) => intersects(it, box));
+  if (!direct.length) return [];
+  const minX = Math.min(...direct.map((it) => it.x));
+  const maxX = Math.max(...direct.map((it) => it.x + it.w));
+  const inside = (it: TextItem, y: number) => y >= it.y && y <= it.y + it.h;
+  const ranges: CharRange[] = [];
+  info.items.forEach((it, i) => {
+    const onTop = inside(it, top.y);
+    const onBot = inside(it, bot.y);
+    const cy = it.y + it.h / 2;
+    let a: number;
+    let b: number;
+    if (onTop && onBot) {
+      if (!intersects(it, box)) return;
+      a = box.x;
+      b = box.x + box.w;
+    } else if (onTop) {
+      if (it.x + it.w < top.x) return;
+      a = top.x;
+      b = Infinity;
+    } else if (onBot) {
+      if (it.x > bot.x) return;
+      a = -Infinity;
+      b = bot.x;
+    } else if (cy > top.y && cy < bot.y && it.x < maxX && it.x + it.w > minX) {
+      a = -Infinity;
+      b = Infinity;
+    } else return;
+    const o = charOffsets(it);
+    let s = -1;
+    let e = -1;
+    for (let k = 0; k < it.str.length; k++) {
+      const c0 = it.x + o[k]!;
+      const c1 = it.x + o[k + 1]!;
+      const overlap = Math.min(c1, b) - Math.max(c0, a);
+      if (overlap > 0 && overlap >= (c1 - c0) * 0.35) {
+        if (s < 0) s = k;
+        e = k + 1;
+      }
+    }
+    if (s >= 0) ranges.push({ item: i, start: s, end: e });
+  });
+  return ranges;
+}
+
+function parsePageRange(text: string, max: number): number[] {
+  const out = new Set<number>();
+  for (const part of text.split(",")) {
+    const m = part.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+    if (!m) continue;
+    const a = Number(m[1]);
+    const b = m[2] ? Number(m[2]) : a;
+    for (let p = Math.min(a, b); p <= Math.max(a, b); p++) if (p >= 1 && p <= max) out.add(p - 1);
+  }
+  return [...out].sort((x, y) => x - y);
+}
+
+function saveBlob(out: Uint8Array, name: string) {
+  const url = URL.createObjectURL(new Blob([out as BlobPart], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function pickFont(item: { bold: boolean; italic: boolean; fontFamily: string }) {
@@ -60,6 +201,8 @@ function pickFont(item: { bold: boolean; italic: boolean; fontFamily: string }) 
   if (item.italic) return StandardFonts.HelveticaOblique;
   return StandardFonts.Helvetica;
 }
+
+
 
 
 export interface TicketCanvasStudioProps {
