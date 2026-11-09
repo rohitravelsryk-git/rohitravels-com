@@ -1630,7 +1630,7 @@ function PrintFormatPage() {
               <button
                 type="button"
                 onClick={() => void openTicketEditor()}
-                disabled={building || !source}
+                disabled={building}
                 className="inline-flex min-w-[150px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#D97757] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileEdit className="h-4 w-4" />} PDF Editor
