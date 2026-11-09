@@ -189,6 +189,8 @@ export interface TicketPDFEditorModalProps {
     agent?: string;
     noBrand?: boolean;
     headerFooterPages?: number[];
+    headerBrandingUrl?: string;
+    footerBrandingUrl?: string;
   };
   onProfileChange?: (profile: {
     agencyName?: string;
@@ -199,6 +201,8 @@ export interface TicketPDFEditorModalProps {
     agent?: string;
     noBrand?: boolean;
     headerFooterPages?: number[];
+    headerBrandingUrl?: string;
+    footerBrandingUrl?: string;
   }) => void;
   onSaveToBooking?: (editedPdfBytes: Uint8Array) => Promise<void>;
 }

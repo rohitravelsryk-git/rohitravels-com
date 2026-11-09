@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate, LogOut, FileEdit } from "lucide-react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LogOut, FileEdit } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -1595,12 +1595,12 @@ function PrintFormatPage() {
         <div className="print:hidden">
           <h1 className="font-serif text-2xl font-black text-navy">Print Format</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload Your Ticket to add your logo, header and footer
+            Upload a ticket, then edit it and add your own header or footer artwork
           </p>
 
           <div className="mt-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <label className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-4 py-3 text-sm font-bold text-navy hover:bg-navy/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className={`inline-flex min-w-[180px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-4 py-3 text-sm font-bold text-navy hover:bg-navy/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
                 <input
                   ref={inputRef}
                   type="file"
@@ -1627,16 +1627,15 @@ function PrintFormatPage() {
                   <X className="h-4 w-4" />
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => void openTicketEditor()}
+                disabled={building || !source}
+                className="inline-flex min-w-[150px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#D97757] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileEdit className="h-4 w-4" />} PDF Editor
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => void openTicketEditor()}
-              disabled={building}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#D97757] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileEdit className="h-4 w-4" />} PDF Editor
-            </button>
 
             <TicketPDFEditorModal
               isOpen={isFoxitEditorOpen}
@@ -1675,19 +1674,6 @@ function PrintFormatPage() {
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
             )}
 
-            <div className="flex items-center justify-between rounded-lg border border-[#E7E5E4] bg-[#FAF9F5] px-3 py-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 font-medium text-[#141413]">
-                <LayoutTemplate className="h-3.5 w-3.5 text-[#D97757]" />
-                Header &amp; Footer Branding
-              </span>
-              <button
-                type="button"
-                onClick={() => void openTicketEditor()}
-                className="font-bold text-[#D97757] hover:underline"
-              >
-                In PDF Editor →
-              </button>
-            </div>
 
             {source && (
               <button
