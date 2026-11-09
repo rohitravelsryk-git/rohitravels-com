@@ -10,6 +10,7 @@ export const TicketPDFEditorModal: React.FC<TicketPDFEditorModalProps> = ({
   userRole = 'admin',
   onSaveToBooking,
   profile,
+  onProfileChange,
 }) => {
   if (!isOpen) return null;
 
@@ -27,9 +28,16 @@ export const TicketPDFEditorModal: React.FC<TicketPDFEditorModalProps> = ({
           }
         }}
         profile={profile}
-        initialHeaderEnabled={true}
-        initialFooterEnabled={true}
-        initialHeaderFooterPages="first"
+        onProfileChange={onProfileChange}
+        initialHeaderEnabled={!profile?.noBrand}
+        initialFooterEnabled={!profile?.noBrand}
+        initialHeaderFooterPages={
+          profile?.headerFooterPages && profile.headerFooterPages.length > 1
+            ? "custom"
+            : profile?.headerFooterPages && profile.headerFooterPages.length === 1 && profile.headerFooterPages[0] === 0
+              ? "first"
+              : "first"
+        }
       />
     </div>
   );

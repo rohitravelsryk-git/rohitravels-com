@@ -180,12 +180,25 @@ export interface TicketPDFEditorModalProps {
   bookingRef?: string;
   userRole?: 'admin' | 'b2b_agent';
   onSaveAndPrint?: (editedPdfBytes: Uint8Array) => void;
-    profile?: {
+  profile?: {
     agencyName?: string;
     phone?: string;
     address?: string;
     tagline?: string;
     logoUrl?: string;
+    agent?: string;
+    noBrand?: boolean;
+    headerFooterPages?: number[];
   };
-onSaveToBooking?: (editedPdfBytes: Uint8Array) => Promise<void>;
+  onProfileChange?: (profile: {
+    agencyName?: string;
+    phone?: string;
+    address?: string;
+    tagline?: string;
+    logoUrl?: string;
+    agent?: string;
+    noBrand?: boolean;
+    headerFooterPages?: number[];
+  }) => void;
+  onSaveToBooking?: (editedPdfBytes: Uint8Array) => Promise<void>;
 }

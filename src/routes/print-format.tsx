@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate, LogOut } from "lucide-react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate, LogOut, FileEdit } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -1633,9 +1633,9 @@ function PrintFormatPage() {
               type="button"
               onClick={() => void openTicketEditor()}
               disabled={building}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#DE7356] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#D97757] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#c25e45] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket Canvas Studio &amp; Print
+              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileEdit className="h-4 w-4" />} PDF Editor
             </button>
 
             <TicketPDFEditorModal
@@ -1643,7 +1643,7 @@ function PrintFormatPage() {
               onClose={() => setIsFoxitEditorOpen(false)}
               pdfBytes={editorPdfBytes}
               bookingRef={fileName.replace(/\.[^.]+$/, "") || "TICKET"}
-              userRole="admin"
+              userRole={agentPortal ? "b2b_agent" : "admin"}
               onSaveToBooking={async (edited) => {
                 setPdfBytes(edited);
                 setEditorPdfBytes(edited);
@@ -1655,6 +1655,19 @@ function PrintFormatPage() {
                 address: address.trim() || (agentPortal ? "" : DEFAULT_ADDRESS),
                 tagline: tagline.trim() || (agentPortal ? "" : DEFAULT_TAGLINE),
                 logoUrl: logoDataUrl || undefined,
+                agent: agent.trim() || undefined,
+                noBrand: noBrand,
+                headerFooterPages: Array.from(headerFooterPages),
+              }}
+              onProfileChange={(p) => {
+                if (p.agencyName !== undefined) setAgencyName(p.agencyName);
+                if (p.tagline !== undefined) setTagline(p.tagline);
+                if (p.address !== undefined) setAddress(p.address);
+                if (p.phone !== undefined) setPhone(p.phone);
+                if (p.agent !== undefined) setAgent(p.agent);
+                if (p.logoUrl !== undefined) setLogoDataUrl(p.logoUrl);
+                if (p.noBrand !== undefined) setNoBrand(p.noBrand);
+                if (p.headerFooterPages !== undefined) setHeaderFooterPages(new Set(p.headerFooterPages));
               }}
             />
 
@@ -1662,181 +1675,18 @@ function PrintFormatPage() {
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
             )}
 
-            <div className="space-y-3 rounded-xl border border-border bg-secondary/20 p-3">
-              <div className="flex items-center gap-2 border-b border-border/70 pb-2">
-                <LayoutTemplate className="h-4 w-4 text-navy" />
-                <h3 className="text-[11px] font-black uppercase tracking-widest text-navy">Header &amp; Footer</h3>
-              </div>
-
-              <label className="flex items-start gap-2 rounded-lg border border-border bg-white p-3 cursor-pointer hover:bg-secondary/40">
-              <input
-                type="checkbox"
-                checked={noBrand}
-                onChange={(e) => setNoBrand(e.target.checked)}
-                className="mt-0.5 h-4 w-4 accent-navy"
-              />
-              <span className="text-xs font-semibold text-navy">
-                Remove header, footer & agent details
-                <span className="mt-0.5 block text-[10px] font-normal text-muted-foreground">
-                  Outputs the ticket only — no branding, agency name, address, phone, arranger or footer note.
-                </span>
+            <div className="flex items-center justify-between rounded-lg border border-[#E7E5E4] bg-[#FAF9F5] px-3 py-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 font-medium text-[#141413]">
+                <LayoutTemplate className="h-3.5 w-3.5 text-[#D97757]" />
+                Header &amp; Footer Branding
               </span>
-            </label>
-
-            {!noBrand && visiblePages.length > 0 && (
-              <div className="rounded-lg border border-dashed border-navy/25 bg-navy/[0.03] px-3 py-2.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-navy/70">Apply to pages</p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setHeaderFooterPages(new Set(visiblePages))}
-                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-navy/10"
-                    >
-                      All
-                    </button>
-                    <span className="text-border">·</span>
-                    <button
-                      type="button"
-                      onClick={() => setHeaderFooterPages(new Set())}
-                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-navy/10"
-                    >
-                      None
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {visiblePages.map((idx) => {
-                    const on = headerFooterPages.has(idx);
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() =>
-                          setHeaderFooterPages((prev) => {
-                            const n = new Set(prev);
-                            if (n.has(idx)) n.delete(idx); else n.add(idx);
-                            return n;
-                          })
-                        }
-                        title={`${on ? "Remove" : "Add"} header/footer on page ${idx + 1}`}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
-                          on ? "border-gold bg-gold text-gold-foreground shadow-sm" : "border-border bg-white text-muted-foreground hover:border-navy/30 hover:text-navy"
-                        }`}
-                      >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {!noBrand && (
-              <>
-                <div className="space-y-2 rounded-lg border border-dashed border-navy/25 bg-navy/[0.03] px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold text-navy/80">
-                      {agentPortal
-                        ? "Enter your agency's own details, then save as your default."
-                        : "Using Rohi defaults — fill your own, then save as default."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={resetSavedDefaults}
-                      className="inline-flex items-center gap-1 rounded-md border border-navy bg-navy px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-navy/90"
-                    >
-                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Default Settings"}
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={saveProfileAsDefault}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-gold bg-gold px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-gold/90"
-                    >
-                      {savedFlash ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
-                      {savedFlash ? "My Default" : "Save as my default"}
-                    </button>
-                  </div>
-                </div>
-
-                {[
-                  { label: "Agency Name", value: agencyName, set: setAgencyName, ph: agentPortal ? "Your Agency Name" : DEFAULT_NAME, optional: false },
-                  { label: "Tagline", value: tagline, set: setTagline, ph: agentPortal ? "Optional tagline" : DEFAULT_TAGLINE, optional: true },
-                  { label: "Address", value: address, set: setAddress, ph: agentPortal ? "Your agency address" : DEFAULT_ADDRESS, optional: true },
-                  { label: "Contact / WhatsApp Number", value: phone, set: setPhone, ph: agentPortal ? "e.g. 0300 1234567" : DEFAULT_PHONE, optional: false },
-                  { label: "Travel Arranger Name", value: agent, set: setAgent, ph: "e.g. Ahmed Khan", optional: true },
-                ].map((f) => (
-                  <div key={f.label}>
-                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-navy/70">
-                      {f.label}
-                      {f.optional && (
-                        <span className="font-normal normal-case tracking-normal text-muted-foreground"> (optional)</span>
-                      )}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={f.value}
-                        onChange={(e) => f.set(e.target.value)}
-                        placeholder={f.ph}
-                        className="w-full rounded-lg border border-border bg-white px-3 py-2 pr-8 text-sm text-navy placeholder:text-muted-foreground/60 focus:border-navy focus:outline-none"
-                      />
-                      {f.value && (
-                        <button
-                          type="button"
-                          onClick={() => f.set("")}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-navy"
-                          aria-label={`Clear ${f.label}`}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                <div>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-navy/70">
-                    Upload Logo
-                  </label>
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => onLogo(e.target.files?.[0])}
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => logoInputRef.current?.click()}
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-3 py-2 text-xs font-bold text-navy hover:bg-navy/10"
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      {logoDataUrl ? "Replace Logo" : "Upload Agency Logo"}
-                    </button>
-                    {logoDataUrl && (
-                      <>
-                        <img src={logoDataUrl} alt="Agency logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLogoDataUrl("");
-                            if (logoInputRef.current) logoInputRef.current.value = "";
-                          }}
-                          className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary"
-                          aria-label="Remove logo"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+              <button
+                type="button"
+                onClick={() => void openTicketEditor()}
+                className="font-bold text-[#D97757] hover:underline"
+              >
+                In PDF Editor →
+              </button>
             </div>
 
             {source && (

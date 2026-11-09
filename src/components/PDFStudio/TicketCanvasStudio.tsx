@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { LayoutTemplate, X as CloseIcon } from "lucide-react";
+import { LayoutTemplate, X as CloseIcon, FileEdit, Upload, RotateCcw } from "lucide-react";
 
 
 // Worker setup with CDN fallback
@@ -216,10 +216,23 @@ export interface TicketCanvasStudioProps {
     address?: string;
     tagline?: string;
     logoUrl?: string;
+    agent?: string;
+    noBrand?: boolean;
+    headerFooterPages?: number[];
   };
+  onProfileChange?: (profile: {
+    agencyName?: string;
+    phone?: string;
+    address?: string;
+    tagline?: string;
+    logoUrl?: string;
+    agent?: string;
+    noBrand?: boolean;
+    headerFooterPages?: number[];
+  }) => void;
   initialHeaderEnabled?: boolean;
   initialFooterEnabled?: boolean;
-  initialHeaderFooterPages?: "first" | "all" | "none";
+  initialHeaderFooterPages?: "first" | "all" | "none" | "custom";
 }
 
 export default function TicketCanvasStudio({
@@ -230,6 +243,7 @@ export default function TicketCanvasStudio({
   onClose,
   onApplyToTicket,
   profile,
+  onProfileChange,
   initialHeaderEnabled = true,
   initialFooterEnabled = true,
   initialHeaderFooterPages = "first",
@@ -267,10 +281,114 @@ export default function TicketCanvasStudio({
   const [printOpen, setPrintOpen] = useState(false);
   const [printRange, setPrintRange] = useState<"all" | "current" | "custom">("all");
   const [printCustom, setPrintCustom] = useState("");
-  const [headerEnabled, setHeaderEnabled] = useState(initialHeaderEnabled);
-  const [footerEnabled, setFooterEnabled] = useState(initialFooterEnabled);
-  const [headerScope, setHeaderScope] = useState<"first" | "all">(initialHeaderFooterPages === "all" ? "all" : "first");
+  const DEFAULT_NAME = "ROHI INTERNATIONAL TRAVELS";
+  const DEFAULT_PHONE = "0300 0600867";
+  const DEFAULT_ADDRESS = "Near Al-Razi Hospital, Trust Colony Road, Rahim Yar Khan";
+  const DEFAULT_TAGLINE = "Your's Trust";
+
+  const [headerEnabled, setHeaderEnabled] = useState(initialHeaderEnabled && !profile?.noBrand);
+  const [footerEnabled, setFooterEnabled] = useState(initialFooterEnabled && !profile?.noBrand);
+  const [noBrand, setNoBrand] = useState(Boolean(profile?.noBrand));
+  const [headerScope, setHeaderScope] = useState<"first" | "all" | "custom">(
+    initialHeaderFooterPages === "all" ? "all" : initialHeaderFooterPages === "custom" ? "custom" : "first"
+  );
+  const [headerPagesSet, setHeaderPagesSet] = useState<Set<number>>(
+    new Set(profile?.headerFooterPages && profile.headerFooterPages.length > 0 ? profile.headerFooterPages : [0])
+  );
+  const [agencyName, setAgencyName] = useState(profile?.agencyName || DEFAULT_NAME);
+  const [tagline, setTagline] = useState(profile?.tagline ?? DEFAULT_TAGLINE);
+  const [address, setAddress] = useState(profile?.address || DEFAULT_ADDRESS);
+  const [phone, setPhone] = useState(profile?.phone || DEFAULT_PHONE);
+  const [agent, setAgent] = useState(profile?.agent || "");
+  const [logoUrl, setLogoUrl] = useState(profile?.logoUrl || "");
   const [brandingOpen, setBrandingOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement | null>(null);
+
+  const notifyProfileChange = useCallback(
+    (updates: Partial<NonNullable<TicketCanvasStudioProps["profile"]>>) => {
+      if (!onProfileChange) return;
+      onProfileChange({
+        agencyName,
+        phone,
+        address,
+        tagline,
+        logoUrl,
+        agent,
+        noBrand,
+        headerFooterPages: Array.from(headerPagesSet),
+        ...updates,
+      });
+    },
+    [onProfileChange, agencyName, phone, address, tagline, logoUrl, agent, noBrand, headerPagesSet]
+  );
+
+  const isPageBranded = useCallback(
+    (pageIdx1: number) => {
+      if (noBrand) return false;
+      if (headerScope === "all") return true;
+      if (headerScope === "first") return pageIdx1 === 1;
+      return headerPagesSet.has(pageIdx1 - 1);
+    },
+    [noBrand, headerScope, headerPagesSet]
+  );
+
+  const handleSaveDefaults = () => {
+    const prof = { agencyName, tagline, address, phone, agent, logoDataUrl: logoUrl };
+    try {
+      const storageKey = portal.toLowerCase().includes("agent") ? "b2b_branding_profile" : "rohi_print_format_profile";
+      window.localStorage.setItem(storageKey, JSON.stringify(prof));
+      setSavedFlash(true);
+      toast.success("Branding saved as default");
+      setTimeout(() => setSavedFlash(false), 2000);
+    } catch {
+      toast.error("Could not save to browser storage");
+    }
+  };
+
+  const handleResetDefaults = () => {
+    const isAgent = portal.toLowerCase().includes("agent");
+    try {
+      const storageKey = isAgent ? "b2b_branding_profile" : "rohi_print_format_profile";
+      window.localStorage.removeItem(storageKey);
+    } catch {}
+    const defName = isAgent ? "" : DEFAULT_NAME;
+    const defPhone = isAgent ? "" : DEFAULT_PHONE;
+    const defAddr = isAgent ? "" : DEFAULT_ADDRESS;
+    const defTag = isAgent ? "" : DEFAULT_TAGLINE;
+    setAgencyName(defName);
+    setPhone(defPhone);
+    setAddress(defAddr);
+    setTagline(defTag);
+    setAgent("");
+    setLogoUrl("");
+    if (logoFileRef.current) logoFileRef.current.value = "";
+    notifyProfileChange({
+      agencyName: defName,
+      phone: defPhone,
+      address: defAddr,
+      tagline: defTag,
+      agent: "",
+      logoUrl: "",
+    });
+    toast.info("Restored default settings");
+  };
+
+  const handleLogoFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      setLogoUrl(dataUrl);
+      notifyProfileChange({ logoUrl: dataUrl });
+      toast.success("Logo uploaded");
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Initialize initial bytes if provided
   useEffect(() => {
@@ -835,6 +953,123 @@ export default function TicketCanvasStudio({
       if (!preview) {
         const drop = [...new Set(list.filter((x) => x.kind === "removePage").map((x) => x.page))].sort((a, b) => b - a);
         for (const p of drop) pdf.removePage(p - 1);
+
+        if (!noBrand && (headerEnabled || footerEnabled)) {
+          const totalP = pdf.getPageCount();
+          const stdFontBold = await getFont(StandardFonts.HelveticaBold);
+          const stdFontReg = await getFont(StandardFonts.Helvetica);
+
+          let embeddedLogo: any = null;
+          if (logoUrl && logoUrl.startsWith("data:image/")) {
+            try {
+              const comma = logoUrl.indexOf(",");
+              const b64 = logoUrl.slice(comma + 1);
+              const binary = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+              if (logoUrl.includes("image/jpeg") || logoUrl.includes("image/jpg")) {
+                embeddedLogo = await pdf.embedJpg(binary);
+              } else {
+                embeddedLogo = await pdf.embedPng(binary);
+              }
+            } catch {
+              embeddedLogo = null;
+            }
+          }
+
+          for (let pIdx = 1; pIdx <= totalP; pIdx++) {
+            if (!isPageBranded(pIdx)) continue;
+            const p = pdf.getPage(pIdx - 1);
+            const { width: pW, height: pH } = p.getSize();
+
+            if (headerEnabled) {
+              const hH = 34;
+              p.drawRectangle({
+                x: 0,
+                y: pH - hH,
+                width: pW,
+                height: hH,
+                color: rgb(0.98, 0.976, 0.96),
+              });
+              p.drawLine({
+                start: { x: 0, y: pH - hH },
+                end: { x: pW, y: pH - hH },
+                thickness: 0.8,
+                color: rgb(0.85, 0.467, 0.341),
+              });
+
+              let leftX = 14;
+              if (embeddedLogo) {
+                const maxDim = 24;
+                const scale = maxDim / Math.max(embeddedLogo.width, embeddedLogo.height);
+                const lW = embeddedLogo.width * scale;
+                const lH = embeddedLogo.height * scale;
+                p.drawImage(embeddedLogo, {
+                  x: leftX,
+                  y: pH - hH + (hH - lH) / 2,
+                  width: lW,
+                  height: lH,
+                });
+                leftX += lW + 8;
+              }
+
+              p.drawText(agencyName || DEFAULT_NAME, {
+                x: leftX,
+                y: pH - 15,
+                size: 9.5,
+                font: stdFontBold,
+                color: rgb(0.08, 0.08, 0.075),
+              });
+              if (tagline) {
+                p.drawText(tagline, {
+                  x: leftX,
+                  y: pH - 25,
+                  size: 6.5,
+                  font: stdFontReg,
+                  color: rgb(0.47, 0.44, 0.42),
+                });
+              }
+
+              const rightText = phone || DEFAULT_PHONE;
+              const phoneW = stdFontBold.widthOfTextAtSize(rightText, 9);
+              p.drawText(rightText, {
+                x: pW - phoneW - 14,
+                y: pH - 15,
+                size: 9,
+                font: stdFontBold,
+                color: rgb(0.08, 0.08, 0.075),
+              });
+
+              const addrText = address || DEFAULT_ADDRESS;
+              const addrW = stdFontReg.widthOfTextAtSize(addrText, 6.5);
+              p.drawText(addrText, {
+                x: Math.max(leftX + 110, pW - addrW - 14),
+                y: pH - 25,
+                size: 6.5,
+                font: stdFontReg,
+                color: rgb(0.47, 0.44, 0.42),
+              });
+            }
+
+            if (footerEnabled) {
+              const fH = 16;
+              p.drawRectangle({
+                x: 0,
+                y: 0,
+                width: pW,
+                height: fH,
+                color: rgb(0.08, 0.08, 0.075),
+              });
+              const fText = `${agencyName || DEFAULT_NAME}  ·  Hotline: ${phone || DEFAULT_PHONE}  ·  Have Safe Journey!`;
+              const fTextW = stdFontBold.widthOfTextAtSize(fText, 7);
+              p.drawText(fText, {
+                x: (pW - fTextW) / 2,
+                y: 4.5,
+                size: 7,
+                font: stdFontBold,
+                color: rgb(1, 1, 1),
+              });
+            }
+          }
+        }
       }
       return pdf.save();
   }, []);
@@ -1237,56 +1472,276 @@ export default function TicketCanvasStudio({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="h-8 gap-1.5 border-[#DE7356]/40 text-[#DE7356] hover:bg-[#DE7356]/10"
-                title="Header & Footer Branding"
+                className="h-8 gap-1.5 border-[#D97757]/40 text-[#D97757] hover:bg-[#D97757]/10"
+                title="Header &amp; Footer Settings"
               >
                 <LayoutTemplate className="size-3.5" />
-                <span className="hidden sm:inline">Branding</span>
-                {(headerEnabled || footerEnabled) && (
-                  <span className="size-1.5 rounded-full bg-[#DE7356]" />
+                <span className="hidden sm:inline">Header &amp; Footer</span>
+                {(headerEnabled || footerEnabled) && !noBrand && (
+                  <span className="size-1.5 rounded-full bg-[#D97757]" />
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 space-y-3 p-4">
-              <div className="border-b border-border pb-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#141413]">
-                  Header &amp; Footer Branding
-                </h4>
-                <p className="text-[11px] text-muted-foreground">
-                  Stamps official Rohi / Agency identity onto printed or downloaded PDF.
-                </p>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium">Top Branded Header</span>
-                <Switch checked={headerEnabled} onCheckedChange={setHeaderEnabled} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium">Bottom Branded Footer</span>
-                <Switch checked={footerEnabled} onCheckedChange={setFooterEnabled} />
-              </div>
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-medium text-muted-foreground">Branding Scope</span>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={headerScope === "first" ? "default" : "outline"}
-                    className={`h-7 text-xs ${headerScope === "first" ? "bg-[#141413] text-white" : ""}`}
-                    onClick={() => setHeaderScope("first")}
-                  >
-                    Page 1 Only
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={headerScope === "all" ? "default" : "outline"}
-                    className={`h-7 text-xs ${headerScope === "all" ? "bg-[#141413] text-white" : ""}`}
-                    onClick={() => setHeaderScope("all")}
-                  >
-                    All Pages
-                  </Button>
+            <PopoverContent align="end" className="w-[360px] sm:w-[420px] max-h-[85vh] overflow-y-auto space-y-3.5 p-4 shadow-xl border-border bg-[#FAF9F5]">
+              <div className="flex items-center justify-between border-b border-[#E7E5E4] pb-2">
+                <div className="flex items-center gap-2">
+                  <LayoutTemplate className="size-4 text-[#D97757]" />
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-[#141413]">
+                      Header &amp; Footer Settings
+                    </h4>
+                    <p className="text-[10px] text-[#78716C]">
+                      Customize branding on downloaded and printed tickets
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              <label className="flex items-start gap-2.5 rounded-lg border border-[#E7E5E4] bg-white p-2.5 cursor-pointer hover:bg-black/[0.02]">
+                <input
+                  type="checkbox"
+                  checked={noBrand}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setNoBrand(val);
+                    notifyProfileChange({ noBrand: val });
+                  }}
+                  className="mt-0.5 h-4 w-4 accent-[#D97757]"
+                />
+                <div>
+                  <p className="text-xs font-bold text-[#141413]">Remove header, footer &amp; agent details</p>
+                  <p className="text-[10px] text-[#78716C] leading-snug">
+                    Outputs ticket only — no branding, agency name, address, phone, arranger or footer note.
+                  </p>
+                </div>
+              </label>
+
+              {!noBrand && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center justify-between rounded-lg border border-[#E7E5E4] bg-white px-2.5 py-2">
+                      <span className="text-xs font-semibold text-[#141413]">Top Header</span>
+                      <Switch
+                        checked={headerEnabled}
+                        onCheckedChange={(c) => {
+                          setHeaderEnabled(c);
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-[#E7E5E4] bg-white px-2.5 py-2">
+                      <span className="text-xs font-semibold text-[#141413]">Bottom Footer</span>
+                      <Switch
+                        checked={footerEnabled}
+                        onCheckedChange={(c) => {
+                          setFooterEnabled(c);
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 rounded-lg border border-dashed border-[#D97757]/30 bg-[#D97757]/5 p-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#141413]">
+                        Apply to Pages
+                      </span>
+                      <div className="flex items-center gap-1.5 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeaderScope("first");
+                            setHeaderPagesSet(new Set([0]));
+                            notifyProfileChange({ headerFooterPages: [0] });
+                          }}
+                          className={`rounded px-1.5 py-0.5 font-bold uppercase ${headerScope === "first" ? "bg-[#141413] text-white" : "text-[#78716C] hover:text-[#141413]"}`}
+                        >
+                          Page 1
+                        </button>
+                        <span className="text-[#E7E5E4]">·</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeaderScope("all");
+                            const all = Array.from({ length: pages.length || 1 }, (_, i) => i);
+                            setHeaderPagesSet(new Set(all));
+                            notifyProfileChange({ headerFooterPages: all });
+                          }}
+                          className={`rounded px-1.5 py-0.5 font-bold uppercase ${headerScope === "all" ? "bg-[#141413] text-white" : "text-[#78716C] hover:text-[#141413]"}`}
+                        >
+                          All Pages
+                        </button>
+                      </div>
+                    </div>
+                    {pages.length > 1 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {pages.map((p) => {
+                          const idx0 = p.index - 1;
+                          const on = headerScope === "all" ? true : headerScope === "first" ? idx0 === 0 : headerPagesSet.has(idx0);
+                          return (
+                            <button
+                              key={p.index}
+                              type="button"
+                              onClick={() => {
+                                setHeaderScope("custom");
+                                const next = new Set(headerPagesSet);
+                                if (on) next.delete(idx0); else next.add(idx0);
+                                setHeaderPagesSet(next);
+                                notifyProfileChange({ headerFooterPages: Array.from(next) });
+                              }}
+                              className={`flex h-6 w-6 items-center justify-center rounded text-[11px] font-bold transition-colors ${
+                                on
+                                  ? "bg-[#D97757] text-white shadow-xs"
+                                  : "border border-[#E7E5E4] bg-white text-[#78716C] hover:border-[#141413] hover:text-[#141413]"
+                              }`}
+                            >
+                              {p.index}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                        Agency Name
+                      </label>
+                      <Input
+                        value={agencyName}
+                        onChange={(e) => {
+                          setAgencyName(e.target.value);
+                          notifyProfileChange({ agencyName: e.target.value });
+                        }}
+                        placeholder={DEFAULT_NAME}
+                        className="h-8 text-xs bg-white border-[#E7E5E4]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                        Tagline <span className="font-normal normal-case text-muted-foreground">(optional)</span>
+                      </label>
+                      <Input
+                        value={tagline}
+                        onChange={(e) => {
+                          setTagline(e.target.value);
+                          notifyProfileChange({ tagline: e.target.value });
+                        }}
+                        placeholder={DEFAULT_TAGLINE}
+                        className="h-8 text-xs bg-white border-[#E7E5E4]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                        Address <span className="font-normal normal-case text-muted-foreground">(optional)</span>
+                      </label>
+                      <Input
+                        value={address}
+                        onChange={(e) => {
+                          setAddress(e.target.value);
+                          notifyProfileChange({ address: e.target.value });
+                        }}
+                        placeholder={DEFAULT_ADDRESS}
+                        className="h-8 text-xs bg-white border-[#E7E5E4]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                          Contact / WhatsApp
+                        </label>
+                        <Input
+                          value={phone}
+                          onChange={(e) => {
+                            setPhone(e.target.value);
+                            notifyProfileChange({ phone: e.target.value });
+                          }}
+                          placeholder={DEFAULT_PHONE}
+                          className="h-8 text-xs bg-white border-[#E7E5E4]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                          Travel Arranger
+                        </label>
+                        <Input
+                          value={agent}
+                          onChange={(e) => {
+                            setAgent(e.target.value);
+                            notifyProfileChange({ agent: e.target.value });
+                          }}
+                          placeholder="e.g. Ahmed Khan"
+                          className="h-8 text-xs bg-white border-[#E7E5E4]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-0.5 block text-[10px] font-bold uppercase tracking-wider text-[#78716C]">
+                        Agency Logo
+                      </label>
+                      <input
+                        ref={logoFileRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleLogoFile(e.target.files?.[0])}
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => logoFileRef.current?.click()}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#141413]/30 bg-white px-2.5 py-1.5 text-xs font-bold text-[#141413] hover:bg-black/5"
+                        >
+                          <Upload className="size-3.5" />
+                          {logoUrl ? "Replace Logo" : "Upload Agency Logo"}
+                        </button>
+                        {logoUrl && (
+                          <div className="flex items-center gap-1">
+                            <img
+                              src={logoUrl}
+                              alt="Logo"
+                              className="h-7 w-7 rounded object-contain border border-[#E7E5E4] bg-white p-0.5"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLogoUrl("");
+                                if (logoFileRef.current) logoFileRef.current.value = "";
+                                notifyProfileChange({ logoUrl: "" });
+                              }}
+                              className="rounded p-1 text-[#78716C] hover:bg-destructive/10 hover:text-destructive"
+                              title="Remove logo"
+                            >
+                              <CloseIcon className="size-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-[#E7E5E4] pt-2.5">
+                    <button
+                      type="button"
+                      onClick={handleResetDefaults}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#78716C] hover:text-[#141413]"
+                    >
+                      <RotateCcw className="size-3" /> Reset Defaults
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveDefaults}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#141413] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/80"
+                    >
+                      {savedFlash ? <Check className="size-3" /> : <Save className="size-3" />}
+                      {savedFlash ? "Saved!" : "Save as Default"}
+                    </button>
+                  </div>
+                </>
+              )}
             </PopoverContent>
           </Popover>
 
@@ -1450,29 +1905,43 @@ export default function TicketCanvasStudio({
                     onPointerCancel={(e) => finishDrag(e, info)}
                     onDoubleClick={(e) => onDoubleClick(e, info)}
                   >
-                    {headerEnabled && (headerScope === "all" || info.index === 1) && (
+                    {headerEnabled && isPageBranded(info.index) && (
                       <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-[#E7E5E4] bg-[#FAF9F5]/95 px-3 py-1.5 backdrop-blur-xs">
-                        <div>
-                          <p className="text-[11px] font-bold text-[#141413] leading-tight">
-                            {profile?.agencyName || "ROHI INTERNATIONAL TRAVELS"}
-                          </p>
-                          <p className="text-[9px] text-[#78716C] leading-tight">
-                            {profile?.tagline || "IATA Certified Travel Agency"}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          {logoUrl && (
+                            <img src={logoUrl} alt="Logo" className="h-7 max-w-[80px] object-contain" />
+                          )}
+                          <div>
+                            <p className="text-[11px] font-bold text-[#141413] leading-tight">
+                              {agencyName || DEFAULT_NAME}
+                            </p>
+                            {tagline && (
+                              <p className="text-[9px] text-[#78716C] leading-tight">
+                                {tagline}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="text-[11px] font-bold text-[#141413] leading-tight">
-                            {profile?.phone || "+92 300 0000000"}
+                            {phone || DEFAULT_PHONE}
                           </p>
                           <p className="text-[9px] text-[#78716C] leading-tight">
-                            {profile?.address || "Rahim Yar Khan, Pakistan"}
+                            {address || DEFAULT_ADDRESS}
                           </p>
+                          {agent && (
+                            <p className="text-[8px] font-semibold text-[#D97757] leading-tight">
+                              Arranger: {agent}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
-                    {footerEnabled && (headerScope === "all" || info.index === 1) && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 bg-[#141413] py-1 text-center text-[9px] font-bold text-white">
-                        {profile?.agencyName || "ROHI INTERNATIONAL TRAVELS"} · Hotline: {profile?.phone || "+92 300 0000000"} · Have Safe Journey!
+                    {footerEnabled && isPageBranded(info.index) && (
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 bg-[#141413] py-1 px-3 text-center text-[9px] font-bold text-white flex items-center justify-between">
+                        <span>{agencyName || DEFAULT_NAME}</span>
+                        <span>Hotline: {phone || DEFAULT_PHONE}</span>
+                        <span>Have Safe Journey!</span>
                       </div>
                     )}
                     <canvas
