@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { LayoutTemplate, X as CloseIcon, FileEdit, Upload, RotateCcw } from "lucide-react";
+import { LayoutTemplate, X as CloseIcon, FileEdit, Upload, RotateCcw, Stamp, Plane, Phone, MessageCircle } from "lucide-react";
 
 
 // Worker setup with CDN fallback
@@ -27,6 +27,48 @@ if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || "4.10.38"}/pdf.worker.min.mjs`;
   }
 }
+
+function StampCorners() {
+  const c = "absolute size-1.5 border-red-600";
+  return (
+    <>
+      <span className={`${c} -top-0.5 -left-0.5 border-t border-l`} />
+      <span className={`${c} -top-0.5 -right-0.5 border-t border-r`} />
+      <span className={`${c} -bottom-0.5 -left-0.5 border-b border-l`} />
+      <span className={`${c} -bottom-0.5 -right-0.5 border-b border-r`} />
+    </>
+  );
+}
+
+function StampSingle({ text }: { text: string }) {
+  return (
+    <div className="relative inline-flex items-center gap-2 border-[1.5px] border-red-600 bg-white/95 px-3.5 py-1.5 text-red-600 shadow-sm">
+      <StampCorners />
+      <div className="flex h-5 w-5 items-center justify-center rounded-full border border-red-600">
+        <Plane className="h-3 w-3 -rotate-45 text-red-600" />
+      </div>
+      <span className="text-xs font-black tracking-wider">{text}</span>
+    </div>
+  );
+}
+
+function StampGroup() {
+  return (
+    <div className="relative inline-flex items-center gap-2.5 border-[1.5px] border-red-600 bg-white/95 px-3.5 py-1 text-red-600 shadow-sm">
+      <StampCorners />
+      <div className="flex h-6 w-6 items-center justify-center rounded-full border border-red-600">
+        <Plane className="h-3.5 w-3.5 -rotate-45 text-red-600" />
+      </div>
+      <div className="leading-tight text-left">
+        <div className="text-xs font-black tracking-wider">GROUP TICKET</div>
+        <div className="my-0.5 h-[1px] w-full bg-red-600" />
+        <div className="text-[8px] font-black tracking-wider">NON REFUNDABLE</div>
+        <div className="text-[8px] font-black tracking-wider">NON CHANGEABLE</div>
+      </div>
+    </div>
+  );
+}
+
 
 type Box = { x: number; y: number; w: number; h: number };
 type RGB = { r: number; g: number; b: number };
@@ -219,6 +261,10 @@ export interface TicketCanvasStudioProps {
     agent?: string;
     noBrand?: boolean;
     headerFooterPages?: number[];
+    stamps?: {
+      nonRefundable?: boolean;
+      group?: boolean;
+    };
   };
   onProfileChange?: (profile: {
     agencyName?: string;
@@ -229,6 +275,10 @@ export interface TicketCanvasStudioProps {
     agent?: string;
     noBrand?: boolean;
     headerFooterPages?: number[];
+    stamps?: {
+      nonRefundable?: boolean;
+      group?: boolean;
+    };
   }) => void;
   initialHeaderEnabled?: boolean;
   initialFooterEnabled?: boolean;
@@ -282,9 +332,16 @@ export default function TicketCanvasStudio({
   const [printRange, setPrintRange] = useState<"all" | "current" | "custom">("all");
   const [printCustom, setPrintCustom] = useState("");
   const DEFAULT_NAME = "ROHI INTERNATIONAL TRAVELS";
-  const DEFAULT_PHONE = "0300 0600867";
-  const DEFAULT_ADDRESS = "Near Al-Razi Hospital, Trust Colony Road, Rahim Yar Khan";
+  const DEFAULT_PHONE = "0305 6622988";
+  const DEFAULT_ADDRESS = "Sardar Market Shahi Road Rahim Yar Khan";
   const DEFAULT_TAGLINE = "Your's Trust";
+  const DEFAULT_AGENT = "Abdul Razzaq";
+
+  const [stamps, setStamps] = useState<{ nonRefundable: boolean; group: boolean }>({
+    nonRefundable: Boolean(profile?.stamps?.nonRefundable),
+    group: Boolean(profile?.stamps?.group),
+  });
+  const [stampPopoverOpen, setStampPopoverOpen] = useState(false);
 
   const [headerEnabled, setHeaderEnabled] = useState(initialHeaderEnabled && !profile?.noBrand);
   const [footerEnabled, setFooterEnabled] = useState(initialFooterEnabled && !profile?.noBrand);
@@ -299,7 +356,7 @@ export default function TicketCanvasStudio({
   const [tagline, setTagline] = useState(profile?.tagline ?? DEFAULT_TAGLINE);
   const [address, setAddress] = useState(profile?.address || DEFAULT_ADDRESS);
   const [phone, setPhone] = useState(profile?.phone || DEFAULT_PHONE);
-  const [agent, setAgent] = useState(profile?.agent || "");
+  const [agent, setAgent] = useState(profile?.agent || (portal.toLowerCase().includes("agent") ? "" : DEFAULT_AGENT));
   const [logoUrl, setLogoUrl] = useState(profile?.logoUrl || "");
   const [brandingOpen, setBrandingOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -317,10 +374,11 @@ export default function TicketCanvasStudio({
         agent,
         noBrand,
         headerFooterPages: Array.from(headerPagesSet),
+        stamps,
         ...updates,
       });
     },
-    [onProfileChange, agencyName, phone, address, tagline, logoUrl, agent, noBrand, headerPagesSet]
+    [onProfileChange, agencyName, phone, address, tagline, logoUrl, agent, noBrand, headerPagesSet, stamps]
   );
 
   const isPageBranded = useCallback(
@@ -334,12 +392,12 @@ export default function TicketCanvasStudio({
   );
 
   const handleSaveDefaults = () => {
-    const prof = { agencyName, tagline, address, phone, agent, logoDataUrl: logoUrl };
+    const prof = { agencyName, tagline, address, phone, agent, logoDataUrl: logoUrl, stamps };
     try {
       const storageKey = portal.toLowerCase().includes("agent") ? "b2b_branding_profile" : "rohi_print_format_profile";
       window.localStorage.setItem(storageKey, JSON.stringify(prof));
       setSavedFlash(true);
-      toast.success("Branding saved as default");
+      toast.success("Saved as my default");
       setTimeout(() => setSavedFlash(false), 2000);
     } catch {
       toast.error("Could not save to browser storage");
@@ -954,7 +1012,7 @@ export default function TicketCanvasStudio({
         const drop = [...new Set(list.filter((x) => x.kind === "removePage").map((x) => x.page))].sort((a, b) => b - a);
         for (const p of drop) pdf.removePage(p - 1);
 
-        if (!noBrand && (headerEnabled || footerEnabled)) {
+        if (!noBrand && (headerEnabled || footerEnabled || stamps.nonRefundable || stamps.group)) {
           const totalP = pdf.getPageCount();
           const stdFontBold = await getFont(StandardFonts.HelveticaBold);
           const stdFontReg = await getFont(StandardFonts.Helvetica);
@@ -975,13 +1033,124 @@ export default function TicketCanvasStudio({
             }
           }
 
+          const red = rgb(0.83, 0.10, 0.14);
+
+          const drawPlaneIcon = (page: any, cx: number, cy: number, r: number) => {
+            page.drawCircle({ x: cx, y: cy, size: r, borderColor: red, borderWidth: 1.2 });
+            const s = r / 6;
+            const path =
+              "M0,5 L1.6,1 L6,-0.4 L6,-1.6 L1.6,-1 L0.4,-4 L1.8,-4.6 L1.8,-5.4 " +
+              "L-1.8,-5.4 L-1.8,-4.6 L-0.4,-4 L-1.6,-1 L-6,-1.6 L-6,-0.4 L-1.6,1 Z";
+            try {
+              page.drawSvgPath(path, {
+                x: cx,
+                y: cy,
+                scale: s,
+                color: red,
+                borderColor: red,
+                borderWidth: 0.2,
+              });
+            } catch {}
+          };
+
+          const drawCorners = (page: any, x: number, y: number, w: number, h: number) => {
+            const inset = 4;
+            const len = 7;
+            const t = 1;
+            const bx = x + inset, by = y + inset, bw = w - inset * 2, bh = h - inset * 2;
+            const seg = (px: number, py: number, ww: number, hh: number) =>
+              page.drawRectangle({ x: px, y: py, width: ww, height: hh, color: red });
+            seg(bx, by, len, t); seg(bx, by, t, len);
+            seg(bx + bw - len, by, len, t); seg(bx + bw - t, by, t, len);
+            seg(bx, by + bh - t, len, t); seg(bx, by + bh - len, t, len);
+            seg(bx + bw - len, by + bh - t, len, t); seg(bx + bw - t, by + bh - len, t, len);
+          };
+
+          type StampItem = { kind: "single"; text: string } | { kind: "group" };
+
+          const drawSingleStamp = (page: any, stamp: StampItem, cx: number, cy: number) => {
+            if (stamp.kind === "single") {
+              const size = 12;
+              const iconR = 8;
+              const padX = 12;
+              const padY = 8;
+              const gap = 8;
+              const textW = stdFontBold.widthOfTextAtSize(stamp.text, size);
+              const w = padX * 2 + iconR * 2 + gap + textW;
+              const h = padY * 2 + Math.max(size, iconR * 2);
+              const x = cx - w / 2;
+              const y = cy - h / 2;
+              page.drawRectangle({ x, y, width: w, height: h, borderColor: red, borderWidth: 1.2, color: rgb(1, 1, 1) });
+              drawCorners(page, x, y, w, h);
+              drawPlaneIcon(page, x + padX + iconR, y + h / 2, iconR);
+              page.drawText(stamp.text, {
+                x: x + padX + iconR * 2 + gap,
+                y: y + (h - size) / 2 + 1,
+                size,
+                font: stdFontBold,
+                color: red,
+              });
+            } else {
+              const titleSize = 13;
+              const subSize = 8;
+              const iconR = 10;
+              const padX = 12;
+              const padY = 8;
+              const gap = 10;
+              const title = "GROUP TICKET";
+              const sub1 = "NON REFUNDABLE";
+              const sub2 = "NON CHANGEABLE";
+              const titleW = stdFontBold.widthOfTextAtSize(title, titleSize);
+              const subW = Math.max(
+                stdFontBold.widthOfTextAtSize(sub1, subSize),
+                stdFontBold.widthOfTextAtSize(sub2, subSize),
+              );
+              const rightW = Math.max(titleW, subW);
+              const w = padX * 2 + iconR * 2 + gap + rightW;
+              const h = padY * 2 + titleSize + 4 + subSize * 2 + 3;
+              const x = cx - w / 2;
+              const y = cy - h / 2;
+              page.drawRectangle({ x, y, width: w, height: h, borderColor: red, borderWidth: 1.2, color: rgb(1, 1, 1) });
+              drawCorners(page, x, y, w, h);
+              drawPlaneIcon(page, x + padX + iconR, y + h / 2, iconR);
+              const textX = x + padX + iconR * 2 + gap;
+              const titleY = y + h - padY - titleSize + 2;
+              page.drawText(title, { x: textX, y: titleY, size: titleSize, font: stdFontBold, color: red });
+              page.drawRectangle({
+                x: textX,
+                y: titleY - 3,
+                width: rightW,
+                height: 0.8,
+                color: red,
+              });
+              page.drawText(sub1, {
+                x: textX,
+                y: titleY - 3 - subSize - 3,
+                size: subSize,
+                font: stdFontBold,
+                color: red,
+              });
+              page.drawText(sub2, {
+                x: textX,
+                y: titleY - 3 - subSize * 2 - 5,
+                size: subSize,
+                font: stdFontBold,
+                color: red,
+              });
+            }
+          };
+
+          const activeStamps: StampItem[] = [];
+          if (stamps.nonRefundable) activeStamps.push({ kind: "single", text: "NON REFUNDABLE" });
+          if (stamps.group) activeStamps.push({ kind: "group" });
+
           for (let pIdx = 1; pIdx <= totalP; pIdx++) {
             if (!isPageBranded(pIdx)) continue;
             const p = pdf.getPage(pIdx - 1);
             const { width: pW, height: pH } = p.getSize();
 
             if (headerEnabled) {
-              const hH = 34;
+              const hH = 38;
               p.drawRectangle({
                 x: 0,
                 y: pH - hH,
@@ -992,13 +1161,19 @@ export default function TicketCanvasStudio({
               p.drawLine({
                 start: { x: 0, y: pH - hH },
                 end: { x: pW, y: pH - hH },
-                thickness: 0.8,
+                thickness: 1.2,
+                color: rgb(0.85, 0.467, 0.341),
+              });
+              p.drawLine({
+                start: { x: 0, y: pH - hH - 2 },
+                end: { x: pW, y: pH - hH - 2 },
+                thickness: 0.5,
                 color: rgb(0.85, 0.467, 0.341),
               });
 
               let leftX = 14;
               if (embeddedLogo) {
-                const maxDim = 24;
+                const maxDim = 28;
                 const scale = maxDim / Math.max(embeddedLogo.width, embeddedLogo.height);
                 const lW = embeddedLogo.width * scale;
                 const lH = embeddedLogo.height * scale;
@@ -1013,66 +1188,108 @@ export default function TicketCanvasStudio({
 
               p.drawText(agencyName || DEFAULT_NAME, {
                 x: leftX,
-                y: pH - 15,
-                size: 9.5,
+                y: pH - 16,
+                size: 11,
                 font: stdFontBold,
                 color: rgb(0.08, 0.08, 0.075),
               });
-              if (tagline) {
-                p.drawText(tagline, {
+              if (tagline || DEFAULT_TAGLINE) {
+                p.drawText(tagline || DEFAULT_TAGLINE, {
                   x: leftX,
-                  y: pH - 25,
-                  size: 6.5,
+                  y: pH - 27,
+                  size: 7,
                   font: stdFontReg,
                   color: rgb(0.47, 0.44, 0.42),
                 });
               }
 
               const rightText = phone || DEFAULT_PHONE;
-              const phoneW = stdFontBold.widthOfTextAtSize(rightText, 9);
+              const phoneW = stdFontBold.widthOfTextAtSize(rightText, 10);
               p.drawText(rightText, {
                 x: pW - phoneW - 14,
                 y: pH - 15,
-                size: 9,
+                size: 10,
                 font: stdFontBold,
                 color: rgb(0.08, 0.08, 0.075),
               });
 
+              if (agent || DEFAULT_AGENT) {
+                const agText = `Travel Arranger: ${agent || DEFAULT_AGENT}`;
+                const agW = stdFontBold.widthOfTextAtSize(agText, 7.5);
+                p.drawText(agText, {
+                  x: pW - agW - 14,
+                  y: pH - 24,
+                  size: 7.5,
+                  font: stdFontBold,
+                  color: rgb(0.85, 0.467, 0.341),
+                });
+              }
+
               const addrText = address || DEFAULT_ADDRESS;
               const addrW = stdFontReg.widthOfTextAtSize(addrText, 6.5);
               p.drawText(addrText, {
-                x: Math.max(leftX + 110, pW - addrW - 14),
-                y: pH - 25,
+                x: pW - addrW - 14,
+                y: pH - 33,
                 size: 6.5,
                 font: stdFontReg,
                 color: rgb(0.47, 0.44, 0.42),
               });
             }
 
+            if (activeStamps.length > 0) {
+              const baselineY = footerEnabled ? 36 : 24;
+              const stampW = 140;
+              const gap = 20;
+              const totalW = activeStamps.length * stampW + (activeStamps.length - 1) * gap;
+              let cursor = (pW - totalW) / 2;
+              activeStamps.forEach((st) => {
+                const cx = cursor + stampW / 2;
+                drawSingleStamp(p, st, cx, baselineY);
+                cursor += stampW + gap;
+              });
+            }
+
             if (footerEnabled) {
-              const fH = 16;
+              const fH = 22;
               p.drawRectangle({
                 x: 0,
                 y: 0,
                 width: pW,
                 height: fH,
-                color: rgb(0.08, 0.08, 0.075),
+                color: rgb(0.98, 0.976, 0.96),
               });
-              const fText = `${agencyName || DEFAULT_NAME}  ·  Hotline: ${phone || DEFAULT_PHONE}  ·  Have Safe Journey!`;
-              const fTextW = stdFontBold.widthOfTextAtSize(fText, 7);
-              p.drawText(fText, {
-                x: (pW - fTextW) / 2,
-                y: 4.5,
+              p.drawLine({
+                start: { x: 0, y: fH },
+                end: { x: pW, y: fH },
+                thickness: 0.8,
+                color: rgb(0.85, 0.467, 0.341),
+              });
+
+              const fText1 = `${agencyName || DEFAULT_NAME}  ·  ${address || DEFAULT_ADDRESS}  ·  ${phone || DEFAULT_PHONE}`;
+              const fW1 = stdFontBold.widthOfTextAtSize(fText1, 7);
+              p.drawText(fText1, {
+                x: (pW - fW1) / 2,
+                y: 11,
                 size: 7,
                 font: stdFontBold,
-                color: rgb(1, 1, 1),
+                color: rgb(0.08, 0.08, 0.075),
+              });
+
+              const fText2 = "Thank you for booking with us — Have Safe Journey!";
+              const fW2 = stdFontReg.widthOfTextAtSize(fText2, 6.5);
+              p.drawText(fText2, {
+                x: (pW - fW2) / 2,
+                y: 3.5,
+                size: 6.5,
+                font: stdFontReg,
+                color: rgb(0.47, 0.44, 0.42),
               });
             }
           }
         }
       }
       return pdf.save();
-  }, [agencyName, tagline, address, phone, agent, logoUrl, noBrand, headerEnabled, footerEnabled, isPageBranded]);
+  }, [agencyName, tagline, address, phone, agent, logoUrl, noBrand, headerEnabled, footerEnabled, stamps, isPageBranded]);
 
   // Live preview = the exact file that will be downloaded
   useEffect(() => {
@@ -1081,7 +1298,7 @@ export default function TicketCanvasStudio({
     const t = setTimeout(async () => {
       try {
         const hasPdfChanges = edits.some((e) => e.kind !== "rotate" && e.kind !== "removePage");
-        const hasBranding = !noBrand && (headerEnabled || footerEnabled);
+        const hasBranding = !noBrand && (headerEnabled || footerEnabled || stamps.nonRefundable || stamps.group);
         const out = hasPdfChanges || hasBranding || noBrand
           ? await buildPdf(bytes, edits, { editing })
           : new Uint8Array(bytes.slice(0));
@@ -1095,7 +1312,7 @@ export default function TicketCanvasStudio({
       cancelled = true;
       clearTimeout(t);
     };
-  }, [bytes, edits, editing, buildPdf, noBrand, headerEnabled, footerEnabled, agencyName, tagline, address, phone, agent, logoUrl]);
+  }, [bytes, edits, editing, buildPdf, noBrand, headerEnabled, footerEnabled, stamps, agencyName, tagline, address, phone, agent, logoUrl]);
 
   const outputEdits = (): Edit[] =>
     editing !== null
@@ -1468,6 +1685,60 @@ export default function TicketCanvasStudio({
           <Button type="button" size="sm" variant="secondary" onClick={() => void save()} disabled={!bytes || busy} title="Save (Ctrl+S)">
             <Save /> <span className="hidden sm:inline">Save</span>
           </Button>
+          <Popover open={stampPopoverOpen} onOpenChange={setStampPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className={`h-8 gap-1.5 ${(stamps.nonRefundable || stamps.group) ? "border-red-600/50 text-red-600 bg-red-500/10 font-bold" : "border-border text-foreground hover:bg-secondary"}`}
+                title="Stamp Options (NON REFUNDABLE, GROUP TICKET)"
+              >
+                <Stamp className="size-3.5 text-red-600" />
+                <span className="hidden sm:inline">Stamp Options</span>
+                {(stamps.nonRefundable || stamps.group) && (
+                  <span className="size-1.5 rounded-full bg-red-600" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[340px] p-4 shadow-xl border-border bg-[#FAF9F5] space-y-3">
+              <div className="border-b border-[#E7E5E4] pb-2 flex items-center gap-2">
+                <Stamp className="size-4 text-red-600" />
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-navy">Stamp Options</h4>
+                  <p className="text-[10px] text-muted-foreground">Select official stamps for ticket pages</p>
+                </div>
+              </div>
+              <label className="flex items-center gap-3 rounded-lg border border-[#E7E5E4] bg-white p-2.5 cursor-pointer hover:bg-black/[0.02]">
+                <input
+                  type="checkbox"
+                  checked={stamps.nonRefundable}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    const next = { ...stamps, nonRefundable: val };
+                    setStamps(next);
+                    notifyProfileChange({ stamps: next });
+                  }}
+                  className="h-4 w-4 accent-red-600"
+                />
+                <span className="text-xs font-bold text-red-600">NON REFUNDABLE</span>
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-[#E7E5E4] bg-white p-2.5 cursor-pointer hover:bg-black/[0.02]">
+                <input
+                  type="checkbox"
+                  checked={stamps.group}
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    const next = { ...stamps, group: val };
+                    setStamps(next);
+                    notifyProfileChange({ stamps: next });
+                  }}
+                  className="h-4 w-4 accent-red-600"
+                />
+                <span className="text-xs font-bold text-red-600">GROUP TICKET · NON REFUNDABLE NON CHANGEABLE</span>
+              </label>
+            </PopoverContent>
+          </Popover>
           <Popover open={brandingOpen} onOpenChange={setBrandingOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -1725,6 +1996,42 @@ export default function TicketCanvasStudio({
                     </div>
                   </div>
 
+                  {/* Stamp Options section */}
+                  <div className="space-y-2 rounded-lg border border-red-600/30 bg-red-500/5 p-3">
+                    <div className="flex items-center gap-1.5 border-b border-red-600/20 pb-1.5">
+                      <Stamp className="size-3.5 text-red-600" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-navy">Stamp Options</span>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={stamps.nonRefundable}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next = { ...stamps, nonRefundable: val };
+                          setStamps(next);
+                          notifyProfileChange({ stamps: next });
+                        }}
+                        className="h-3.5 w-3.5 accent-red-600"
+                      />
+                      <span className="text-xs font-bold text-red-600">NON REFUNDABLE</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={stamps.group}
+                        onChange={(e) => {
+                          const val = e.target.checked;
+                          const next = { ...stamps, group: val };
+                          setStamps(next);
+                          notifyProfileChange({ stamps: next });
+                        }}
+                        className="h-3.5 w-3.5 accent-red-600"
+                      />
+                      <span className="text-xs font-bold text-red-600">GROUP TICKET · NON REFUNDABLE NON CHANGEABLE</span>
+                    </label>
+                  </div>
+
                   <div className="flex items-center justify-between border-t border-[#E7E5E4] pt-2.5">
                     <button
                       type="button"
@@ -1907,43 +2214,64 @@ export default function TicketCanvasStudio({
                     onPointerCancel={(e) => finishDrag(e, info)}
                     onDoubleClick={(e) => onDoubleClick(e, info)}
                   >
-                    {headerEnabled && isPageBranded(info.index) && (
-                      <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-between border-b border-[#E7E5E4] bg-[#FAF9F5]/95 px-3 py-1.5 backdrop-blur-xs">
-                        <div className="flex items-center gap-2">
-                          {logoUrl && (
-                            <img src={logoUrl} alt="Logo" className="h-7 max-w-[80px] object-contain" />
+                    {headerEnabled && !noBrand && isPageBranded(info.index) && (
+                      <div className="pointer-events-none absolute left-0 right-0 top-0 z-10 flex items-center justify-between gap-4 border-b-2 border-double border-navy bg-[#FAF9F5]/95 px-4 py-2 backdrop-blur-xs">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          {logoUrl ? (
+                            <img src={logoUrl} alt="Logo" className="h-10 max-w-[80px] object-contain" />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy">
+                              <Plane className="h-4 w-4 -rotate-45 text-[#D97757]" />
+                            </div>
                           )}
-                          <div>
-                            <p className="text-[11px] font-bold text-[#141413] leading-tight">
+                          <div className="min-w-0">
+                            <p className="font-serif text-sm font-black leading-tight text-navy">
                               {agencyName || DEFAULT_NAME}
                             </p>
-                            {tagline && (
-                              <p className="text-[9px] text-[#78716C] leading-tight">
-                                {tagline}
+                            {(tagline || DEFAULT_TAGLINE) && (
+                              <p className="mt-0.5 text-[8px] font-bold tracking-[0.2em] text-muted-foreground">
+                                {tagline || DEFAULT_TAGLINE}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[11px] font-bold text-[#141413] leading-tight">
-                            {phone || DEFAULT_PHONE}
+                        <div className="text-right text-navy">
+                          <p className="inline-flex items-center gap-1.5 text-xs font-extrabold leading-tight">
+                            <Phone className="h-3 w-3" style={{ color: "#25D366" }} fill="#25D366" />
+                            <span>{phone || DEFAULT_PHONE}</span>
                           </p>
-                          <p className="text-[9px] text-[#78716C] leading-tight">
-                            {address || DEFAULT_ADDRESS}
-                          </p>
-                          {agent && (
-                            <p className="text-[8px] font-semibold text-[#D97757] leading-tight">
-                              Arranger: {agent}
+                          {(agent || DEFAULT_AGENT) && (
+                            <p className="mt-0.5 text-[9px] font-semibold text-navy">
+                              <span className="text-muted-foreground">Travel Arranger:</span>{" "}
+                              <span className="font-black text-[#D97757]">{agent || DEFAULT_AGENT}</span>
+                            </p>
+                          )}
+                          {(address || DEFAULT_ADDRESS) && (
+                            <p className="text-[8px] font-medium text-muted-foreground truncate max-w-[200px]">
+                              {address || DEFAULT_ADDRESS}
                             </p>
                           )}
                         </div>
                       </div>
                     )}
-                    {footerEnabled && isPageBranded(info.index) && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 bg-[#141413] py-1 px-3 text-center text-[9px] font-bold text-white flex items-center justify-between">
-                        <span>{agencyName || DEFAULT_NAME}</span>
-                        <span>Hotline: {phone || DEFAULT_PHONE}</span>
-                        <span>Have Safe Journey!</span>
+
+                    {(stamps.nonRefundable || stamps.group) && !noBrand && isPageBranded(info.index) && (
+                      <div className="pointer-events-none absolute bottom-11 left-0 right-0 z-10 flex flex-wrap items-center justify-center gap-4">
+                        {stamps.nonRefundable && <StampSingle text="NON REFUNDABLE" />}
+                        {stamps.group && <StampGroup />}
+                      </div>
+                    )}
+
+                    {footerEnabled && !noBrand && isPageBranded(info.index) && (
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 border-t border-navy bg-[#FAF9F5]/95 py-1 px-3 text-center text-[9px] font-semibold tracking-wide text-navy">
+                        <p>
+                          {agencyName || DEFAULT_NAME}
+                          {` · ${address || DEFAULT_ADDRESS}`}
+                          {` · ${phone || DEFAULT_PHONE}`}
+                        </p>
+                        <p className="text-[7.5px] font-normal text-muted-foreground leading-tight">
+                          Thank you for booking with us — Have Safe Journey!
+                        </p>
                       </div>
                     )}
                     <canvas

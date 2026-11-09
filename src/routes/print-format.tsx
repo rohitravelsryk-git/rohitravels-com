@@ -1654,9 +1654,13 @@ function PrintFormatPage() {
                 address: address.trim() || (agentPortal ? "" : DEFAULT_ADDRESS),
                 tagline: tagline.trim() || (agentPortal ? "" : DEFAULT_TAGLINE),
                 logoUrl: logoDataUrl || undefined,
-                agent: agent.trim() || undefined,
+                agent: agent.trim() || (agentPortal ? "" : DEFAULT_AGENT),
                 noBrand: noBrand,
                 headerFooterPages: Array.from(headerFooterPages),
+                stamps: {
+                  nonRefundable: stamps.nonRefundable,
+                  group: stamps.group,
+                },
               }}
               onProfileChange={(p) => {
                 if (p.agencyName !== undefined) setAgencyName(p.agencyName);
@@ -1667,6 +1671,13 @@ function PrintFormatPage() {
                 if (p.logoUrl !== undefined) setLogoDataUrl(p.logoUrl);
                 if (p.noBrand !== undefined) setNoBrand(p.noBrand);
                 if (p.headerFooterPages !== undefined) setHeaderFooterPages(new Set(p.headerFooterPages));
+                if (p.stamps !== undefined) {
+                  setStamps((prev) => ({
+                    ...prev,
+                    nonRefundable: p.stamps?.nonRefundable ?? prev.nonRefundable,
+                    group: p.stamps?.group ?? prev.group,
+                  }));
+                }
               }}
             />
 
