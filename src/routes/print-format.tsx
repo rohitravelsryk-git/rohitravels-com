@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LogOut, FileEdit } from "lucide-react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LogOut, FileEdit, LayoutTemplate, Stamp } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -1644,39 +1644,30 @@ function PrintFormatPage() {
               bookingRef={fileName.replace(/\.[^.]+$/, "") || "TICKET"}
               userRole={agentPortal ? "b2b_agent" : "admin"}
               onSaveToBooking={async (edited) => {
-                setPdfBytes(edited);
-                setEditorPdfBytes(edited);
-                setIsFoxitEditorOpen(false);
-              }}
-              profile={{
-                agencyName: agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME),
-                phone: phone.trim() || (agentPortal ? "" : DEFAULT_PHONE),
-                address: address.trim() || (agentPortal ? "" : DEFAULT_ADDRESS),
-                tagline: tagline.trim() || (agentPortal ? "" : DEFAULT_TAGLINE),
-                logoUrl: logoDataUrl || undefined,
-                agent: agent.trim() || (agentPortal ? "" : DEFAULT_AGENT),
-                noBrand: noBrand,
-                headerFooterPages: Array.from(headerFooterPages),
-                stamps: {
-                  nonRefundable: stamps.nonRefundable,
-                  group: stamps.group,
-                },
-              }}
-              onProfileChange={(p) => {
-                if (p.agencyName !== undefined) setAgencyName(p.agencyName);
-                if (p.tagline !== undefined) setTagline(p.tagline);
-                if (p.address !== undefined) setAddress(p.address);
-                if (p.phone !== undefined) setPhone(p.phone);
-                if (p.agent !== undefined) setAgent(p.agent);
-                if (p.logoUrl !== undefined) setLogoDataUrl(p.logoUrl);
-                if (p.noBrand !== undefined) setNoBrand(p.noBrand);
-                if (p.headerFooterPages !== undefined) setHeaderFooterPages(new Set(p.headerFooterPages));
-                if (p.stamps !== undefined) {
-                  setStamps((prev) => ({
-                    ...prev,
-                    nonRefundable: p.stamps?.nonRefundable ?? prev.nonRefundable,
-                    group: p.stamps?.group ?? prev.group,
-                  }));
+                setLoading(true);
+                try {
+                  const bytes = edited.slice();
+                  setPdfBytes(bytes);
+                  setEditorPdfBytes(bytes);
+                  const { previews, redactions, pageSizes, textItems } = await processPdf(bytes);
+                  setPreviewPages(previews);
+                  setSource({ kind: "pdf", bytes, redactions, pageSizes, textItems });
+                  setIncludedPages(new Set(previews.map((_, i) => i)));
+                  setTextEdits({});
+                  setSelectedIdx(new Set());
+                  setEraseRects([]);
+                  if (!fileName) setFileName("edited-ticket.pdf");
+                  setIsFoxitEditorOpen(false);
+
+                  // Step 2: Open Stamp Options modal (exact same as Upload Ticket flow)
+                  setPendingStamps(stamps);
+                  setPendingPnr(pnr);
+                  setStampModalOpen(true);
+                } catch (err) {
+                  console.error("Failed to apply edited ticket:", err);
+                  setIsFoxitEditorOpen(false);
+                } finally {
+                  setLoading(false);
                 }
               }}
             />
@@ -1685,18 +1676,225 @@ function PrintFormatPage() {
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
             )}
 
+            {source && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingStamps(stamps);
+                  setPendingPnr(pnr);
+                  setStampModalOpen(true);
+                }}
+                className="flex w-full items-center justify-between rounded-lg border border-[#D97757]/30 bg-[#FAF9F5] p-3 text-left transition-all hover:border-[#D97757] hover:bg-[#D97757]/10"
+              >
+                <div className="flex items-center gap-2">
+                  <Stamp className="h-4 w-4 text-[#D97757]" />
+                  <div>
+                    <p className="text-xs font-bold text-[#141413]">Stamp Options</p>
+                    <p className="text-[10px] text-[#78716C]">
+                      {stamps.nonRefundable && stamps.group
+                        ? "Non-Refundable & Group Ticket active"
+                        : stamps.nonRefundable
+                        ? "Non-Refundable active"
+                        : stamps.group
+                        ? "Group Ticket active"
+                        : "Click to add Non-Refundable / Group stamps"}
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded bg-[#D97757]/15 px-2 py-0.5 text-[11px] font-bold text-[#D97757]">
+                  {stamps.nonRefundable || stamps.group ? "Active" : "None"}
+                </span>
+              </button>
+            )}
+
+            {/* Header & Footer section on the page */}
+            <div className="space-y-3 rounded-xl border border-border bg-[#FAF9F5] p-3">
+              <div className="flex items-center gap-2 border-b border-[#E7E5E4] pb-2">
+                <LayoutTemplate className="h-4 w-4 text-[#D97757]" />
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-[#141413]">Header &amp; Footer</h3>
+              </div>
+
+              <label className="flex items-start gap-2 rounded-lg border border-[#E7E5E4] bg-white p-3 cursor-pointer hover:bg-black/[0.02]">
+                <input
+                  type="checkbox"
+                  checked={noBrand}
+                  onChange={(e) => setNoBrand(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-[#D97757]"
+                />
+                <span className="text-xs font-semibold text-[#141413]">
+                  Remove header, footer & agent details
+                  <span className="mt-0.5 block text-[10px] font-normal text-[#78716C]">
+                    Outputs the ticket only — no branding, agency name, address, phone, arranger or footer note.
+                  </span>
+                </span>
+              </label>
+
+              {!noBrand && visiblePages.length > 0 && (
+                <div className="rounded-lg border border-dashed border-[#D97757]/30 bg-[#D97757]/5 px-3 py-2.5">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-[#78716C]">Apply to pages</p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setHeaderFooterPages(new Set(visiblePages))}
+                        className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#141413] hover:bg-black/10"
+                      >
+                        All
+                      </button>
+                      <span className="text-border">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setHeaderFooterPages(new Set())}
+                        className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#78716C] hover:bg-black/10"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {visiblePages.map((idx) => {
+                      const on = headerFooterPages.has(idx);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() =>
+                            setHeaderFooterPages((prev) => {
+                              const n = new Set(prev);
+                              if (n.has(idx)) n.delete(idx); else n.add(idx);
+                              return n;
+                            })
+                          }
+                          title={`${on ? "Remove" : "Add"} header/footer on page ${idx + 1}`}
+                          className={`flex h-7 w-7 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
+                            on ? "border-[#D97757] bg-[#D97757] text-white shadow-xs" : "border-[#E7E5E4] bg-white text-[#78716C] hover:border-[#141413] hover:text-[#141413]"
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {!noBrand && (
+                <>
+                  <div className="space-y-2 rounded-lg border border-dashed border-[#E7E5E4] bg-white px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold text-[#141413]">
+                        {agentPortal
+                          ? "Enter your agency's own details, then save as your default."
+                          : "Using Rohi defaults — fill your own, then save as default."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={resetSavedDefaults}
+                        className="inline-flex items-center gap-1 rounded-md border border-[#141413] bg-[#141413] px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-black/80"
+                      >
+                        <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Default Settings"}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={saveProfileAsDefault}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-[#D97757] bg-[#D97757] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-[#c25e45]"
+                      >
+                        {savedFlash ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
+                        {savedFlash ? "My Default" : "Save as my default"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {[
+                    { label: "Agency Name", value: agencyName, set: setAgencyName, ph: agentPortal ? "Your Agency Name" : DEFAULT_NAME, optional: false },
+                    { label: "Tagline", value: tagline, set: setTagline, ph: agentPortal ? "Optional tagline" : DEFAULT_TAGLINE, optional: true },
+                    { label: "Address", value: address, set: setAddress, ph: agentPortal ? "Your agency address" : DEFAULT_ADDRESS, optional: true },
+                    { label: "Contact / WhatsApp Number", value: phone, set: setPhone, ph: agentPortal ? "e.g. 0300 1234567" : DEFAULT_PHONE, optional: false },
+                    { label: "Travel Arranger Name", value: agent, set: setAgent, ph: "e.g. Ahmed Khan", optional: true },
+                  ].map((f) => (
+                    <div key={f.label}>
+                      <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-[#78716C]">
+                        {f.label}
+                        {f.optional && (
+                          <span className="font-normal normal-case tracking-normal text-muted-foreground"> (optional)</span>
+                        )}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={f.value}
+                          onChange={(e) => f.set(e.target.value)}
+                          placeholder={f.ph}
+                          className="w-full rounded-lg border border-[#E7E5E4] bg-white px-3 py-2 pr-8 text-sm text-[#141413] placeholder:text-muted-foreground/60 focus:border-[#D97757] focus:outline-none"
+                        />
+                        {f.value && (
+                          <button
+                            type="button"
+                            onClick={() => f.set("")}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-[#141413]"
+                            aria-label={`Clear ${f.label}`}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-[#78716C]">
+                      Upload Logo
+                    </label>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => onLogo(e.target.files?.[0])}
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-[#141413]/30 bg-white px-3 py-2 text-xs font-bold text-[#141413] hover:bg-black/5"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        {logoDataUrl ? "Replace Logo" : "Upload Agency Logo"}
+                      </button>
+                      {logoDataUrl && (
+                        <>
+                          <img src={logoDataUrl} alt="Agency logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border bg-white" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLogoDataUrl("");
+                              if (logoInputRef.current) logoInputRef.current.value = "";
+                            }}
+                            className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary"
+                            aria-label="Remove logo"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             {source && (
               <button
-                  type="button"
-                  onClick={downloadPdf}
-                  disabled={building}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-4 py-3 text-sm font-black tracking-wide text-gold-foreground shadow-lg hover:brightness-95 disabled:opacity-60"
-                >
-                  {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                  {building ? "Building PDF…" : "Download"}
-                </button>
-
+                type="button"
+                onClick={downloadPdf}
+                disabled={building}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#D97757] px-4 py-3 text-sm font-black tracking-wide text-white shadow-lg hover:bg-[#c25e45] disabled:opacity-60"
+              >
+                {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {building ? "Building PDF…" : "Download"}
+              </button>
             )}
           </div>
         </div>
