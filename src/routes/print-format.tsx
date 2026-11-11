@@ -1337,8 +1337,7 @@ function PrintFormatPage() {
 
 
 
-    const margin = 0;
-    const contentGap = 4;
+    const contentGap = 6;
 
     if (source.kind === "pdf") {
       const src = await PDFDocument.load(source.bytes, { ignoreEncryption: true });
@@ -1356,97 +1355,44 @@ function PrintFormatPage() {
         const srcPage = srcPages[pi];
         const srcW = srcPage.getWidth();
         const srcH = srcPage.getHeight();
-        // Preserve the ticket at its original scale — no forced A4 resize.
-        // The page (and header/footer) are sized to fit the ticket, edge to
-        // edge, with no added left/right margin — not the other way around.
-        const scale = 1;
-        const drawW = srcW;
-        const drawH = srcH;
-        const pageW = drawW + margin * 2;
-        const applyBranding = headerFooterPages.has(origIdx) && !skipBranding;
-        const headerHPts = applyBranding ? getHeaderH(pageW) : 0;
-        const pageFooterH = applyBranding ? footerH : 0;
-        const pageH = headerHPts + pageFooterH + contentGap * 2 + drawH;
-        const offsetX = margin;
-        const offsetY = pageFooterH + contentGap;
+
+        // Exact same page size as uploaded
+        const pageW = srcW;
+        const pageH = srcH;
         const page = out.addPage([pageW, pageH]);
-
-        page.drawPage(embeds[pi], {
-          x: offsetX,
-          y: offsetY,
-          width: drawW,
-          height: drawH,
-        });
-        for (const r of source.redactions) {
-          if (r.pageIndex !== origIdx) continue;
-          page.drawRectangle({
-            x: offsetX + r.x * scale,
-            y: offsetY + r.y * scale,
-            width: r.width * scale,
-            height: r.height * scale,
-            color: rgb(r.color.r, r.color.g, r.color.b),
-          });
-        }
-        source.textItems.forEach((t, idx) => {
-          if (t.pageIndex !== origIdx) return;
-          const edited = textEdits[idx];
-          const style = textStyles[idx];
-          const hasStyle = !!style && (style.size !== undefined || style.bold || style.italic || style.underline || style.color || style.family);
-          if (edited === undefined && !hasStyle) return;
-          const value = edited ?? t.original;
-          if (edited !== undefined && value === t.original && !hasStyle) return;
-          const cleared = value.trim() === "";
-          const effHeight = style?.size ?? t.fontHeightPts;
-          const padX = effHeight * (cleared ? 0.9 : 0.35);
-          const padY = effHeight * (cleared ? 0.8 : 0.35);
-          const bg = t.bgColor || { r: 1, g: 1, b: 1 };
-          page.drawRectangle({
-            x: offsetX + (t.x - padX) * scale,
-            y: offsetY + (t.y - padY) * scale,
-            width: (t.widthPts + padX * 2) * scale,
-            height: (effHeight + padY * 2) * scale,
-            color: rgb(bg.r, bg.g, bg.b),
-          });
-          if (!cleared) {
-            const size = effHeight * scale;
-            const useFont = pickStyledFont(style?.family, style?.bold, style?.italic);
-            const textColor = hexRgb(style?.color);
-            page.drawText(value, {
-              x: offsetX + t.x * scale,
-              y: offsetY + t.y * scale,
-              size,
-              font: useFont,
-              color: textColor,
-            });
-            if (style?.underline) {
-              const tw = useFont.widthOfTextAtSize(value, size);
-              page.drawLine({
-                start: { x: offsetX + t.x * scale, y: offsetY + t.y * scale - size * 0.12 },
-                end: { x: offsetX + t.x * scale + tw, y: offsetY + t.y * scale - size * 0.12 },
-                thickness: Math.max(0.5, size * 0.06),
-                color: textColor,
-              });
-            }
-          }
-        });
-
-        eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
-          page.drawRectangle({
-            x: offsetX + r.x * drawW,
-            y: offsetY + drawH - (r.y + r.h) * drawH,
-            width: r.w * drawW,
-            height: r.h * drawH,
-            color: rgb(1, 1, 1),
-          });
-        });
-
-        pastedItems.filter((p) => p.pageIndex === origIdx).forEach((p) => {
-          drawPastedItem(page, p, offsetX, offsetY, drawW, drawH, scale);
-        });
+        const applyBranding = headerFooterPages.has(origIdx) && !skipBranding;
 
         if (applyBranding) {
+          const headerHPts = getHeaderH(pageW);
+          const pageFooterH = footerH;
+          // Available box strictly between the header bottom and footer top
+          const availW = pageW;
+          const availH = Math.max(50, pageH - headerHPts - pageFooterH - contentGap * 2);
+
+          // Fit ticket proportionally so data moves below header and above footer
+          const fitScale = Math.min(availW / srcW, availH / srcH, 1);
+          const drawW = srcW * fitScale;
+          const drawH = srcH * fitScale;
+          const offsetX = (pageW - drawW) / 2;
+          const offsetY = pageFooterH + contentGap + (availH - drawH) / 2;
+
+          page.drawPage(embeds[pi], {
+            x: offsetX,
+            y: offsetY,
+            width: drawW,
+            height: drawH,
+          });
+
           drawHeader(page, pageW, pageH);
           drawFooter(page, pageW);
+        } else {
+          // Unbranded: exact full bleed original page size and position
+          page.drawPage(embeds[pi], {
+            x: 0,
+            y: 0,
+            width: srcW,
+            height: srcH,
+          });
         }
 
         if (headerFooterPages.has(origIdx)) {
@@ -1459,45 +1405,47 @@ function PrintFormatPage() {
       const img = source.mime.includes("png")
         ? await out.embedPng(source.bytes)
         : await out.embedJpg(source.bytes);
-      // Preserve the ticket image at its original pixel size — no forced A4 resize.
-      const drawW = img.width;
-      const drawH = img.height;
-      const pageW = drawW + margin * 2;
-      const applyBranding = headerFooterPages.has(0) && !skipBranding;
-      const headerHPts = applyBranding ? getHeaderH(pageW) : 0;
-      const pageFooterHere = applyBranding ? footerH : 0;
-      const pageH = headerHPts + pageFooterHere + contentGap * 2 + drawH;
+
+      const srcW = img.width;
+      const srcH = img.height;
+      const pageW = srcW;
+      const pageH = srcH;
       const page = out.addPage([pageW, pageH]);
-      page.drawImage(img, {
-        x: margin,
-        y: pageFooterHere + contentGap,
-        width: drawW,
-        height: drawH,
-      });
-      const imgOffsetX = margin;
-      const imgOffsetY = pageFooterHere + contentGap;
-      eraseRects.filter((r) => r.pageIndex === 0).forEach((r) => {
-        page.drawRectangle({
-          x: imgOffsetX + r.x * drawW,
-          y: imgOffsetY + drawH - (r.y + r.h) * drawH,
-          width: r.w * drawW,
-          height: r.h * drawH,
-          color: rgb(1, 1, 1),
-        });
-      });
-      pastedItems.filter((p) => p.pageIndex === 0).forEach((p) => {
-        drawPastedItem(page, p, imgOffsetX, imgOffsetY, drawW, drawH, 1);
-      });
+      const applyBranding = headerFooterPages.has(0) && !skipBranding;
+
       if (applyBranding) {
+        const headerHPts = getHeaderH(pageW);
+        const pageFooterHere = footerH;
+        const availW = pageW;
+        const availH = Math.max(50, pageH - headerHPts - pageFooterHere - contentGap * 2);
+
+        const fitScale = Math.min(availW / srcW, availH / srcH, 1);
+        const drawW = srcW * fitScale;
+        const drawH = srcH * fitScale;
+        const offsetX = (pageW - drawW) / 2;
+        const offsetY = pageFooterHere + contentGap + (availH - drawH) / 2;
+
+        page.drawImage(img, {
+          x: offsetX,
+          y: offsetY,
+          width: drawW,
+          height: drawH,
+        });
+
         drawHeader(page, pageW, pageH);
         drawFooter(page, pageW);
+      } else {
+        page.drawImage(img, {
+          x: 0,
+          y: 0,
+          width: srcW,
+          height: srcH,
+        });
       }
 
       drawStampsOnPage(page, pageW);
       drawImageStampsOnPage(page, pageW, pageH);
     }
-
-
     return await out.save();
   }
 
@@ -1563,7 +1511,7 @@ function PrintFormatPage() {
       <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
       <div className="min-w-0 flex-1">
       {!agentPortal && (
-      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white print:hidden">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-[#141413] text-white print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/admin" className="inline-flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/10">
@@ -1593,14 +1541,14 @@ function PrintFormatPage() {
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[320px_1fr]">
         {/* Controls */}
         <div className="print:hidden">
-          <h1 className="font-serif text-2xl font-black text-navy">Print Format</h1>
+          <h1 className="font-serif text-2xl font-black text-[#141413]">Print Format</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Upload a ticket, then edit it and add your own header or footer artwork
           </p>
 
           <div className="mt-6 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <label className={`inline-flex min-w-[180px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-navy/40 bg-navy/5 px-4 py-3 text-sm font-bold text-navy hover:bg-navy/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
+              <label className={`inline-flex min-w-[180px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#141413]/40 bg-[#141413]/5 px-4 py-3 text-sm font-bold text-[#141413] hover:bg-[#141413]/10 ${loading ? "pointer-events-none opacity-60" : ""}`}>
                 <input
                   ref={inputRef}
                   type="file"
@@ -1900,32 +1848,39 @@ function PrintFormatPage() {
         </div>
 
         {/* Preview */}
-        <div className="rounded-xl bg-white ring-1 ring-border print:ring-0">
-          <div id="rohi-print-sheet" className="mx-auto w-full max-w-[820px] p-6 print:p-0">
-            {/* Header (hidden when IATA / Salam Air stamps are active) */}
+        <div className="rounded-xl bg-[#FAF9F5] p-3 ring-1 ring-border print:bg-white print:p-0 print:ring-0">
+          <div
+            id="rohi-print-sheet"
+            className="mx-auto flex flex-col justify-between rounded-lg bg-white p-6 shadow-md ring-1 ring-border/60 transition-all print:m-0 print:p-0 print:shadow-none print:ring-0"
+            style={{
+              width: "100%",
+              maxWidth: "820px",
+              minHeight: "1080px",
+            }}
+          >
+            {/* Header (hidden when IATA / Salam Air stamps are active or noBrand) */}
             {!(stamps.iata || stamps.salam || noBrand) && (() => {
-
               const displayName = agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME);
               const displayTagline = tagline.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_TAGLINE);
               const displayAddress = address.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_ADDRESS);
               const displayPhone = phone.trim() || (agentPortal ? "" : DEFAULT_PHONE);
               const displayAgent = agent.trim();
               return (
-                <div ref={headerRef} className="flex items-center justify-between gap-6 border-b-4 border-double border-navy pb-4">
+                <div ref={headerRef} className="flex items-center justify-between gap-6 border-b-2 border-double border-[#141413] pb-4">
                   <div className="flex min-w-0 items-center gap-3">
                     {logoDataUrl ? (
                       <img src={logoDataUrl} alt="Agency logo" width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 shrink-0 object-contain" />
                     ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy">
-                        <Plane className="h-6 w-6 -rotate-45 text-gold" />
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#141413]">
+                        <Plane className="h-6 w-6 -rotate-45 text-[#D97757]" />
                       </div>
                     )}
                     <div className={`min-w-0 ${displayTagline ? "" : "flex flex-col justify-center"}`}>
-                      <p className="font-serif text-xl font-black leading-tight text-navy">
+                      <p className="font-serif text-xl font-black leading-tight text-[#141413]">
                         {displayName}
                       </p>
                       {displayTagline && (
-                        <p className="mt-0.5 text-[10px] font-bold tracking-[0.25em] text-muted-foreground">
+                        <p className="mt-0.5 text-[10px] font-bold tracking-[0.25em] text-[#78716C]">
                           {displayTagline}
                         </p>
                       )}
@@ -1933,7 +1888,7 @@ function PrintFormatPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-4">
-                    <div className="text-right text-navy">
+                    <div className="text-right text-[#141413]">
                       <a
                         href={waLink(displayPhone)}
                         target="_blank"
@@ -1947,13 +1902,13 @@ function PrintFormatPage() {
                         <span className="whitespace-nowrap">{displayPhone}</span>
                       </a>
                       {displayAgent && (
-                        <p className="mt-1.5 text-[11px] font-semibold text-navy">
-                          <span className="text-muted-foreground">Travel Arranger:</span>{" "}
+                        <p className="mt-1.5 text-[11px] font-semibold text-[#141413]">
+                          <span className="text-[#78716C]">Travel Arranger:</span>{" "}
                           <span className="font-black">{displayAgent}</span>
                         </p>
                       )}
                       {displayAddress && (
-                        <p className="mt-1 text-[10px] font-semibold text-muted-foreground">{displayAddress}</p>
+                        <p className="mt-1 text-[10px] font-semibold text-[#78716C]">{displayAddress}</p>
                       )}
                     </div>
                     {qrDataUrl && (
@@ -1962,29 +1917,26 @@ function PrintFormatPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Scan or click to chat on WhatsApp"
-                        className="group shrink-0 rounded-md border border-gold/60 bg-white p-1 shadow-sm no-underline hover:border-gold hover:shadow-md"
+                        className="group shrink-0 rounded-md border border-[#D97757]/40 bg-white p-1 shadow-xs no-underline hover:border-[#D97757] hover:shadow-sm"
                       >
                         <img src={qrDataUrl} alt="WhatsApp contact QR code" width={72} height={72} loading="lazy" decoding="async" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
                       </a>
                     )}
                   </div>
                 </div>
-
               );
             })()}
 
-
-
-            {/* Ticket preview */}
-            <div className="mt-3 space-y-4">
+            {/* Ticket preview: cleanly sits below header and above footer */}
+            <div className="my-auto flex flex-1 flex-col items-center justify-center py-4">
               {previewPages.length === 0 && !loading && (
-                <div className="flex h-72 items-center justify-center rounded-md border-2 border-dashed border-border text-sm text-muted-foreground">
+                <div className="flex h-72 w-full items-center justify-center rounded-md border-2 border-dashed border-border text-sm text-[#78716C]">
                   Upload a ticket (JPG, PNG or PDF) to preview it here.
                 </div>
               )}
               {loading && (
-                <div className="flex h-72 items-center justify-center rounded-md border-2 border-dashed border-border text-sm text-muted-foreground">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing ticket…
+                <div className="flex h-72 w-full items-center justify-center rounded-md border-2 border-dashed border-border text-sm text-[#78716C]">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#D97757]" /> Processing ticket…
                 </div>
               )}
               {previewPages.length > 0 && (() => {
@@ -2004,508 +1956,95 @@ function PrintFormatPage() {
                     setCurrentPage(next);
                   }
                 };
+
                 return previewPages.map((src, i) => {
                   if (i !== activeIdx) return null;
-                  const pageSize = source?.kind === "pdf" ? source.pageSizes[i] : null;
-                  const pageItems =
-                    source?.kind === "pdf" && pageSize
-                      ? source.textItems
-                          .map((t, idx) => ({ t, idx }))
-                          .filter((it) => it.t.pageIndex === i)
-                      : [];
                   return (
-                <div
-                  key={i}
-                  className="relative"
-                  style={pageSize ? { containerType: "inline-size", touchAction: "none" } as any : undefined}
-                  onPointerDown={(e) => {
-                    lastPageRef.current = i;
-                    if (!pageSize) return;
-                    const target = e.target as HTMLElement;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const sx = e.clientX - rect.left;
-                    const sy = e.clientY - rect.top;
-                    // Always record paste anchor at click point so Ctrl+V pastes here
-                    pasteAnchorRef.current = { pageIndex: i, xPct: (sx / rect.width) * 100, yPct: (sy / rect.height) * 100 };
-                    if (target.tagName === "INPUT") return;
-                    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-                    setSelectedIdx(new Set());
-                    setSelectedPastedIds(new Set());
-                    setMarquee({ pageIndex: i, x: sx, y: sy, w: 0, h: 0, erase: eraseMode || e.altKey || e.shiftKey });
-                    e.preventDefault();
-                  }}
-                  onPointerMove={(e) => {
-                    if (!marquee || marquee.pageIndex !== i) return;
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const cx = e.clientX - rect.left;
-                    const cy = e.clientY - rect.top;
-                    setMarquee({
-                      pageIndex: i,
-                      x: Math.min(marquee.x, cx),
-                      y: Math.min(marquee.y, cy),
-                      w: Math.abs(cx - marquee.x),
-                      h: Math.abs(cy - marquee.y),
-                      erase: marquee.erase,
-                    });
-                  }}
-                  onPointerUp={(e) => {
-                    if (!marquee || marquee.pageIndex !== i || !pageSize) { setMarquee(null); return; }
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    if (marquee.erase && marquee.w > 3 && marquee.h > 3) {
-                      pushHistory();
-                      const xPct = marquee.x / rect.width;
-                      const yPct = marquee.y / rect.height;
-                      const wPct = marquee.w / rect.width;
-                      const hPct = marquee.h / rect.height;
-                      setEraseRects((prev) => [...prev, {
-                        pageIndex: i,
-                        x: xPct,
-                        y: yPct,
-                        w: wPct,
-                        h: hPct,
-                      }]);
-                      setMarquee(null);
-                      return;
-                    }
-                    const mLeft = marquee.x / rect.width;
-                    const mTop = marquee.y / rect.height;
-                    const mRight = (marquee.x + marquee.w) / rect.width;
-                    const mBottom = (marquee.y + marquee.h) / rect.height;
-                    const sel = new Set<number>();
-                    if (marquee.w > 3 && marquee.h > 3) {
-                      pageItems.forEach(({ t, idx }) => {
-                        const l = t.x / pageSize.w;
-                        const top = (pageSize.h - t.y - t.fontHeightPts) / pageSize.h;
-                        const r = (t.x + t.widthPts) / pageSize.w;
-                        const b = (pageSize.h - t.y) / pageSize.h;
-                        if (l < mRight && r > mLeft && top < mBottom && b > mTop) sel.add(idx);
-                      });
-                    }
-                    setSelectedIdx(sel);
-                    setMarquee(null);
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt={`Ticket page ${i + 1}`}
-                    width={794} height={1123} loading="lazy" decoding="async"
-                    draggable={false}
-                    className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
-                  />
-                  <div
-                    className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm print:hidden"
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="First page">⏮</button>
-                      <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Previous page">◀</button>
-                      <div className="mx-1 flex items-center gap-1.5 text-xs font-semibold text-navy">
-                        <input
-                          type="number" min={1} max={visible.length} value={posInVisible + 1}
-                          onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
-                          className="w-12 rounded-md border border-border bg-background px-1.5 py-1 text-center text-xs focus:outline-none focus:ring-2 focus:ring-gold/40"
+                    <div key={i} className="relative flex w-full flex-col items-center justify-center">
+                      <div className="relative max-h-[820px] w-full flex items-center justify-center overflow-hidden rounded-md border border-border/40 bg-white">
+                        <img
+                          src={src}
+                          alt={`Ticket page ${i + 1}`}
+                          draggable={false}
+                          className="max-h-[800px] w-auto max-w-full select-none object-contain"
                         />
-                        <span className="text-muted-foreground">of {visible.length}</span>
+                        {(stamps.iata || stamps.salam) && (
+                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-6">
+                            {stamps.iata && (
+                              <img src={IATA_STAMP_URL} alt="IATA stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
+                            )}
+                            {stamps.salam && (
+                              <div className="relative inline-block">
+                                <img src={SALAM_STAMP_URL} alt="Salam Air stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
+                                {pnr.trim() && (
+                                  <span
+                                    className="absolute leading-none tracking-tight"
+                                    style={{
+                                      left: "44%",
+                                      top: "-6%",
+                                      fontSize: 12,
+                                      color: "#322fff",
+                                      fontFamily: "'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {pnr.trim().toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Next page">▶</button>
-                      <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Last page">⏭</button>
-                    </div>
 
-                    <div className="h-6 w-px bg-border" />
-
-                    <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
-                      className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50"
-                      title="Delete this page">
-                      <X className="h-3.5 w-3.5" /> Delete page
-                    </button>
-                  </div>
-                  {marquee && marquee.pageIndex === i && (
-                    <div
-                      className={`pointer-events-none absolute border-2 ${marquee.erase ? "border-red-500 bg-red-500/10" : "border-gold bg-gold/10"}`}
-                      style={{ left: marquee.x, top: marquee.y, width: marquee.w, height: marquee.h }}
-                    />
-                  )}
-                  {eraseRects.filter((r) => r.pageIndex === i).map((r, ri) => (
-                    <div
-                      key={`erase-${ri}`}
-                      className="absolute bg-white"
-                      style={{
-                        left: `${r.x * 100}%`,
-                        top: `${r.y * 100}%`,
-                        width: `${r.w * 100}%`,
-                        height: `${r.h * 100}%`,
-                        zIndex: 4,
-                      }}
-                      onDoubleClick={() => { pushHistory(); setEraseRects((prev) => prev.filter((_, j) => j !== ri)); }}
-                      title="Double-click to remove erase area"
-                    />
-                  ))}
-                  {pageSize && pageItems.map(({ t, idx }) => {
-                    const edited = textEdits[idx];
-                    const style = textStyles[idx];
-                    const hasStyle = !!style && (style.size !== undefined || style.bold || style.italic || style.underline || style.color || style.family);
-                    if (edited === undefined && !hasStyle) return null;
-                    const value = edited ?? t.original;
-                    const leftPct = (t.x / pageSize.w) * 100;
-                    const effHeight = (style?.size ?? t.fontHeightPts);
-                    const topPct = ((pageSize.h - t.y - effHeight) / pageSize.h) * 100;
-                    const cleared = value.trim() === "";
-                    const padCqi = cleared ? 0.9 : 0.35;
-                    const widthPct = Math.min(100 - leftPct, (t.widthPts / pageSize.w) * 100 + 3);
-                    const fontCqi = (effHeight / pageSize.w) * 100;
-                    const bg = t.bgColor || { r: 1, g: 1, b: 1 };
-                    const bgCss = `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
-                    const famCss = style?.family === "times" ? '"Times New Roman", Times, serif'
-                      : style?.family === "courier" ? '"Courier New", Courier, monospace'
-                      : "Helvetica, Arial, sans-serif";
-                    return (
-                      <div
-                        key={`baked-${idx}`}
-                        className="pointer-events-none absolute box-border overflow-hidden"
-                        style={{
-                          left: `calc(${leftPct}% - ${padCqi}cqi)`,
-                          top: `calc(${topPct}% - ${padCqi}cqi)`,
-                          width: `calc(${widthPct}% + ${padCqi * 2}cqi)`,
-                          height: `calc(${fontCqi}cqi + ${padCqi * 2}cqi + 4px)`,
-                          padding: `${padCqi}cqi`,
-                          fontSize: `calc(${fontCqi} * 1cqi)`,
-                          lineHeight: 1,
-                          fontFamily: famCss,
-                          fontWeight: style?.bold ? 700 : 400,
-                          fontStyle: style?.italic ? "italic" : "normal",
-                          textDecoration: style?.underline ? "underline" : "none",
-                          color: style?.color || "#000",
-                          background: bgCss,
-                          zIndex: eraseMode ? 5 : 0,
-                          display: eraseMode ? "block" : "none",
-                        }}
-                      >
-                        {cleared ? "" : value}
-                      </div>
-                    );
-                  })}
-                  {pageSize && pastedItems.filter((p) => p.pageIndex === i).map((p) => {
-                    const isSel = selectedPastedIds.has(p.id);
-                    const isShape = p.kind && p.kind !== "text";
-                    const fontCqi = (p.size / pageSize.w) * 100;
-                    const famCss = p.family === "times" ? '"Times New Roman", Times, serif'
-                      : p.family === "courier" ? '"Courier New", Courier, monospace'
-                      : "Helvetica, Arial, sans-serif";
-                    const bgCss = p.bg ? `rgb(${Math.round(p.bg.r * 255)}, ${Math.round(p.bg.g * 255)}, ${Math.round(p.bg.b * 255)})` : "transparent";
-                    return (
-                      <div
-                        key={p.id}
-                        tabIndex={0}
-                        role="button"
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
-                          const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
-                          let selected = selectedPastedIds;
-                          if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                            const n = new Set(selectedPastedIds);
-                            if (n.has(p.id)) n.delete(p.id); else n.add(p.id);
-                            setSelectedPastedIds(n);
-                            selected = n;
-                          } else if (!selectedPastedIds.has(p.id)) {
-                            const n = new Set([p.id]);
-                            setSelectedPastedIds(n);
-                            setSelectedIdx(new Set());
-                            selected = n;
-                          }
-                          const starts = new Map<string, { xPct: number; yPct: number }>();
-                          pastedItems.forEach((it) => {
-                            if (selected.has(it.id)) starts.set(it.id, { xPct: it.xPct, yPct: it.yPct });
-                          });
-                          if (!starts.has(p.id)) starts.set(p.id, { xPct: p.xPct, yPct: p.yPct });
-                          pasteDragRef.current = {
-                            primaryId: p.id,
-                            startX: e.clientX,
-                            startY: e.clientY,
-                            rect,
-                            starts,
-                          };
-                          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-                        }}
-                        onPointerMove={(e) => {
-                          const d = pasteDragRef.current;
-                          if (!d || d.primaryId !== p.id) return;
-                          const dxPct = ((e.clientX - d.startX) / d.rect.width) * 100;
-                          const dyPct = ((e.clientY - d.startY) / d.rect.height) * 100;
-                          setPastedItems((prev) => prev.map((x) => {
-                            const s = d.starts.get(x.id);
-                            if (!s) return x;
-                            return { ...x, xPct: Math.max(0, Math.min(95, s.xPct + dxPct)), yPct: Math.max(0, Math.min(95, s.yPct + dyPct)) };
-                          }));
-                        }}
-                        onPointerUp={(e) => {
-                          (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-                          pasteDragRef.current = null;
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Delete" || e.key === "Backspace") {
-                            e.preventDefault();
-                            pushHistory();
-                            setPastedItems((prev) => prev.filter((x) => x.id !== p.id));
-                            setSelectedPastedIds((prev) => { const n = new Set(prev); n.delete(p.id); return n; });
-                            return;
-                          }
-                          const step = e.shiftKey ? 5 : 0.5;
-                          const dirs: Record<string, [number, number]> = {
-                            ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step],
-                          };
-                          const d = dirs[e.key];
-                          if (!d) return;
-                          e.preventDefault();
-                          if (isShape && e.altKey) {
-                            // Alt+Arrow resizes shapes instead of moving them.
-                            setPastedItems((prev) => prev.map((x) => x.id === p.id
-                              ? { ...x, wPct: Math.max(1, (x.wPct ?? 10) + d[0]), hPct: Math.max(0, (x.hPct ?? 5) + d[1]) }
-                              : x));
-                            return;
-                          }
-                          setPastedItems((prev) => prev.map((x) => x.id === p.id ? { ...x, xPct: Math.max(0, Math.min(95, x.xPct + d[0])), yPct: Math.max(0, Math.min(95, x.yPct + d[1])) } : x));
-                        }}
-                        className={isShape ? "absolute cursor-move select-none outline-none" : "absolute cursor-move select-none whitespace-pre outline-none"}
-                        style={isShape ? {
-                          left: `${p.xPct}%`,
-                          top: `${p.yPct}%`,
-                          width: `${p.wPct ?? 10}%`,
-                          height: p.kind === "line" ? `${Math.max(0.3, (p.strokeWidth ?? 1.5) / 4)}%` : `${p.hPct ?? 5}%`,
-                          background: p.kind === "line" ? (p.strokeColor || "#000") : (p.fillColor || "transparent"),
-                          border: p.kind === "line" ? "none" : `${p.strokeWidth ?? 1.5}px solid ${p.strokeColor || "#000"}`,
-                          borderRadius: p.kind === "ellipse" ? "50%" : undefined,
-                          opacity: p.opacity ?? 1,
-                          zIndex: 7,
-                          boxShadow: isSel ? "0 0 0 2px #c8940b" : "none",
-                          touchAction: "none",
-                        } : {
-                          left: `${p.xPct}%`,
-                          top: `${p.yPct}%`,
-                          fontSize: `calc(${fontCqi} * 1cqi)`,
-                          lineHeight: 1,
-                          fontFamily: famCss,
-                          fontWeight: p.bold ? 700 : 400,
-                          fontStyle: p.italic ? "italic" : "normal",
-                          textDecoration: p.underline ? "underline" : "none",
-                          color: p.color || "#000",
-                          background: bgCss,
-                          padding: "1px 2px",
-                          opacity: p.opacity ?? 1,
-                          zIndex: 7,
-                          boxShadow: isSel ? "0 0 0 1px #c8940b" : "none",
-                          touchAction: "none",
-                        }}
-                        title={isShape ? "Drag to move · Alt+Arrow to resize · Delete to remove" : "Drag to move · Delete/Backspace to remove"}
-                      >
-                        {isShape ? null : p.text}
-                      </div>
-                    );
-                  })}
-                  {(() => {
-                    const groupItems = pastedItems.filter((p) => p.pageIndex === i && selectedPastedIds.has(p.id));
-                    if (groupItems.length < 1 || !pageSize) return null;
-                    const measure = (t: string, sizePct: number) => {
-                      // approximate character width as 0.55em for group bbox
-                      const charW = sizePct * 0.55;
-                      return { w: Math.max(1, t.length * charW), h: sizePct * 1.15 };
-                    };
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    groupItems.forEach((p) => {
-                      let w: number, h: number;
-                      if (p.kind && p.kind !== "text") {
-                        w = p.wPct ?? 10;
-                        h = p.kind === "line" ? 1 : (p.hPct ?? 5);
-                      } else {
-                        const fontPct = (p.size / pageSize.w) * 100;
-                        ({ w, h } = measure(p.text, fontPct));
-                      }
-                      minX = Math.min(minX, p.xPct);
-                      minY = Math.min(minY, p.yPct);
-                      maxX = Math.max(maxX, p.xPct + w);
-                      maxY = Math.max(maxY, p.yPct + h);
-                    });
-                    const pad = 0.6;
-                    const bx = Math.max(0, minX - pad);
-                    const by = Math.max(0, minY - pad);
-                    const bw = Math.min(100 - bx, (maxX - minX) + pad * 2);
-                    const bh = Math.min(100 - by, (maxY - minY) + pad * 2);
-                    return (
-                      <div
-                        className="absolute cursor-move"
-                        style={{
-                          left: `${bx}%`,
-                          top: `${by}%`,
-                          width: `${bw}%`,
-                          height: `${bh}%`,
-                          border: "1.5px dashed #c8940b",
-                          background: "rgba(200,148,11,0.06)",
-                          zIndex: 8,
-                          touchAction: "none",
-                        }}
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
-                          const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
-                          const starts = new Map<string, { xPct: number; yPct: number }>();
-                          pastedItems.forEach((it) => {
-                            if (selectedPastedIds.has(it.id)) starts.set(it.id, { xPct: it.xPct, yPct: it.yPct });
-                          });
-                          const primaryId = groupItems[0].id;
-                          pasteDragRef.current = { primaryId, startX: e.clientX, startY: e.clientY, rect, starts };
-                          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-                        }}
-                        onPointerMove={(e) => {
-                          const d = pasteDragRef.current;
-                          if (!d) return;
-                          const dxPct = ((e.clientX - d.startX) / d.rect.width) * 100;
-                          const dyPct = ((e.clientY - d.startY) / d.rect.height) * 100;
-                          setPastedItems((prev) => prev.map((x) => {
-                            const s = d.starts.get(x.id);
-                            if (!s) return x;
-                            return { ...x, xPct: Math.max(0, Math.min(95, s.xPct + dxPct)), yPct: Math.max(0, Math.min(95, s.yPct + dyPct)) };
-                          }));
-                        }}
-                        onPointerUp={(e) => {
-                          (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-                          pasteDragRef.current = null;
-                        }}
-                        title="Drag the group to move all pasted text together"
-                      />
-                    );
-                  })()}
-                  {!eraseMode && pageSize && pageItems.map(({ t, idx }) => {
-                    const style = textStyles[idx];
-                    const effHeight = style?.size ?? t.fontHeightPts;
-                    const leftPct = (t.x / pageSize.w) * 100;
-                    const topPct = ((pageSize.h - t.y - effHeight) / pageSize.h) * 100;
-                    const value = textEdits[idx] ?? t.original;
-                    const cleared = textEdits[idx] !== undefined && value.trim() === "";
-                    const padCqi = 0.35;
-                    const widthPct = Math.min(100 - leftPct, (t.widthPts / pageSize.w) * 100 + 3);
-                    const fontCqi = (effHeight / pageSize.w) * 100;
-                    const isSel = selectedIdx.has(idx);
-                    const bg = t.bgColor || { r: 1, g: 1, b: 1 };
-                    const bgCss = `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
-                    return (
-                      <input
-                        key={idx}
-                        type="text"
-                        value={value}
-                        onFocus={() => setFocusedIdx(idx)}
-                        onChange={(e) => setTextEdits((prev) => ({ ...prev, [idx]: e.target.value }))}
-                        onPointerDown={(e) => {
-                          if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                            e.preventDefault();
-                            setSelectedIdx((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(idx)) next.delete(idx); else next.add(idx);
-                              return next;
-                            });
-                          } else if (selectedIdx.size > 0) {
-                            setSelectedIdx(new Set());
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Delete" || ((e.ctrlKey || e.metaKey) && e.key === "Backspace")) {
-                            e.preventDefault();
-                            setTextEdits((prev) => ({ ...prev, [idx]: "" }));
-                            return;
-                          }
-                          if (e.key === "Backspace") {
-                            const inp = e.currentTarget as HTMLInputElement;
-                            const current = textEdits[idx] ?? t.original;
-                            const allSelected =
-                              inp.selectionStart === 0 && inp.selectionEnd === current.length && current.length > 0;
-                            if (current === "" || allSelected) {
-                              e.preventDefault();
-                              setTextEdits((prev) => ({ ...prev, [idx]: "" }));
-                            }
-                          }
-                        }}
-                        onDoubleClick={(e) => {
-                          (e.currentTarget as HTMLInputElement).select();
-                        }}
-                        title={`Original: ${t.original} — press Delete to wipe`}
-                        className="absolute box-border outline-none cursor-text focus:z-10"
-                        style={{
-                          left: `calc(${leftPct}% - ${padCqi}cqi)`,
-                          top: `calc(${topPct}% - ${padCqi}cqi)`,
-                          width: `calc(${widthPct}% + ${padCqi * 2}cqi)`,
-                          height: `calc(${fontCqi}cqi + ${padCqi * 2}cqi + 4px)`,
-                          padding: `${padCqi}cqi`,
-                          fontSize: `calc(${fontCqi} * 1cqi)`,
-                          lineHeight: 1,
-                          fontFamily: style?.family === "times" ? '"Times New Roman", Times, serif'
-                            : style?.family === "courier" ? '"Courier New", Courier, monospace'
-                            : "Helvetica, Arial, sans-serif",
-                          fontWeight: style?.bold ? 700 : 400,
-                          fontStyle: style?.italic ? "italic" : "normal",
-                          textDecoration: style?.underline ? "underline" : "none",
-                          color: style?.color || "#000",
-                          background: cleared ? "#ffffff" : bgCss,
-                          border: isSel ? "1px dashed #c8940b" : "none",
-                          boxShadow: "none",
-                        }}
-                      />
-                    );
-                  })}
-
-
-
-                  {(stamps.iata || stamps.salam) && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-6">
-                      {stamps.iata && (
-                        <img src={IATA_STAMP_URL} alt="IATA stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
-                      )}
-                      {stamps.salam && (
-                        <div className="relative inline-block">
-                          <img src={SALAM_STAMP_URL} alt="Salam Air stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
-                      {pnr.trim() && (
-                            <span
-                              className="absolute leading-none tracking-tight"
-                              style={{
-                                left: "44%",
-                                top: "-6%",
-                                fontSize: 12,
-                                color: "#322fff",
-                                fontFamily: "'Comic Sans MS', 'Comic Neue', 'Chalkboard SE', cursive",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {pnr.trim().toUpperCase()}
-                            </span>
-                          )}
-
+                      {/* Pagination Controls */}
+                      <div className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-[#FAF9F5] px-4 py-2 shadow-xs print:hidden">
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#141413] transition-colors hover:bg-black/5 disabled:opacity-30" aria-label="First page">⏮</button>
+                          <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#141413] transition-colors hover:bg-black/5 disabled:opacity-30" aria-label="Previous page">◀</button>
+                          <div className="mx-1 flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
+                            <input
+                              type="number" min={1} max={visible.length} value={posInVisible + 1}
+                              onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
+                              className="w-10 rounded-md border border-border bg-white px-1 py-0.5 text-center text-xs focus:border-[#D97757] focus:outline-none"
+                            />
+                            <span className="text-[#78716C]">of {visible.length}</span>
+                          </div>
+                          <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#141413] transition-colors hover:bg-black/5 disabled:opacity-30" aria-label="Next page">▶</button>
+                          <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
+                            className="rounded-md px-2 py-1 text-xs font-bold text-[#141413] transition-colors hover:bg-black/5 disabled:opacity-30" aria-label="Last page">⏭</button>
                         </div>
-                      )}
+                        {visible.length > 1 && (
+                          <>
+                            <div className="h-5 w-px bg-border" />
+                            <button type="button" onClick={deleteCurrent}
+                              className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100"
+                              title="Delete this page">
+                              <X className="h-3.5 w-3.5" /> Delete page
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-                );
-              });
+                  );
+                });
               })()}
-
-
             </div>
 
             {/* Stamp overlay above footer */}
             {(stamps.nonRefundable || stamps.group) && previewPages.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-8">
+              <div className="my-2 flex flex-wrap items-center justify-center gap-8">
                 {stamps.nonRefundable && <StampSingle text="NON REFUNDABLE" />}
                 {stamps.group && <StampGroup />}
               </div>
             )}
 
-
-
-
-
-            {/* Footer (hidden when IATA / Salam Air stamps are active) */}
+            {/* Footer */}
             {!(stamps.iata || stamps.salam || noBrand) && (
-              <div className="mt-4 border-t-2 border-navy pt-2 text-center text-[10px] font-semibold tracking-widest text-navy">
+              <div className="border-t-2 border-[#141413] pt-2 text-center text-[10px] font-semibold tracking-widest text-[#141413]">
                 <p>
                   {(agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME))}
                   {(address.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_ADDRESS)) ? (
@@ -2515,7 +2054,7 @@ function PrintFormatPage() {
                         href={agentPortal ? undefined : MAPS_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="no-underline hover:text-gold"
+                        className="no-underline hover:text-[#D97757]"
                       >
                         {address.trim() || DEFAULT_ADDRESS}
                       </a>
@@ -2528,17 +2067,16 @@ function PrintFormatPage() {
                         href={waLink(phone.trim() || DEFAULT_PHONE)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-black no-underline hover:text-gold"
+                        className="font-black no-underline hover:text-[#D97757]"
                       >
                         {phone.trim() || DEFAULT_PHONE}
                       </a>
                     </>
                   ) : null}
                 </p>
-                <p className="mt-0.5 text-muted-foreground">Thank you for booking with us — Have Safe Journey!</p>
+                <p className="mt-0.5 text-[#78716C]">Thank you for booking with us — Have Safe Journey!</p>
               </div>
             )}
-
           </div>
         </div>
       </section>
@@ -2546,7 +2084,7 @@ function PrintFormatPage() {
       {stampModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-sm font-black uppercase tracking-widest text-navy">Stamp Options</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest text-[#141413]">Stamp Options</h3>
             <div className="mt-4 space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -2571,7 +2109,7 @@ function PrintFormatPage() {
               <button
                 type="button"
                 onClick={() => setStampModalOpen(false)}
-                className="rounded-md border border-border bg-white px-4 py-2 text-sm font-semibold text-navy hover:bg-secondary"
+                className="rounded-md border border-border bg-white px-4 py-2 text-sm font-semibold text-[#141413] hover:bg-secondary"
               >
                 Cancel
               </button>
@@ -2582,7 +2120,7 @@ function PrintFormatPage() {
                   setPnr(pendingPnr);
                   setStampModalOpen(false);
                 }}
-                className="rounded-md bg-navy px-4 py-2 text-sm font-bold text-white hover:brightness-110"
+                className="rounded-md bg-[#141413] px-4 py-2 text-sm font-bold text-white hover:brightness-110"
               >
                 Generate
               </button>
