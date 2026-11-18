@@ -294,7 +294,10 @@ export default function TicketCanvasStudio({
   // Initialize initial bytes if provided
   useEffect(() => {
     if (initialPdfBytes && !bytes) {
-      void loadBytes(initialPdfBytes, initialFileName || "ticket.pdf", false);
+      const buffer = initialPdfBytes instanceof Uint8Array
+        ? new Uint8Array(initialPdfBytes).buffer
+        : initialPdfBytes;
+      void loadBytes(buffer, initialFileName || "ticket.pdf", false);
     }
   }, [initialPdfBytes]);
 
@@ -468,7 +471,7 @@ export default function TicketCanvasStudio({
         off.height = vp.height;
         const octx = off.getContext("2d");
         if (!octx) continue;
-        await page.render({ canvasContext: octx, viewport: vp }).promise;
+        await page.render({ canvas: off, canvasContext: octx, viewport: vp }).promise;
         if (cancelled) return;
         canvas.width = vp.width;
         canvas.height = vp.height;

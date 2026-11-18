@@ -38,6 +38,7 @@ export const Route = createFileRoute("/print-format")({
       { property: "og:description", content: "Turn any ticket into a branded, agent-ready PDF in seconds. Auto-hides fare & taxes." },
       { property: "og:url", content: "https://rohitravels.com/print-format" },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://rohitravels.com/print-format" }],
   }),
@@ -1595,7 +1596,6 @@ function PrintFormatPage() {
                 setLoading(true);
                 try {
                   const bytes = edited.slice();
-                  setPdfBytes(bytes);
                   setEditorPdfBytes(bytes);
                   const { previews, redactions, pageSizes, textItems } = await processPdf(bytes);
                   setPreviewPages(previews);
