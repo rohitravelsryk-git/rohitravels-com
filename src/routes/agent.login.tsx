@@ -6,7 +6,6 @@ import { getPsf } from "@/lib/fares.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   Lock,
@@ -14,8 +13,6 @@ import {
   MessageCircle,
   Plane,
   ShieldCheck,
-  TrendingUp,
-  Users,
 } from "lucide-react";
 import {
   requestAgentLoginCode,
@@ -227,13 +224,6 @@ function LoginPage() {
     }
   }
 
-  const stats = [
-    { value: "5,000+", label: "Travel Partners", icon: Users },
-    { value: "200+", label: "Global Destinations", icon: Plane },
-    { value: "1M+", label: "Bookings Processed", icon: TrendingUp },
-    { value: "99%", label: "Partner Satisfaction", icon: CheckCircle2 },
-  ];
-
   return (
     <main className="relative min-h-screen bg-[#F4EFEA] text-[#1C1917] selection:bg-[#D97757] selection:text-white">
       {/* Background ambient warmth */}
@@ -291,7 +281,7 @@ function LoginPage() {
                   B2B Agent Portal
                 </span>
                 <span className="text-[10px] font-semibold uppercase tracking-[.22em] text-[#B7A99E]">
-                  Global Destinations · Stronger Together
+                  Flights · Hotels · Holidays · Visas
                 </span>
               </div>
 
@@ -303,23 +293,6 @@ function LoginPage() {
               <p className="text-xs font-bold uppercase tracking-[.3em] text-[#B7A99E]">
                 Flights &middot; Hotels &middot; Holidays &middot; Visas
               </p>
-            </div>
-
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-              {stats.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <div
-                    key={s.label}
-                    className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-sm backdrop-blur-sm transition hover:bg-white/10"
-                  >
-                    <Icon className="h-5 w-5 text-[#D97757]" />
-                    <div className="mt-3 font-serif text-2xl font-bold tracking-tight text-[#FAF9F5]">{s.value}</div>
-                    <div className="mt-1 text-[11px] leading-tight text-[#B7A99E]">{s.label}</div>
-                  </div>
-                );
-              })}
             </div>
 
             {/* Airplane Hero Card */}
