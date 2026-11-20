@@ -15,14 +15,9 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+async function requireUnlocked(tabs: string[] = []) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type BackupTableRow = {

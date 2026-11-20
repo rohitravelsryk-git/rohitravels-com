@@ -463,9 +463,10 @@ export const setBookingPnr = createServerFn({ method: "POST" })
   });
 
 export const countSubmittedBookings = createServerFn({ method: "GET" }).handler(async () => {
-  // This is used for the admin dashboard badge.
-  // We bypass full requireUnlocked() check for the count badge if needed, 
-  // but AdminTabs component is already protected by the layout.
+  // Admin dashboard badge: only panel users who can see bookings get the count.
+  const { getPanelCaller } = await import("./panel-gate");
+  const panel = await getPanelCaller().catch(() => null);
+  if (!panel || (panel.role === "staff" && !panel.tabs.includes("bookings"))) return { count: 0 };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count, error } = await supabaseAdmin
     .from("agent_bookings")
@@ -733,15 +734,24 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
     const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     if (bin.byteLength > 10 * 1024 * 1024) throw new Error("File too large (max 10MB)");
 
+    // Tickets must be real PDFs or images: check the file's own signature, not the
+    // browser-supplied type, and store it with the detected type.
+    const isPdf = bin[0] === 0x25 && bin[1] === 0x50 && bin[2] === 0x44 && bin[3] === 0x46;
+    const isPng = bin[0] === 0x89 && bin[1] === 0x50 && bin[2] === 0x4e && bin[3] === 0x47;
+    const isJpg = bin[0] === 0xff && bin[1] === 0xd8 && bin[2] === 0xff;
+    const isWebp = bin[0] === 0x52 && bin[1] === 0x49 && bin[2] === 0x46 && bin[3] === 0x46 && bin[8] === 0x57 && bin[9] === 0x45 && bin[10] === 0x42 && bin[11] === 0x50;
+    const contentType = isPdf ? "application/pdf" : isPng ? "image/png" : isJpg ? "image/jpeg" : isWebp ? "image/webp" : null;
+    if (!contentType) throw new Error("Only PDF, JPG, PNG or WEBP ticket files are allowed");
+
     const safe = data.name.replace(/[^\w.\-]+/g, "_");
     const path = `${(row as any).agent_user_id}/tickets/${data.id}/${Date.now()}_${safe}`;
     const { error: upErr } = await supabaseAdmin.storage
       .from("booking-attachments")
-      .upload(path, bin, { contentType: data.type, upsert: false });
+      .upload(path, bin, { contentType, upsert: false });
     if (upErr) throw new Error(upErr.message);
 
     const existing = Array.isArray((row as any).tickets) ? (row as any).tickets : [];
-    const tickets = [...existing, { name: data.name, path, type: data.type, size: bin.byteLength, uploaded_at: new Date().toISOString() }];
+    const tickets = [...existing, { name: data.name, path, type: contentType, size: bin.byteLength, uploaded_at: new Date().toISOString() }];
 
     // Attaching a ticket file must NEVER confirm the booking: only the admin's
     // explicit Confirm action (setBookingStatusAdmin) may move the ticket

@@ -18,9 +18,10 @@ function sessionConfig() {
   };
 }
 
-export async function requireAdminUnlocked() {
-  const session = await useSession<GateSession>(sessionConfig());
-  if (!session.data.unlocked) throw new Error("Unauthorized");
+/** Admin always passes; staff only with one of `tabs`. No tabs = administrators only. */
+export async function requireAdminUnlocked(tabs: string[] = []) {
+  const { requirePanelTab } = await import("./panel-gate");
+  await requirePanelTab(tabs);
 }
 
 function apiKey() {

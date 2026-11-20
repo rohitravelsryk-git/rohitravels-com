@@ -2,7 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const getQuickReplies = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { getPanelCaller } = await import("./panel-gate");
+  if (!(await getPanelCaller().catch(() => null))) return [];
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("wa_quick_replies")
     .select("*")
@@ -20,6 +22,8 @@ export const saveQuickReply = createServerFn({ method: "POST" })
     }).parse(d)
   )
   .handler(async ({ data }) => {
+    const { getPanelCaller } = await import("./panel-gate");
+    if (!(await getPanelCaller())) throw new Error("Unauthorized");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("wa_quick_replies")
@@ -31,6 +35,8 @@ export const saveQuickReply = createServerFn({ method: "POST" })
 export const deleteQuickReply = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string() }).parse(d))
   .handler(async ({ data }) => {
+    const { getPanelCaller } = await import("./panel-gate");
+    if (!(await getPanelCaller())) throw new Error("Unauthorized");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("wa_quick_replies")

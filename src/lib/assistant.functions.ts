@@ -186,7 +186,7 @@ export const askAssistant = createServerFn({ method: "POST" })
 
 async function requireStaff() {
   const { requireAdminUnlocked } = await import("./marketing.server");
-  await requireAdminUnlocked();
+  await requireAdminUnlocked(["queries"]);
 }
 
 export const draftQueryReply = createServerFn({ method: "POST" })

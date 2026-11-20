@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 // Aggregated sold-seat counts per fare_id.
 // This ensures that seat counts are isolated to specific groups/dates even if they share a sector.
 export const getSectorSoldCounts = createServerFn({ method: "GET" }).handler(async () => {
+  const { requirePanelTabOrApprovedAgent } = await import("./panel-gate");
+  await requirePanelTabOrApprovedAgent(["fares", "bookings"]);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   
   // 1. Fetch seats from active agent bookings.

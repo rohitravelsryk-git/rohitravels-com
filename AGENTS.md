@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Admin navigation uses one shared, server-persisted grouped layout with admin-only custom link editing, so every admin page presents the same menu structure.
+- Admin-panel server functions gate through `src/lib/panel-gate.ts` (`requirePanelTab(tabs)`): admins always pass, staff only with a matching allowed tab read fresh from `staff_users`; no tabs = admin only. Why: an unlocked session alone let any staff reach every admin action.

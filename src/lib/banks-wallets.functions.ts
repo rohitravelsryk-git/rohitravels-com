@@ -10,10 +10,9 @@ function sessionConfig() {
   return { password, name: "rohi-admin", maxAge: 60 * 60 * 8, cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" } };
 }
 
-async function requireUnlocked() {
-  const s = await useSession<GateSession>(sessionConfig());
-  if (!s.data.unlocked) throw new Error("Unauthorized");
-  return s;
+async function requireUnlocked(tabs: string[] = ["addons", "bank-details"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type BankWallet = {

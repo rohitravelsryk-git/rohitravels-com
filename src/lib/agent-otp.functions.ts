@@ -209,6 +209,13 @@ export const syncAgentProfile = createServerFn({ method: "POST" })
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const email = data.email.trim().toLowerCase();
+      // The caller must be signed in as exactly this user with exactly this email;
+      // otherwise anyone could re-link someone else's agency profile.
+      const { getAgentCaller } = await import("./panel-gate");
+      const caller = await getAgentCaller();
+      if (!caller || caller.userId !== data.userId || caller.email !== email) {
+        return { ok: false as const, agent: null };
+      }
       let { data: agent } = await supabaseAdmin
         .from("agents")
         .select("user_id, agency_name, email, status, mfa_enabled")

@@ -18,14 +18,9 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+async function requireUnlocked(tabs: string[] = ["tickets"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type TicketAttachment = { name: string; path?: string; url?: string; type?: string; kind?: string };
@@ -240,6 +235,8 @@ export const removeTicketDoc = createServerFn({ method: "POST" })
     const { data: row } = await (supabaseAdmin as any)
       .from("group_tickets").select("attachments").eq("id", data.id).maybeSingle();
     const existing: TicketAttachment[] = Array.isArray(row?.attachments) ? row.attachments : [];
+    // Only files actually attached to this ticket may be deleted.
+    if (!existing.some((a) => a?.path === data.path)) throw new Error("Document not found on this ticket");
     const attachments = existing.filter((a) => a?.path !== data.path);
     await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
     const { error } = await (supabaseAdmin as any)
@@ -469,6 +466,14 @@ export async function notifyUpdateNameStatus(supabaseAdmin: any, t: GroupTicket)
  * Sends email + optional WhatsApp webhook. Dedupes via unique(ticket_id, kind).
  */
 export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(async () => {
+  // Any signed-in admin-panel user may trigger the (deduplicated) scan.
+  const { getPanelCaller } = await import("./panel-gate");
+  if (!(await getPanelCaller())) throw new Error("Unauthorized");
+  return performTicketReminderScan();
+});
+
+/** Server-only reminder scan. Callers must verify the requester first. */
+export async function performTicketReminderScan() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date();
   const in72 = new Date(now.getTime() + 72 * 3600 * 1000);
@@ -615,4 +620,4 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
   }
 
   return { scanned: tickets.length, created: created.length };
-});
+}

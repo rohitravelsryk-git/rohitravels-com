@@ -13,14 +13,9 @@ function sessionConfig() {
     cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
-async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+async function requireUnlocked(tabs: string[] = ["self-groups"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type SelfGroupPassenger = {

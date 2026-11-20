@@ -1633,6 +1633,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_approved_agent: { Args: { _user_id: string }; Returns: boolean }
       save_airline_ledger: {
         Args: { p_data: Json; p_expected_revision: number }
         Returns: number

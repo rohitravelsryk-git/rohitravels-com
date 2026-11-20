@@ -554,15 +554,8 @@ async function runAirlineLedgerGoogleSheetSync(revision: number): Promise<Airlin
 }
 
 async function requireUnlocked() {
-  const password = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
-  if (!password) throw new Error("ROHI_SESSION_SECRET is not configured");
-  const s = await useSession<{ unlocked?: boolean }>({
-    password,
-    name: "rohi-admin",
-    maxAge: 60 * 60 * 8,
-    cookie: { httpOnly: true, secure: true, sameSite: "lax", path: "/" },
-  });
-  if (!s.data.unlocked) throw new Error("Unauthorized");
+  const { requirePanelTab } = await import("./panel-gate");
+  await requirePanelTab(["airline-accounts"]);
 }
 
 export const syncAirlineLedgerGoogleSheetOnOpen = createServerFn({ method: "POST" }).handler(async () => {

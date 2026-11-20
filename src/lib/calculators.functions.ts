@@ -15,10 +15,9 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
-  const s = await useSession<GateSession>(sessionConfig());
-  if (!s.data.unlocked) throw new Error("Unauthorized");
-  return s;
+async function requireUnlocked(tabs: string[] = ["calculators"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type CalculatorToolId =

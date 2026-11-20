@@ -35,7 +35,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
   .validator((input: unknown) => CopyInput.parse(input))
   .handler(async ({ data }): Promise<MarketingCopy> => {
     const { requireAdminUnlocked, chat } = await import("@/lib/marketing.server");
-    await requireAdminUnlocked();
+    await requireAdminUnlocked(["marketing"]);
 
     const system = [
       `You are the senior social-media marketing copywriter for ${BRAND_NAME},`,
@@ -130,7 +130,7 @@ export const generateMarketingImage = createServerFn({ method: "POST" })
   .validator((input: unknown) => ImageInput.parse(input))
   .handler(async ({ data }): Promise<{ dataUrl: string }> => {
     const { requireAdminUnlocked, image } = await import("@/lib/marketing.server");
-    await requireAdminUnlocked();
+    await requireAdminUnlocked(["marketing"]);
 
     const size = data.format === "status" ? "1024x1536" : data.format === "poster" ? "1536x1024" : "1024x1024";
     const styled = [
@@ -160,7 +160,7 @@ export const readImageText = createServerFn({ method: "POST" })
   .validator((input: unknown) => ReadImageInput.parse(input))
   .handler(async ({ data }): Promise<{ text: string }> => {
     const { requireAdminUnlocked, vision } = await import("@/lib/marketing.server");
-    await requireAdminUnlocked();
+    await requireAdminUnlocked(["marketing"]);
 
     const text = await vision(
       "You extract fare details from travel posters and screenshots for a Pakistani travel agency.",

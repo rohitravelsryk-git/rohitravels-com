@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const getStickyNote = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { supabase } = await import("@/integrations/supabase/client");
+    const { getPanelCaller } = await import("./panel-gate");
+    const panel = await getPanelCaller().catch(() => null);
 
     const { data, error } = await supabaseAdmin
       .from("b2b_sticky_notes")
@@ -13,17 +14,11 @@ export const getStickyNote = createServerFn({ method: "GET" })
       .order("updated_at", { ascending: false })
       .limit(1);
 
-    if (!error && data && data.length > 0) return data[0];
-
-    const fallback = await supabase
-      .from("b2b_sticky_notes")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(1);
-
-    if (fallback.data && fallback.data.length > 0) return fallback.data[0];
-
-    return null;
+    if (error || !data || data.length === 0) return null;
+    const row = data[0];
+    // Only the admin panel sees drafts; everyone else sees the note only while it is switched on.
+    if (panel) return row;
+    return row.is_enabled ? row : null;
   });
 
 export const updateStickyNote = createServerFn({ method: "POST" })
@@ -34,6 +29,8 @@ export const updateStickyNote = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    const { requirePanelTab } = await import("./panel-gate");
+    await requirePanelTab(["sticky-notes"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: existing, error: fetchError } = await supabaseAdmin
       .from("b2b_sticky_notes")

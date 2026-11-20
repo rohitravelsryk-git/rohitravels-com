@@ -15,14 +15,9 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+async function requireUnlocked(tabs: string[] = ["vendors"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export type Vendor = {
@@ -134,6 +129,7 @@ export const listVendorsAdmin = createServerFn({ method: "GET" }).handler(async 
  * Backward compatible listVendors function used by admin.index.tsx, admin.tickets.tsx, and accounts-book.
  */
 export const listVendors = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked(["vendors", "tickets", "fares", "accounts-book", "addons", "bookings"]);
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await (supabaseAdmin as any).from("vendors")

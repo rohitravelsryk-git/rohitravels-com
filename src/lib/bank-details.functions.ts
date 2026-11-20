@@ -32,18 +32,15 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+async function requireUnlocked(tabs: string[] = ["bank-details"]) {
+  const { requirePanelTab } = await import("./panel-gate");
+  return requirePanelTab(tabs);
 }
 
 export const listBankDetails = createServerFn({ method: "GET" })
   .handler(async () => {
+    const { requirePanelTabOrApprovedAgent } = await import("./panel-gate");
+    await requirePanelTabOrApprovedAgent(["bank-details"]);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("bank_details")
