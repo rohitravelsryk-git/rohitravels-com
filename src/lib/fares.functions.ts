@@ -548,7 +548,11 @@ const fareInput = z.object({
   vendor_name: z.string().optional().nullable(),
   is_featured: z.boolean().optional().default(false),
   group_type: z.enum(["self", "party"]).optional().default("party"),
-  pnr: z.string().optional().nullable(),
+  pnr: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val ? val.trim().toUpperCase() : "")),
   hide_fare_after_2h: z.boolean().optional().default(false),
   auto_hide_hours: z.number().int().min(1).max(720).optional().default(2),
   sort_order: z.number().int().optional().default(0),
@@ -560,7 +564,8 @@ export const createFare = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("fares").insert(data);
+    const payload = { ...data, pnr: (data.pnr ?? "").trim().toUpperCase() };
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("fares").insert(payload);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -571,9 +576,10 @@ export const updateFare = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...rest } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const payload = { ...rest, pnr: (rest.pnr ?? "").trim().toUpperCase(), updated_at: new Date().toISOString() };
     const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("fares")
-      .update({ ...rest, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };

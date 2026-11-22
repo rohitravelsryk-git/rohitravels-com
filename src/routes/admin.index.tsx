@@ -965,7 +965,7 @@ function AdminPanel({
       is_featured: false,
       sort_order: 0,
       group_type: d.group_type,
-      pnr: d.group_type === "party" ? null : (d.pnr ? d.pnr.trim().toUpperCase() : null),
+      pnr: d.group_type === "party" ? "" : (d.pnr ? d.pnr.trim().toUpperCase() : ""),
       hide_fare_after_2h: d.hide_fare_after_2h,
       auto_hide_hours: d.auto_hide_hours,
     };
